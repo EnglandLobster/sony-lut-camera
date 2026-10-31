@@ -177,8 +177,10 @@ public final class LibraryActivity extends Activity {
         selectedId=entry.id;lastSelection=selection;
         previewEntry=entry;previewForCapture=true;fitError="";fittedPreview=null;
         runTask("正在准备 "+entry.name,new Task(){public void run()throws Exception{
+            CaptureDiagnostics diagnostic=new CaptureDiagnostics(android.os.Environment.getExternalStorageDirectory());
+            diagnostic.append("library_prepare model="+android.os.Build.MODEL+" sdk="+android.os.Build.VERSION.SDK_INT+" lut="+entry.id);
             library.select(entry.id);previewChoice=PreviewProfileStore.choice(entry);
-            if(previewChoice.enabled)try{fittedPreview=PreviewFitting.ensure(entry);}catch(Exception e){fitError=explain(e);android.util.Log.w("SonyPreviewFit","prepare_failed",e);}
+            if(previewChoice.enabled)try{diagnostic.append("preview_fit_begin");fittedPreview=PreviewFitting.ensure(entry);diagnostic.append("preview_fit_ready");}catch(Exception e){diagnostic.failure(e);fitError=explain(e);android.util.Log.w("SonyPreviewFit","prepare_failed",e);}
         }},new Runnable(){public void run(){
             if(previewChoice.enabled&&fittedPreview==null){mode="preview_error";selection=0;render();return;}
             if(previewChoice.enabled&&fittedPreview.largeError()&&previewChoice.acknowledged<fittedPreview.fitVersion){mode="preview_warning";selection=0;render();return;}
@@ -209,6 +211,9 @@ public final class LibraryActivity extends Activity {
         }});
     }
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
+        if(request==CAPTURE_REQUEST&&data!=null&&data.hasExtra("startup_failure")){
+            mode="library";showNotice("无法开始拍摄",data.getStringExtra("startup_failure")+"\n诊断：SD卡 SONYLUT/DIAG/INIT.TXT");return;
+        }
         if(result!=RESULT_OK||data==null)return;
         if(request==CAPTURE_REQUEST&&data.getBooleanExtra("open_gallery",false))openGallery(null,data.getIntExtra("page_offset",0));
         else if(request==GALLERY_REQUEST&&data.getBooleanExtra("return_capture",false)){mode="library";selection=indexOf(selectedId);if(!luts.isEmpty())startCapture(luts.get(selection));}

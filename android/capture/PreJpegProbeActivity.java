@@ -37,6 +37,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private PhotoHud productHud;
     private volatile boolean developEnabledThisShot;
     private SimpleExposure exposure;
+    private CaptureSetup captureSetup;
+    private CaptureDiagnostics startupDiagnostics;
+    private volatile String startupFailure;
     private CaptureTelemetry telemetry;
     private int pendingReceipts;
     private long recordedPairShot=-1;
@@ -130,6 +133,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private synchronized void event(String name,String detail){
         String line=SystemClock.elapsedRealtime()+" "+name+" "+detail+" shot="+gate.shot();
         android.util.Log.i("SonyPreJpeg",line);
+        if(startupDiagnostics!=null&&gate.shot()==0)try{startupDiagnostics.append(line);}
+        catch(IOException e){android.util.Log.e("SonyPreJpeg","startup_diagnostic_write_failed",e);}
         long start=SystemClock.elapsedRealtime();
         if(run!=null&&!journalClosed)try{
             // Keep one descriptor for the run. Each unbuffered write still
@@ -182,8 +187,12 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }else ui.postDelayed(hideReviewStatus,3500);
     }
     private static Throwable cause(Throwable e){while(e.getCause()!=null)e=e.getCause();return e;}
-    private void failure(String where,Throwable e){
+    private void failure(final String where,final Throwable e){
         android.util.Log.e("SonyPreJpeg","failure stage="+where,e);
+        if(productUi()&&gate.shot()==0){
+            startupFailure="阶段："+where+"\n"+cause(e).toString();
+            if(startupDiagnostics!=null)try{startupDiagnostics.failure(e);}catch(IOException writeError){android.util.Log.e("SonyPreJpeg","startup_diagnostic_write_failed",writeError);}
+        }
         event("failed",where+" "+cause(e));gate.fail();message("测试停止："+where+"\n请保留当前页面，读取日志。");
         ui.post(new Runnable(){public void run(){
             if(autoPreview!=null){
@@ -193,15 +202,22 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }
             endProcessing();
             if(productHud!=null){status.setVisibility(View.GONE);productHud.mode="error";productHud.detail="拍摄未完成";
-                productHud.progress=originalFile!=null?"原片已保存":"请返回 LUT 库重新进入拍摄";
-                productHud.footer="MENU 返回 LUT 库后重试";productHud.update();}
+                productHud.progress=startupFailure!=null?where+": "+cause(e).toString():originalFile!=null?"原片已保存":"请返回 LUT 库重新进入拍摄";
+                productHud.footer=startupFailure!=null?"详情：SD卡 SONYLUT/DIAG/INIT.TXT · MENU 返回":"MENU 返回 LUT 库后重试";
+                if(startupFailure!=null)setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("startup_failure",startupFailure));productHud.update();}
             if(active&&review!=null)try{review.showGraphicsOutput();}catch(Exception x){android.util.Log.e("SonyPreJpeg","error_graphics_restore_failed",x);}
         }});
     }
     @Override public void onCreate(Bundle state){super.onCreate(state);
+        if(productUi())try{
+            startupDiagnostics=new CaptureDiagnostics(Environment.getExternalStorageDirectory());
+            event("activity_create","model="+Build.MODEL+" sdk="+Build.VERSION.SDK_INT+" abi="+Build.CPU_ABI
+                +" max_heap="+Runtime.getRuntime().maxMemory()+" app="+getPackageManager().getPackageInfo(getPackageName(),0).versionName);
+        }catch(Exception e){android.util.Log.e("SonyPreJpeg","startup_diagnostic_open_failed",e);}
         previousExceptionHandler=Thread.getDefaultUncaughtExceptionHandler();
         exceptionHandler=new Thread.UncaughtExceptionHandler(){public void uncaughtException(Thread thread,Throwable error){
             android.util.Log.e("SonyPreJpeg","uncaught thread="+thread.getName()+" shot="+gate.shot(),error);
+            if(startupDiagnostics!=null)try{startupDiagnostics.failure(error);}catch(Throwable ignored){}
             try{if(run!=null){PrintWriter out=new PrintWriter(new FileOutputStream(RunFiles.file(run,"CRASH.TXT"),true));
                 try{out.println("thread="+thread.getName()+" state="+gate.state()+" shot="+gate.shot());error.printStackTrace(out);out.flush();}finally{out.close();}}}
             catch(Throwable ignored){}
@@ -298,7 +314,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(!initOnly)photoFiles=new PhotoFiles(sd,"handoff".equals(phase)?PhotoFiles.Format.ARW:PhotoFiles.Format.JPEG);
         Class<?> props=Class.forName("com.sony.scalar.sysutil.ScalarProperties");Method get=props.getMethod("getString",String.class);
         String memory=(String)get.invoke(null,"device.memory"),pixels=(String)get.invoke(null,"mem.rawimage.size.in.mega.pixel");
-        if(!"ILDCSC_MUSASHI8Gb".equals(memory)||!"24".equals(pixels))throw new IOException("unvalidated platform "+memory+"/"+pixels);
+        event("platform","memory="+memory+" pixels="+pixels);
+        for(String field:new String[]{"PROP_MODEL_NAME","PROP_VERSION_PLATFORM"})try{
+            event("platform_property",field+"="+get.invoke(null,props.getField(field).get(null)));
+        }catch(Exception unavailable){event("platform_property",field+" unavailable="+cause(unavailable));}
+        try{event("firmware",String.valueOf(props.getMethod("getFirmwareVersion").invoke(null)));}
+        catch(Exception unavailable){event("firmware","unavailable="+cause(unavailable));}
+        if(!"ILDCSC_MUSASHI8Gb".equals(memory)||!"24".equals(pixels))throw new IOException("当前内存布局尚未适配："+memory+"/"+pixels);
         File map;
         if("reference01".equals(mapRevision)){
             // These bytes are the original exact-platform reference asset.
@@ -331,6 +353,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     event("preview_profile_loaded","fit_version="+automaticProfile.fitVersion+" mae="+automaticProfile.mae+" warning="+automaticProfile.largeError());
                 }
                 event("lut_source_verified","ms="+(SystemClock.elapsedRealtime()-loadStart));
+                event("lut_load_begin","workers=4");
                 lutCache=Native.prepareDeviceLutCompiled(lut.getPath(),LutBinaryCache.binary(lut).getPath(),selectedLut.id,4);
             }else lutCache=Native.prepareDeviceLut(lut.getPath(),4);
             event("lut_load",Native.deviceLutLoadInfo(lutCache)+" source_and_load_ms="+(SystemClock.elapsedRealtime()-loadStart));
@@ -354,12 +377,20 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         try{
             // Start EE after listener registration so its readiness event is not
             // lost during open(). Retain the user's existing shooting settings.
+            event("camera_api_lookup","CameraEx.OpenOptions");
             Class<?> openType=Class.forName("com.sony.scalar.hardware.CameraEx$OpenOptions");Object options=openType.newInstance();
             openType.getMethod("setPreview",boolean.class).invoke(options,false);
             event("camera_open_begin","preview=false inherit_setting=default");cameraEx=cameraType.getMethod("open",int.class,openType).invoke(null,0,options);
             camera=(Camera)cameraType.getMethod("getNormalCamera").invoke(cameraEx);Camera.Parameters p=camera.getParameters();Camera.Size size=p.getPictureSize();
             event("camera_parameters","drive="+p.get("drive-mode")+" storage="+p.get("storage-fmt")+" jpeg_quality="+p.get("jpeg-quality")+" size="+(size==null?"null":size.width+"x"+size.height));
             event("camera_zoom",zoomValues(p));
+            event("camera_capabilities","drive="+p.get("drive-mode-values")+" sizes="+p.get("picture-size-values")
+                +" quality="+p.get("jpeg-quality-values")+" matrix="+p.get("rgb-matrix-supported")+" gamma="+p.get("extended-gamma-table-supported"));
+            if(productUi()){
+                captureSetup=new CaptureSetup(new CameraExposureDriver(camera));
+                event("capture_settings_begin","single/jpeg/6000x4000");captureSetup.open();
+                p=camera.getParameters();size=p.getPictureSize();event("capture_settings_ready","single/jpeg/6000x4000");
+            }
             if(!"single".equals(p.get("drive-mode"))||!"jpeg".equals(p.get("storage-fmt")))throw new IOException("probe requires existing single/JPEG settings");
             if(size==null||size.width!=6000||size.height!=4000)throw new IOException("probe requires existing 6000x4000 setting");
             // Explicit recovery for the recorded 0.6.18 transaction: the native
@@ -999,6 +1030,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     event("zoom_restore_done",zoomValues(camera.getParameters()));originalZoom.clear();
                 }catch(Throwable e){event("zoom_restore_error",cause(e).toString());}
             }
+            if(value==cameraEx&&captureSetup!=null)try{
+                captureSetup.close();captureSetup=null;event("capture_settings_restored","original settings readback matched");
+            }catch(Exception e){event("capture_settings_restore_error",cause(e).toString());}
             try{
             event("release_begin",value.getClass().getName());value.getClass().getMethod("release").invoke(value);event("release_done",value.getClass().getName());
             if(value==cameraEx&&previewDriver!=null)previewDriver.cameraReleased();
@@ -1013,7 +1047,12 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         exitProductProcess();
     }
     @Override protected void onResume(){super.onResume();active=true;
-        if(closed){finish();return;}
+        if(closed&&startupFailure==null){finish();return;}
+        if(closed&&startupFailure!=null){
+            if(review!=null)try{review.startDisplayTracking();review.showGraphicsOutput();}
+            catch(Exception e){android.util.Log.e("SonyPreJpeg","error_display_resume_failed",e);}
+            return;
+        }
         if(productUi())SonyAppPolicy.register(this);
         if(review!=null)try{review.startDisplayTracking();}catch(Exception e){failure("display_geometry",e);close();return;}
         open();
