@@ -13,7 +13,9 @@ final class PhotoHud extends View {
     boolean liveInfoVisible=true;
     String liveExposure="",liveCompensation="+0.0 EV",qualityLabel="";
     CaptureReadout readout=new CaptureReadout();
-    private String liveHint="";
+    private String liveHint="",settingsNotice="";
+    private final Runnable clearSettingsNotice=new Runnable(){public void run(){settingsNotice="";invalidate();}};
+    void showSettingsNotice(String text){settingsNotice=text;removeCallbacks(clearSettingsNotice);postDelayed(clearSettingsNotice,10000);invalidate();}
     private boolean attached;
     private final DevelopingPreview developingPreview=new DevelopingPreview();
     private boolean animationQueued,imageDirty,wasMoving,fullFramePending=true;
@@ -156,6 +158,15 @@ final class PhotoHud extends View {
                 String[] values={readout.shutterText(),readout.apertureText(),readout.isoText(),liveCompensation};
                 float cell=w/4;
                 for(int i=0;i<values.length;i++)center(c,fit(values[i],cell-16,21),cell*(i+.5f),463,21,CameraPage.TEXT);
+            }
+            if(settingsNotice.length()>0){
+                p.setTextSize(17);String remaining=settingsNotice;int line=0;
+                while(remaining.length()>0&&line<4){
+                    int count=p.breakText(remaining,true,w-72,null);if(count<1)break;
+                    chip(c,remaining.substring(0,count),24,78+line*30,w-48,17,false);
+                    remaining=remaining.substring(count);line++;
+                }
+                chip(c,"仅本次拍摄生效，退出后恢复",24,78+line*30,w-48,16,false);
             }
             if(liveHint.length()>0)chip(c,liveHint,12,390,w-24,16,false);
         }else{

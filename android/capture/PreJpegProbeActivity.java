@@ -42,6 +42,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private long surfaceWaitStarted=-1;
     private final Runnable retrySurface=new Runnable(){public void run(){open();}};
     private int captureQuality=95;
+    private String settingsNotice="";
+    private boolean settingsNoticeShown;
     private CaptureStoreEvents storeEvents;
     private LegacyStoreCompletion legacyStore;
     private CaptureDiagnostics startupDiagnostics;
@@ -403,7 +405,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             openType.getMethod("setPreview",boolean.class).invoke(options,false);
             event("camera_open_begin","preview=false inherit_setting=default");cameraEx=cameraType.getMethod("open",int.class,openType).invoke(null,0,options);
             camera=(Camera)cameraType.getMethod("getNormalCamera").invoke(cameraEx);Camera.Parameters p=camera.getParameters();Camera.Size size=p.getPictureSize();
-            event("camera_parameters","drive="+p.get("drive-mode")+" storage="+p.get("storage-fmt")+" jpeg_quality="+p.get("jpeg-quality")+" size="+(size==null?"null":size.width+"x"+size.height));
+            java.util.Map<String,String> initialSettings=productUi()?new CameraExposureDriver(camera).read():null;
+            event("camera_parameters","drive="+p.get("drive-mode")+" storage="+p.get("storage-fmt")+" hdr="+p.get("hdr-mode")+" effect="+p.get("picture-effect")+" scene="+p.get("scene-mode")+" jpeg_quality="+p.get("jpeg-quality")+" size="+(size==null?"null":size.width+"x"+size.height));
             event("camera_zoom",zoomValues(p));
             event("camera_capabilities","drive="+p.get("drive-mode-values")+" sizes="+p.get("picture-size-values")
                 +" quality="+p.get("jpeg-quality-values")+" matrix="+p.get("rgb-matrix-supported")+" gamma="+p.get("extended-gamma-table-supported"));
@@ -451,6 +454,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 exposure=new SimpleExposure(new CameraExposureDriver(camera));
                 try{exposure.open();}catch(Exception error){throw new IOException("automatic exposure setting failed",error);}
                 event("automatic_exposure_ready",exposure.state());
+                settingsNotice=CaptureSettingsNotice.between(initialSettings,new CameraExposureDriver(camera).read());
             }
             registerCameraListeners();
             if(productUi()){
@@ -1007,6 +1011,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             else if(autoPreview.ready())productHud.showLiveHint("已恢复拍摄原色 · 按下快门拍摄");
         }
         else if(entering&&productHud.liveInfoVisible)productHud.showLiveHint("拨轮调亮度 · 中央归零 · ↑ 隐藏信息");
+        if(!settingsNoticeShown&&settingsNotice.length()>0){
+            settingsNoticeShown=true;productHud.showSettingsNotice(settingsNotice);
+            event("settings_notice",settingsNotice);
+        }
         productHud.update();
     }
     private void adjustExposure(int direction,boolean reset){
