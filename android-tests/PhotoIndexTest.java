@@ -39,6 +39,10 @@ public final class PhotoIndexTest {
         fake.rows=Arrays.asList(entry(41),entry(42));reject(new Check(){public void run()throws Exception{index.savedAfter(40,entry(39).uri);}},"multiple new outputs accepted");
         fake.rows=Arrays.asList(entry(39));reject(new Check(){public void run()throws Exception{index.savedAfter(40,entry(38).uri);}},"stale output accepted");
         fake.rows=Arrays.asList(entry(41));reject(new Check(){public void run()throws Exception{index.savedAfter(40,entry(41).uri);}},"original accepted as output");
+        fake.rows=Collections.emptyList();if(index.registeredAfter(38,source))throw new AssertionError("unregistered file accepted");
+        fake.rows=Arrays.asList(entry(39));if(!index.registeredAfter(38,source))throw new AssertionError("matching new index/file rejected");
+        reject(new Check(){public void run()throws Exception{index.registeredAfter(39,source);}},"old index entry reused");
+        fake.rows=Arrays.asList(entry(40));reject(new Check(){public void run()throws Exception{index.registeredAfter(38,source);}},"new index for another file accepted");
         for(final String uri:new String[]{"avindex://1000/00000001-default/fcspoint","avindex://1000/00000001-default/rsmpoint","file:///sd/DSC00041.JPG"})
             reject(new Check(){public void run()throws Exception{new PhotoIndex.Entry(uri,41,100,41);}},"mutable or foreign URI accepted");
         System.out.println("PASS exact DCF identity, bounded queries, missing/ambiguous/stale results, source preservation, anchor rejection");

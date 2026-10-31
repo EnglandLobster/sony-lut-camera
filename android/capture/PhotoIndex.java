@@ -52,4 +52,12 @@ final class PhotoIndex {
         if(entry.order<=before||entry.uri.equals(sourceUri))throw new IOException("Sony save did not create a new photo");
         return entry;
     }
+    boolean registeredAfter(long before,File file)throws IOException {
+        try{
+            Entry saved=savedAfter(before,""),source=source(file);
+            if(!saved.uri.equals(source.uri)||saved.order!=source.order)
+                throw new IOException("legacy stored file differs from new Sony index entry");
+            return true;
+        }catch(NotReady pending){return false;}
+    }
 }

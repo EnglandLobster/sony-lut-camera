@@ -11,3 +11,4 @@ for suite in CaptureStartupErrorTest CaptureSetupTest BuiltinRetirementTest Prev
 done
 python3 scripts/generate_preview_fixture.py
 "$java_home/bin/java" -cp out/product-ui-tests org.hongen.sonylutprobe.NativePreviewTest out/tests/native-preview/IDENT.PRV
+bash scripts/test_legacy_capture.sh

@@ -1,6 +1,20 @@
 # A6000 / A7 一代离线验证（2026-10-31）
 
-候选：0.9.0-beta.6-rc.3 / code99。研究在没有相机连接的情况下完成。公开 beta.5 保持不变；rc.3 尚未完成相机拍摄验收。客户反馈的“准备拍摄后退出”尚未锁定唯一触发点。
+候选：0.9.0-beta.6-rc.4 / code100。研究在没有相机连接的情况下完成。公开 beta.5 保持不变；候选尚未完成相机拍摄验收。已确认两份官方固件共同缺少 beta.5 强制使用的保存通知 API，导致拍摄初始化无法完成。
+
+本轮安装到 API10 模拟器并回归的发行 APK SHA-256：`acf4f3fd7a8861335d2e4bbbae84fd73f8c0a3463dd359158bfe70391d907774`。保持原包名、签名证书和已有用户数据。
+
+## 确认的启动兼容错误与 rc.4 修复
+
+beta.5 的 `open()` 在相机打开和参数配置后调用 `registerCameraListeners()`，其中强制查找 `CameraEx$StoreImageCompleteListener`。两份固件的类定义和 CameraEx 方法声明均没有这个接口及 setter；`startPreview()` 在这次查找之后，因此初始化必然在到达可拍摄状态之前失败。先前仅检查原生库和 DisplayManager 没有覆盖这个 Java 回调契约。
+
+rc.4 的 `CaptureStoreEvents` 按实际接口选择协议。新版机型沿用具名保存完成回调；缺少该接口的老机型使用 `LegacyStoreIndex` 和已有 `PhotoIndex` 的有界查询，确认保存前序号之后唯一的新记录与当前新文件的 DCF 身份一致。同时 `PhotoFiles` 要求文件稳定、完整，拒绝多文件歧义、重复或旧结果。每次保存以代次隔离并有 30 秒超时；取消会使旧轮询失效。只有原片确认后才开始调色并提交第二个保存，保留完整 LUT、6000×4000 和 EXTRA FINE。
+
+旧 `JpegListener` 虽然存在，但没有被启用。A6000 固件的 setter 调用 `native_setCallback(6)`；`libcamera.so` 的 `handleJpegEvent_Thread` 将编码数据复制进 MemoryHeapBase 后交给数据回调，Java EventHandler 再把消息中的 byte[] 交给 JpegListener。最终采用媒体索引确认，避免为保存通知搬运整张 JPEG。
+
+`audit_sony_capture_api.py` 读取真实 ODEX 的方法声明与继承关系，核对 47 个其他必需方法，A6000 3.21 和 A7 3.20 均无缺失。两份数据库库还包含 `AvindexStore.Images.Media.EXTERNAL_CONTENT_URI` 及 `_data`、`rec_order`、`dcf_folder_number`、`dcf_file_number` 字段。日志：`full-capture-api-audit.json`、`store-api-audit.json`；原生事件分发证据：`a6000-jpeg-native.txt`。这项审计确认声明契约，未执行相机硬件服务。
+
+`CaptureStoreEventsTest` 使用与固件声明一致的最小测试类复现旧强制查找失败，验证新分支不注册完整 JPEG 数据回调、新版分支不变且 setter 运行错误不被隐藏。`LegacyStoreCompletionTest` 与 `PhotoIndexTest` 验证双文件顺序、完整文件但索引未到、旧索引不能用于新文件、过期代次、取消、超时和歧义。以上三组在主机及 API10 ARM / 24 MB 堆均通过；这是接口和文件状态模拟，不是传感器模拟。
 
 ## 固件证据
 
@@ -39,17 +53,19 @@
 - 模拟器复现 rc.2 在显示初始化失败、资源关闭后仍执行后台 prepare，随后第二个错误覆盖首个错误。rc.3 将后台准备安排在显示初始化成功之后；复测只有首个 display_geometry 错误，没有后续 prepare。
 - 错误页面显示中文原因、MENU 返回提示与诊断路径。实际截图发现名称文字与多行错误正文重叠，已删除错误页中重复的中部名称，保留顶部名称。
 
-本轮没有模拟传感器、Sony AV 服务或存储硬件；两机的实际快门、显影和保存仍待相机验收。后续现场日志用于确定启动退出究竟落在哪一步，不替代以上离线测试。
+本轮没有模拟传感器、Sony AV 服务或存储硬件；两机的实际快门、显影和保存仍待相机验收。已确认的初始化 API 阻断点已修复；现场若仍失败，日志用于识别其他运行条件。
 
 ## 重现命令
 
 先构建发行 APK，在 API10 ARM 模拟器安装并打开 LUT 库，确认 24m 堆设置已生效。以下脚本拒绝运行在真实相机上：
 
 ```sh
+bash scripts/test_legacy_capture.sh
 bash scripts/test_legacy_emulator.sh EMULATOR_SERIAL
+python3 scripts/audit_sony_capture_api.py /path/to/a6000/system /path/to/a7/system
 clang++ -std=c++11 native/device_memory_span_tests.cpp -o out/device-memory-span-tests
 out/device-memory-span-tests
 python3 scripts/emulate_legacy_memory_property.py /path/to/a6000/libcameraseq.so /path/to/a7/libcameraseq.so
 ```
 
-指令仿真需要 `unicorn`、`pyelftools`。固件、原始日志与截图仅保留在本地忽略目录 `results/legacy-emulator-20261031/`，不随源码或 APK 发布。
+指令仿真需要 `unicorn`、`pyelftools`，Java 接口审计需要 `androguard`。固件、原始日志与截图仅保留在本地忽略目录 `results/legacy-emulator-20261031/`，不随源码或 APK 发布。

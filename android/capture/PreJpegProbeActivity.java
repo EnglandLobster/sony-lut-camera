@@ -38,6 +38,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private volatile boolean developEnabledThisShot;
     private SimpleExposure exposure;
     private CaptureSetup captureSetup;
+    private CaptureStoreEvents storeEvents;
+    private LegacyStoreCompletion legacyStore;
     private CaptureDiagnostics startupDiagnostics;
     private volatile String startupFailure;
     private CaptureTelemetry telemetry;
@@ -188,6 +190,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     private static Throwable cause(Throwable e){while(e.getCause()!=null)e=e.getCause();return e;}
     private void failure(final String where,final Throwable e){
+        if(legacyStore!=null)legacyStore.cancel();
         final CaptureStartupError friendly=CaptureStartupError.from(e);
         android.util.Log.e("SonyPreJpeg","failure stage="+where,e);
         if(productUi()&&gate.shot()==0){
@@ -627,7 +630,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     private void registerCameraListeners()throws Exception{
         final Object owner=cameraEx;
-        for(final String kind:new String[]{"ShutterListener","StoreImageCompleteListener","PreviewStartListener"}){
+        for(final String kind:new String[]{"ShutterListener","PreviewStartListener"}){
             final String name="com.sony.scalar.hardware.CameraEx$"+kind;
             Object value=listener(name,new InvocationHandler(){public Object invoke(Object proxy,Method method,Object[] args){
                 if(method.getDeclaringClass()==Object.class)return objectMethod(proxy,method,args);
@@ -638,22 +641,49 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     if(status==0)arm("shutter_callback");
                     else if(status==1)cancelShutter();
                     else failure("shutter",new IOException("status "+status));
-                }else if(kind.equals("StoreImageCompleteListener")){
-                    try{
-                        final String directory=(String)args[1].getClass().getField("DirectoryName").get(args[1]);
-                        final String file=(String)args[1].getClass().getField("FileName").get(args[1]);
-                        final long shot=gate.shot();
-                        final long at=SystemClock.elapsedRealtime();event("stored_notification","value="+args[0]+" dir="+directory+" file="+file+" state="+gate.state());
-                        work.post(new Runnable(){public void run(){
-                            if(closed||shot!=gate.shot()){event("stale_store_ignored","event_shot="+shot+" file="+file);return;}
-                            try{if(photoFiles.knownStore(directory,file)){event("duplicate_store_ignored","file="+file);return;}}
-                            catch(IOException e){failure("store_path",e);return;}
-                            verifyStored(directory,file,at);
-                        }});
-                    }catch(Throwable e){failure("store_notification",e);}
                 }else onPreviewStarted();return null;
             }});
             cameraType.getMethod("set"+kind,Class.forName(name)).invoke(cameraEx,value);
+        }
+        storeEvents=new CaptureStoreEvents(owner,new CaptureStoreEvents.Sink(){
+            public void named(Object value,final String directory,final String file){
+                if(closed||cameraEx!=owner)return;
+                final long shot=gate.shot(),at=SystemClock.elapsedRealtime();
+                event("stored_notification","value="+value+" dir="+directory+" file="+file+" state="+gate.state());
+                work.post(new Runnable(){public void run(){
+                    if(closed||shot!=gate.shot()){event("stale_store_ignored","event_shot="+shot+" file="+file);return;}
+                    try{if(photoFiles.knownStore(directory,file)){event("duplicate_store_ignored","file="+file);return;}}
+                    catch(IOException e){failure("store_path",e);return;}
+                    verifyStored(directory,file,at);
+                }});
+            }
+            public void failed(Throwable error){if(!closed&&cameraEx==owner)failure("store_notification",error);}
+        });
+        if(!storeEvents.hasNamedReceipt())legacyStore=new LegacyStoreCompletion(photoFiles,new LegacyStoreIndex(this,sd));
+        event("store_protocol",storeEvents.hasNamedReceipt()?"named_store_complete":"legacy_index_and_complete_file; overlap_original=false");
+    }
+    private void storeToCamera(Class<?> type,Object image,boolean releaseSource)throws Exception{
+        final long shot=gate.shot();
+        final long token;
+        try{token=legacyStore==null?0:legacyStore.begin(SystemClock.elapsedRealtime());}
+        catch(Exception error){
+            // Callers have handed ownership over when releaseSource is true.
+            // A failed index snapshot occurs before Sony receives that image.
+            if(releaseSource)release(image);throw error;
+        }
+        sequenceType.getMethod("storeImage",type,boolean.class).invoke(sequence,image,releaseSource);
+        if(legacyStore!=null)work.postDelayed(new Runnable(){public void run(){pollLegacyStore(token,shot);}},200);
+    }
+    private void pollLegacyStore(final long token,final long shot){
+        if(closed||shot!=gate.shot()||legacyStore==null||!legacyStore.active(token))return;
+        try{
+            File file=legacyStore.poll(token,SystemClock.elapsedRealtime());
+            if(file==null){work.postDelayed(new Runnable(){public void run(){pollLegacyStore(token,shot);}},200);return;}
+            event("legacy_store_confirmed","file="+file+" indexed=true stable=true complete=true");
+            verifyStored("DCIM/"+file.getParentFile().getName()+"/",file.getName(),SystemClock.elapsedRealtime());
+        }catch(Throwable error){
+            failure("legacy_store",error);
+            if(!active)ui.post(new Runnable(){public void run(){close();}});
         }
     }
     private void cancelShutter(){
@@ -683,7 +713,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(gate.arm()){
         final long shot=gate.shot();processingProgress.begin(shot);pressAt=SystemClock.elapsedRealtime();timingOrigin=origin;journalAtPress=journalWriteMs();
         originalFile=null;gradedFile=null;displayedAt=0;nextReadyAt=0;awaitFirstFrame=false;lutApplied=false;
-        overlapThisShot=overlapOriginal&&(!alternateOverlap||shot%2==0);
+        overlapThisShot=overlapOriginal&&legacyStore==null&&(!alternateOverlap||shot%2==0);
         event("armed","origin="+origin+" lut_cache_reused="+(shot>1)+" overlap_original="+overlapThisShot);
         ui.post(new Runnable(){public void run(){if(shot==gate.shot()){clearOriginalReview();reviewing=false;review.setVisibility(View.INVISIBLE);review.setImageBitmap(null);}}});
         developEnabledThisShot=productUi()&&getIntent().getBooleanExtra("develop_animation",true)
@@ -736,15 +766,15 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     // file's store is the final SAVE milestone in the product UI.
                     processing(CaptureProgress.Stage.GRADE,productUi()?"正在准备调色":"正在保存原片");
                     event("store_begin","type=YC role=original release_source=false");
-                    sequenceType.getMethod("storeImage",imageType,boolean.class).invoke(sequence,image,false);
+                    storeToCamera(imageType,image,false);
                 }else{
                     gate.saving();storeAt=SystemClock.elapsedRealtime();event("store_begin","type=YC release_source=true");imageTransferred=true;
                     processing(CaptureProgress.Stage.SAVE,"正在保存原片");
-                    sequenceType.getMethod("storeImage",imageType,boolean.class).invoke(sequence,image,true);
+                    storeToCamera(imageType,image,true);
                 }
             }else{
                 gate.saving();storeAt=SystemClock.elapsedRealtime();event("store_begin","type=RAW release_source=true");rawTransferred=true;
-                sequenceType.getMethod("storeImage",rawType,boolean.class).invoke(sequence,raw,true);
+                storeToCamera(rawType,raw,true);
             }
             event("store_accepted","call_ms="+(SystemClock.elapsedRealtime()-storeAt));
             // Explicit experiment: CreateStream replies from CaptureDevExit
@@ -791,7 +821,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             gate.savingGraded();storeAt=SystemClock.elapsedRealtime();event("store_begin","type=YC role=graded release_source=true");
             processing(CaptureProgress.Stage.SAVE,"正在保存成片");
             Object image=retainedImage;retainedImage=null;
-            sequenceType.getMethod("storeImage",imageType,boolean.class).invoke(sequence,image,true);
+            storeToCamera(imageType,image,true);
             event("store_accepted","role=graded call_ms="+(SystemClock.elapsedRealtime()-storeAt));
         }else{
             if(originalFile==null||originalFile.equals(file))throw new IOException("graded save did not preserve distinct original");
@@ -1010,6 +1040,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void close(){if(closed||workerActive||gate.busy())return;
         if(productUi())recordPair();
         closed=true;
+        if(legacyStore!=null)legacyStore.cancel();
+        if(storeEvents!=null)try{storeEvents.close();storeEvents=null;}catch(Exception e){event("store_listener_close_error",cause(e).toString());}
         if(autoPreview!=null)autoPreview.close();
         if(isolationBarrier!=null)isolationBarrier.fail();
         if(isolationPreview!=null)try{isolationPreview.close();event("isolation_closed","baseline_restored=true");}
