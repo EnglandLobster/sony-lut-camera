@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "git": [
+    {"path": "vendor/libjpeg-turbo", "url": "https://github.com/libjpeg-turbo/libjpeg-turbo.git", "commit": "8ecba3647edb6dd940463fedf38ca33a8e2a73d1", "version": "2.1.5.1"}
+  ],
+  "files": [
+    {"path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so", "url": "https://raw.githubusercontent.com/jyswjjgdwtdtj/Sony-PictureEffectPlus/23383c34b855c987c89e7f5922c168e7f610850b/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so", "sha256": "843b70399744074e9544d69982d8b37964747f9c93f907389c3c7b9efb759ee0", "scope": "app"},
+    {"path": "vendor/packages/OpenMemories-Tweak-release-0.11.apk", "url": "https://github.com/ma1co/OpenMemories-Tweak/releases/download/v0.11/OpenMemories-Tweak-release-0.11.apk", "sha256": "80a61a3a3d50e2dd22492cdd96cf56c8b1523c83662ae3def59fd52b28675a47", "scope": "helper"}
+  ]
+}

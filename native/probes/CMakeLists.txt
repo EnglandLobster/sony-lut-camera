@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.5)
+project(sony_gpu_probe C CXX)
+set(CMAKE_CXX_STANDARD 11)
+add_executable(sony-gpu-probe gpu_caps.c)
+target_link_libraries(sony-gpu-probe EGL GLESv2)
+add_executable(sony-gpu-lut gpu_lut.cpp ../core.cpp)
+target_compile_options(sony-gpu-lut PRIVATE -O3)
+target_link_libraries(sony-gpu-lut EGL GLESv2)

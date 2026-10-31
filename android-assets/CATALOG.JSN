@@ -1,0 +1,18 @@
+[
+  {
+    "asset": "COLOR33.CUB",
+    "name": "示例调色",
+    "source": "彩色示例 · 内置",
+    "grid": 33,
+    "default": true,
+    "sha256": "06ceaf85781931e6e1d54007d148435a367a579375aeb2de3f881daca9abc743"
+  },
+  {
+    "asset": "IDENT33.CUB",
+    "name": "原色",
+    "source": "不改变色彩 · 内置",
+    "grid": 33,
+    "default": false,
+    "sha256": "a3ea0238d24b77daa43745137696aa81dffe3f1d5b44e9cb87f4e1c5d85e7f6a"
+  }
+]

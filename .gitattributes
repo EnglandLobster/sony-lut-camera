@@ -1,0 +1,11 @@
+* text=auto
+*.java text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+# Catalog SHA-256 values identify the exact source bytes, including line endings.
+*.CUB -text
+*.PRV text eol=lf
+*.TTF binary

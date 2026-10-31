@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.5)
+project(sony_usb_debug C)
+add_executable(usb-debug usb_debug.c)
+target_compile_options(usb-debug PRIVATE -Wall -Wextra -Werror -O2)
+set_target_properties(usb-debug PROPERTIES LINK_FLAGS "-static")

@@ -1,0 +1,4 @@
+-r ../vendor/Sony-PMCA-RE/requirements.txt
+# Upstream axmlparserpy assumes UTF-16 string pools and rejects the official
+# Tweak APK's UTF-8 AndroidManifest.xml. The two-line local parser adapter uses:
+pyaxmlparser==0.3.31

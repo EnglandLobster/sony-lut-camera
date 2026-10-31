@@ -1,0 +1,26 @@
+# Local evidence, device data, SDKs and generated artifacts
+/out/
+/dist/
+/results/
+/archives/
+/vendor/
+/.venv*/
+/HANDOFF.md
+/docs/history/
+/src/
+/probes/
+__pycache__/
+*.py[cod]
+.DS_Store
+*.log
+*.apk
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+.env
+.env.*
+NET.CFG
+wpa_supplicant.conf
+local.properties
