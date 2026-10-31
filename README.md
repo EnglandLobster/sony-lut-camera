@@ -8,9 +8,9 @@
 
 **第一次安装？先看 [新手安装与使用教程](docs/USER_GUIDE.md)**：Windows/macOS 工具下载、相机 MTP 设置、选择本地 APK、首次拍摄及常见问题。
 
-**当前尚未公开 APK**；源码和教程已开放，安装包进度见 [发布状态](docs/RELEASE.md#发布状态)。
+**[下载 beta.5 安装包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.5/SonyLutCamera-v0.9.0-beta.5.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.5) · 已验证 Sony A6300 / 固件 2.01。
 
-1. 先确认已取得 LUT Camera 的 APK；公开包提供后可从 [Releases](https://github.com/EnglandLobster/sony-lut-camera/releases) 下载。自行编译见 [构建说明](docs/BUILD.md)。
+1. 从 [beta.5 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.5) 下载 `SonyLutCamera-v0.9.0-beta.5.apk`。自行编译见 [构建说明](docs/BUILD.md)。
 2. 用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装 APK。相机使用 MTP USB 模式；详细步骤见 [安装与使用](docs/USER_GUIDE.md)。
 3. 打开相机应用列表中的 **LUT Camera**，选一个 LUT，按中央键进入拍摄。首次打开会把预装 LUT 加入 SD 卡。
 4. 正常半按对焦、全按拍照。相机保留原片 JPEG，并另外保存应用完整 LUT 的 JPEG；成片后半按回到取景。

@@ -29,6 +29,6 @@ Host numerical/JPEG tests, Java product tests, exact LUT-cache tests, preview-fi
 - The earlier release-mode installation, library, preview fitting and two physical captures passed on A6300. The user confirmed half-press return and original/graded comparison. Both shots saved separate 6000×4000 EXTRA FINE JPEGs; boot identity stayed unchanged.
 - A first install without any development connector, broader SD-card/library sizes, and other camera models remain unaccepted.
 - Hardware preview color-order/domain calibration  are incomplete. The fitter's reported error is a software-model metric.
-- The external Sony memory-map redistribution basis remains unresolved. No public APK release is claimed.
+- The maintainer authorized publishing beta.5; downloads are linked in RELEASE.md. The external Sony memory-map redistribution basis remains undocumented and its provenance is retained.
 
 Raw logs/photos, prior research and installation records are retained locally under ignored `results/` and `HANDOFF.md`; they are not public repository contents.

@@ -2,8 +2,8 @@
 
 适用：**Sony A6300 / 固件 2.01**；当前应用版本 **0.9.0-beta.5**。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
 
-> **安装包状态（2026-10-31）：目前 GitHub 尚未提供公开 APK。**
-> 本仓库已公开源码和本教程；公开安装包仍在发布准备中，具体原因见 [发布状态](RELEASE.md#发布状态)。已经取得对应 APK 的用户可以按下文安装。若 [Releases 页面](https://github.com/EnglandLobster/sony-lut-camera/releases)没有 `.apk`，不是你漏找了；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
+> **[直接下载 LUT Camera beta.5 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.5/SonyLutCamera-v0.9.0-beta.5.apk)**
+> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.5) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
 
 **操作路线：准备 APK 和安装工具 → 相机设为 MTP → 连接电脑 → 选择本地 APK 安装 → 相机里打开 LUT Camera。**
 
@@ -145,7 +145,7 @@ chmod +x ./pmca-console-v0.18-osx
 
 | 遇到的问题 | 按这个顺序检查 |
 | --- | --- |
-| Releases 页面只有源码、找不到 APK | 当前尚未公开 APK。不要下载源码后改名为 `.apk`；查看本页顶部的发布状态。 |
+| Releases 页面只有源码、找不到 APK | 打开本页顶部的 beta.5 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
 | PMCA 没有找到相机 | 确认相机已开机 → 拔线后确认 USB 连接是 MTP → 换支持数据的线 → 直连电脑 USB 口 → 退出占用相机的程序 → 重新点击 Get camera info。 |
 | 插线后相机菜单不能操作 | 先拔 USB 线，设置 MTP 后再连接。 |
 | Finder 中没有出现 SD 卡盘符 | MTP 不是普通 U 盘模式；以 PMCA 能否读取相机信息为准。复制 LUT 或照片时可以使用读卡器。 |

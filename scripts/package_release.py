@@ -19,7 +19,8 @@ def git(*args, cwd=ROOT):
 
 
 def package():
-    if git('status', '--porcelain').strip():
+    # The source archive below uses committed files only; unrelated local drafts are excluded.
+    if git('status', '--porcelain', '--untracked-files=no').strip():
         raise SystemExit('Commit reviewed source before packaging a release.')
     audit_tracked()
     manifest = ET.parse(ROOT / 'android/AndroidManifest.xml').getroot()
@@ -60,7 +61,7 @@ def package():
             'source_commit': commit, 'variant': 'release', 'apk_sha256': digest,
             'apk_bytes': apk.stat().st_size, 'libjpeg_commit': jpeg['commit'],
             'verified_camera': 'Sony A6300 firmware 2.01',
-            'public_apk_status': 'draft pending Sony memory-map redistribution clarification'}
+            'public_apk_status': 'packaged for maintainer-authorized beta.5 release'}
     (dest / 'BUILDINFO.json').write_text(json.dumps(info, indent=2) + '\n')
     files = sorted(p for p in dest.iterdir() if p.is_file() and p.name != 'SHA256SUMS')
     (dest / 'SHA256SUMS').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest() + '  ' + p.name + '\n' for p in files))

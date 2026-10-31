@@ -8,8 +8,10 @@ A6300 机内完整 3D LUT 照片处理，24MP EXTRA FINE、原片与调色 JPEG 
 
 ## 发布状态
 
+[下载 v0.9.0-beta.5](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.5)（code96，GitHub 预发行版）。
+
 - 原始代码许可：维护者选择 GPL-3.0-only。
-- Sony 内存配置表：APK 使用的 1,860 字节 `MAP24R1.BIN` 来自 `dependencies.lock.json` 固定的 Sony-PictureEffectPlus 版本；上游没有许可文件，尚未确认该表的公开再分发依据。因此 **APK 暂留草稿，不公开发布**。源码不包含这份外部二进制。
+- Sony 内存配置表：APK 使用的 1,860 字节 `MAP24R1.BIN` 来自 `dependencies.lock.json` 固定的 Sony-PictureEffectPlus 版本；上游没有许可文件，尚未确认该表的公开再分发依据。维护者于 2026-10-31 明确要求发布 beta.5；公开发布保留此来源记录，不将该资源声明为本项目 GPL 授权内容。源码不包含这份外部二进制。
 - 发行版的独立构建、包检查和实际安装证据在本页验收记录中更新；不能用开发 APK 的验收替代发行包验收。
 
 ## 发布流程
