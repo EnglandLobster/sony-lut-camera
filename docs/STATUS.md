@@ -1,5 +1,7 @@
 # Current status
 
+Compatibility branch update 2026-11-01: **0.9.0-beta.6-rc.6 / code102** uses Surface lifecycle callbacks instead of `Surface.isValid()` to authorize opening, adds bounded waiting, and selects the highest advertised known Sony JPEG tier with an accurate HUD label. The A6000 false-valid flag and 50/25 quality list are user-reported conditions reproduced as software fixtures, not measurements from our emulator. Host and API10 ARM tests cover these fixtures; physical capture acceptance remains pending. Public release is still beta.5. See [legacy validation](LEGACY_OFFLINE_VALIDATION.md).
+
 Updated 2026-10-31. Release candidate **0.9.0-beta.5 / code 96**, Sony A6300 firmware 2.01. The current source and release builds have passed host checks. Beta.5 is installed on the camera with IMG_7554.jpeg as the LUT selector reference; Fuji C200 remains the default. Public downloads and the release workflow are in [RELEASE.md](RELEASE.md).
 
 ## Preserved product baseline

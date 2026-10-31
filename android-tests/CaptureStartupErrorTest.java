@@ -15,6 +15,8 @@ public final class CaptureStartupErrorTest {
         check(CaptureStartupError.from(new IOException("automatic exposure setting failed",new RuntimeException("setParameters failed"))).action.contains("模式转盘设为 P"));
         check(CaptureStartupError.from(new IOException("EXTRA FINE setting failed",new RuntimeException("setParameters failed"))).action.contains("额外精细"));
         check(CaptureStartupError.from(new IOException("EXTRA FINE not advertised")).title.equals("相机未提供 EXTRA FINE"));
+        check(CaptureStartupError.from(new IOException("preview surface callbacks unavailable")).title.equals("取景界面尚未就绪"));
+        check(CaptureStartupError.from(new IOException("JPEG quality changed: expected=50 actual=25")).title.equals("无法设置 JPEG 画质"));
         check(CaptureStartupError.from(new OutOfMemoryError()).title.equals("相机可用内存不足"));
         CaptureStartupError unknown=CaptureStartupError.from(new IOException("unknown vendor failure"));
         check(unknown.title.equals("未能开始拍摄")&&!unknown.message().contains("unknown vendor"));

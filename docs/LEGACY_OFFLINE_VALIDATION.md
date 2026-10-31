@@ -1,8 +1,8 @@
 # A6000 / A7 一代离线验证（2026-10-31）
 
-候选：0.9.0-beta.6-rc.5 / code101。研究在没有相机连接的情况下完成。公开 beta.5 保持不变；候选尚未完成相机拍摄验收。已确认两份官方固件共同缺少 beta.5 强制使用的保存通知 API，导致拍摄初始化无法完成。
+候选：0.9.0-beta.6-rc.6 / code102。研究在没有相机连接的情况下完成。公开 beta.5 保持不变；候选尚未完成相机拍摄验收。已确认两份官方固件共同缺少 beta.5 强制使用的保存通知 API，导致拍摄初始化无法完成。
 
-本轮安装到 API10 模拟器并回归的发行 APK SHA-256：`f4cd548143f5449d8c781b1e39456797a708bb86e7b7cdb98d7fc69a63193ce8`。保持原包名、签名证书和已有用户数据。
+本轮安装到 API10 模拟器并回归的发行 APK SHA-256：`374fb8dcca61f7d47dd119c17a689c42fa33b2227934fbb58a110fd2503cdeb8`。保持原包名、签名证书和已有用户数据。
 
 ## 确认的启动兼容错误与 rc.4 修复
 
@@ -75,3 +75,13 @@ python3 scripts/emulate_legacy_memory_property.py /path/to/a6000/libcameraseq.so
 新增 HDR on/auto 与 HDR 绘画的启动前拦截测试，确认报错前不写相机设置；RAW／连拍／尺寸的自动配置与恢复沿用并通过 CaptureSetupTest。P 模式和 EXTRA FINE 的设置异常保留操作上下文，即使底层只返回 setParameters failed，屏幕仍给出具体设置方法。CaptureStartupErrorTest 在 API10 / 24 MB 模拟器通过。
 
 在已确认 `ro.kernel.qemu=1` 的模拟器中，仅对隔离的 `:capture` 进程注入 SIGKILL。首次实验发现 Android 2.3.7 可不派发 Activity result 就恢复库页面；补上会话返回检查后，再次注入时显示“拍摄会话意外结束”弹窗，照片库进程存活。日志 `rc5-process-death.log`，实际截图 `rc5-interrupted-dialog.png`。该测试没有连接相机或触发快门，也没有把虚拟机结果记为 A6300 各种真实菜单组合的实拍验收。
+
+## rc.6：用户报告的 Surface 与 JPEG 能力关卡（2026-11-01）
+
+新增报告是外部用户提供的条件：A6000 收到 Surface 回调但 isValid 为 false，JPEG 能力列表为 50,25。此前 API10 模拟器没有复现这些硬件条件，rc.5 仍会被对应守卫拦住。因此不能用先前的模拟器通过来声称这两个关卡已验证。
+
+Sony PictureEffectPlus 参考源码 `base/shooting/ShootingState.Callback.surfaceCreated` 直接调用 executor.setPreviewDisplay(holder)，没有 isValid 前提。rc.6 的 CaptureSurfaceGate 以生命周期回调为依据，覆盖回调先于／晚于准备、暂停、销毁与重复回调。准备前的 Surface 重建不会关闭整个会话，缺少就绪回调每 250 ms 重查、5 秒后显示明确错误；相机已打开后的取景丢失显示错误。所有调用仍经过原来的显示跟踪、相机参数和内存布局检查。
+
+CaptureJpegQuality 按已知 Sony 档位 95/50/25 选最高能力；50,25 选择 FINE，包含 95 时仍选 EXTRA FINE。没有广告能力或未知代码报错，不猜档位。原片与成片使用同一个已选质量值，设置读回、RAW 注册后、下一张拍摄的检查全部改为该值，退出仍恢复原值。主界面不再固定标注 EXTRA FINE，取景 HUD 显示真实档位。显式 EXTRA FINE 诊断入口仍保持严格 95 条件。
+
+CaptureSurfaceGateTest、CaptureJpegQualityTest 在主机和 API10 / 24 MB ARM 环境运行相同的生产逻辑，覆盖外部报告条件及新旧档位路径。它们是可重复的状态／参数测试，不是相机硬件实测。完整运行结果保留在 `rc6-product-tests.txt`、`rc6-api10-tests.txt`；签名发行包构建、DEX035、API10、ARM 检查通过。

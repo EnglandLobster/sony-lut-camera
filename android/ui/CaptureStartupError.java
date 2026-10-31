@@ -12,6 +12,12 @@ final class CaptureStartupError {
             messages.append(item.getMessage()).append('\n');if(item.getCause()==item)break;
         }
         String text=messages.toString();
+        if(text.contains("preview surface lost"))
+            return new CaptureStartupError("取景界面连接中断","相机启动后取景界面已被销毁。","请按 MENU 返回 LUT 库后重新进入。\n若仍发生，请提供诊断文件。");
+        if(text.contains("preview surface callbacks unavailable"))
+            return new CaptureStartupError("取景界面尚未就绪","没有收到相机取景界面的就绪通知。","请按 MENU 返回 LUT 库后重新进入。\n若仍发生，请提供诊断文件。");
+        if(text.contains("JPEG quality")&&!text.contains("EXTRA FINE"))
+            return new CaptureStartupError("无法设置 JPEG 画质","相机未能提供或保持已选的 JPEG 画质。","请退出应用，选择机内支持的最高 JPEG 画质。\n若仍发生，请提供诊断文件。");
         if(text.contains("capture HDR enabled"))
             return new CaptureStartupError("请先关闭 HDR","HDR 合成与当前 LUT 拍摄流程不能同时使用。","MENU 返回 → 退出应用 → 相机菜单，\n关闭自动 HDR／HDR 绘画，再重新进入。");
         if(text.contains("EXTRA FINE not advertised"))

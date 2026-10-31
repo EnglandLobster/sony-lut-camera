@@ -80,7 +80,7 @@ public final class LibraryActivity extends Activity {
     private void showNotice(String title,String detail){previous=mode.equals("notice")?previous:mode;mode="notice";selection=0;notice=detail;render();page.title=title;page.invalidate();}
     private void render(){if(destroyed||busy)return;List<CameraPage.Row> rows=new ArrayList<CameraPage.Row>();
         page.previewMode=mode.equals("library");page.section=mode.equals("library")?"LUT 库 · "+luts.size():"LUT CAMERA";page.title="选择你的色彩";page.subtitle="方向键 / 拨轮选择 · 中央键开始拍摄";page.empty="还没有 LUT";
-        page.note="24MP · EXTRA FINE · 原片与成片分别保存";page.footer="↑↓ 选择   ● 拍摄   ← 相册   → 导入   MENU 更多";
+        page.note="24MP · 本机最高 JPEG 画质 · 原片与成片分别保存";page.footer="↑↓ 选择   ● 拍摄   ← 相册   → 导入   MENU 更多";
         page.emptyDetail="右键导入 · 中央键确认";
         if(mode.equals("library")){
             for(LutLibrary.Entry e:luts)rows.add(new CameraPage.Row(e.name,e.source+(e.id.equals(selectedId)?" · 当前":""),e.size+"³"));

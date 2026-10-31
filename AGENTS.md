@@ -28,7 +28,7 @@ Use Java 7/API10 compatibility and C++11. Match nearby four-space formatting, Pa
 
 ## Capture and UI Contracts
 
-Preserve full 33³ processing, 6000×4000 EXTRA FINE, original/graded files, native memory configuration and save barriers. Half-press restores the exact preview baseline before capture. Never simulate a full shutter press. Before installing, safely leave capture and foreground the development connector. No firmware, USB or C2 experiments without a specific request.
+Preserve full 33³ processing, 6000×4000, original/graded files, native memory configuration and save barriers. Product capture selects the highest advertised known Sony JPEG tier (95 EXTRA FINE, 50 FINE, 25 STANDARD), displays the selected tier, verifies it across registration/rearm, and restores the original quality on exit. Never claim EXTRA FINE on a body that only advertises FINE. Explicit EXTRA FINE diagnostic probes retain their strict requirement. Half-press restores the exact preview baseline before capture. Never simulate a full shutter press. Before installing, safely leave capture and foreground the development connector. No firmware, USB or C2 experiments without a specific request.
 
 Review uses left/older, right/newer, center comparison, half-press shooting. Preserve full image geometry and the Sony high-precision graphics lifecycle.
 

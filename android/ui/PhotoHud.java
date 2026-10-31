@@ -11,7 +11,7 @@ final class PhotoHud extends View {
     String mode="loading",name="LUT Camera",detail="正在准备拍摄",footer="",progress="",tag="";
     CaptureProgress.Stage processingStage=CaptureProgress.Stage.CAPTURE;
     boolean liveInfoVisible=true;
-    String liveExposure="",liveCompensation="+0.0 EV";
+    String liveExposure="",liveCompensation="+0.0 EV",qualityLabel="";
     CaptureReadout readout=new CaptureReadout();
     private String liveHint="";
     private boolean attached;
@@ -151,6 +151,7 @@ final class PhotoHud extends View {
             if(liveInfoVisible){
                 text(c,"P",14,34,24,CameraPage.ACCENT);
                 text(c,fit(name,w-180,18),48,31,18,CameraPage.TEXT);
+                text(c,fit(qualityLabel,w-180,16),48,55,16,CameraPage.MUTED);
                 battery(c,w-104,17);
                 String[] values={readout.shutterText(),readout.apertureText(),readout.isoText(),liveCompensation};
                 float cell=w/4;

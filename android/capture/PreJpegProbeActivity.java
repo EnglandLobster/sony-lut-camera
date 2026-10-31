@@ -38,6 +38,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private volatile boolean developEnabledThisShot;
     private SimpleExposure exposure;
     private CaptureSetup captureSetup;
+    private final CaptureSurfaceGate surfaceGate=new CaptureSurfaceGate();
+    private long surfaceWaitStarted=-1;
+    private final Runnable retrySurface=new Runnable(){public void run(){open();}};
+    private int captureQuality=95;
     private CaptureStoreEvents storeEvents;
     private LegacyStoreCompletion legacyStore;
     private CaptureDiagnostics startupDiagnostics;
@@ -56,7 +60,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private Object cameraEx,sequence,filter;private Camera camera;
     private Class<?> cameraType,sequenceType,rawType,imageType;
     private volatile boolean active,prepared,workerActive,destroyed;
-    private boolean opening,initOnly,preparePending;private volatile boolean closed;private String phase,mapPath,initStage,mapRevision;private File run,sd;
+    private boolean initOnly,preparePending;private volatile boolean closed;private String phase,mapPath,initStage,mapRevision;private File run,sd;
     private boolean normalizeZoom,continuous,verifyPayloads,overlapOriginal,sourceReferenceEnabled,alternateOverlap,overlapThisShot;
     // Store notifications queue on the same worker as grading. The original
     // remains the sole pending store until confirmed, even with overlap enabled.
@@ -96,7 +100,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }};
     private boolean paired(){return "lut".equals(phase);}
     private boolean develops(){return "develop".equals(phase)||"develop-xfine".equals(phase)||paired();}
-    private boolean extraFine(){return "develop-xfine".equals(phase)||paired();}
+    private boolean managedJpegQuality(){return "develop-xfine".equals(phase)||paired();}
     private final Runnable hideReviewStatus=new Runnable(){public void run(){
         if(active&&review!=null&&review.getVisibility()==View.VISIBLE)status.setVisibility(View.INVISIBLE);
     }};
@@ -267,7 +271,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // a full EXTRA FINE JPEG. All EXTRA FINE probes still require a fresh,
         // explicitly selected revision01 session; revision00 stays blocked.
         if((!"firmware00".equals(mapRevision)&&!"reference01".equals(mapRevision))||
-                (extraFine()&&!initOnly&&(!"reference01".equals(mapRevision)||
+                (managedJpegQuality()&&!initOnly&&(!"reference01".equals(mapRevision)||
                 !freshEntry||!getIntent().getBooleanExtra("fresh_session",false)))){
             status=new TextView(this);status.setText("此保存组合尚未开放测试。\n正常拍摄请打开 LUT Camera。");setContentView(status);return;
         }
@@ -378,8 +382,19 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(method.getName().equals("equals"))return proxy==args[0];return "PreJpegProbeListener";
     }
     private void open(){
-        if(!active||!prepared||opening||closed||holder==null||!holder.getSurface().isValid())return;
-        opening=true;
+        if(gate.state()==PreJpegGate.State.FAILED){ui.removeCallbacks(retrySurface);return;}
+        if(surfaceGate.waiting(active,prepared,closed)){
+            long now=SystemClock.elapsedRealtime();
+            if(surfaceWaitStarted<0){surfaceWaitStarted=now;event("surface_wait","waiting for lifecycle callback");}
+            if(now-surfaceWaitStarted>=5000){
+                ui.removeCallbacks(retrySurface);
+                failure("preview_surface_timeout",new IOException("preview surface callbacks unavailable"));close();return;
+            }
+            ui.removeCallbacks(retrySurface);ui.postDelayed(retrySurface,250);return;
+        }
+        if(!surfaceGate.claim(active,prepared,closed,holder!=null))return;
+        ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;
+        event("surface_ready","lifecycle callback received; Android isValid is not a camera prerequisite");
         try{
             // Start EE after listener registration so its readiness event is not
             // lost during open(). Retain the user's existing shooting settings.
@@ -422,14 +437,15 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     event("zoom_disable_done",zoomValues(camera.getParameters()));
                 }
             }
-            if(extraFine()){
+            if(managedJpegQuality()){
                 String supported=p.get("jpeg-quality-values");event("quality_capabilities","values="+supported);
-                if(supported==null||!(","+supported.replace(" ","")+",").contains(",95,"))throw new IOException("EXTRA FINE not advertised; test skipped");
+                captureQuality=CaptureJpegQuality.select(supported);
+                if(!productUi()&&captureQuality!=95)throw new IOException("EXTRA FINE not advertised; diagnostic skipped");
                 originalQuality=p.get("jpeg-quality");if(originalQuality==null)throw new IOException("missing original JPEG quality");
-                try{p.setJpegQuality(95);camera.setParameters(p);}
-                catch(Exception error){throw new IOException("EXTRA FINE setting failed",error);}
-                if(camera.getParameters().getJpegQuality()!=95)throw new IOException("EXTRA FINE readback failed");
-                event("quality_applied","jpeg_quality=95 original="+originalQuality);
+                try{p.setJpegQuality(captureQuality);camera.setParameters(p);}
+                catch(Exception error){throw new IOException("JPEG quality setting failed: "+CaptureJpegQuality.label(captureQuality),error);}
+                CaptureJpegQuality.verify(captureQuality,camera.getParameters().getJpegQuality());
+                event("quality_applied","jpeg_quality="+captureQuality+" label="+CaptureJpegQuality.label(captureQuality)+" original="+originalQuality);
             }
             if(productUi()){
                 exposure=new SimpleExposure(new CameraExposureDriver(camera));
@@ -521,9 +537,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             event("register_begin","two-stage map="+mapRevision+" exposure=1 record="+(paired()?2:1)+" automatic release lock");
             sequenceType.getMethod("setShutterSequenceCallback",callback,optionsType).invoke(sequence,rawListener,options);event("register_done","");
             event("configured_unlock_begin","");sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,false);event("configured_unlock_done","");
-            if(extraFine()){
+            if(managedJpegQuality()){
                 int quality=camera.getParameters().getJpegQuality();event("quality_after_register","jpeg_quality="+quality);
-                if(quality!=95)throw new IOException("RAW registration changed requested EXTRA FINE quality");
+                CaptureJpegQuality.verify(captureQuality,quality);
             }
             if(initOnly){gate.registered(true);initComplete("raw_registration");return;}
             if(develops())prepareFilter();
@@ -535,8 +551,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }
             gate.registered(false);cameraType.getMethod("startDirectShutter").invoke(cameraEx);
             sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,false);
-            event("ready","phase="+phase+" continuous="+continuous);message(paired()?(continuous?"按快门拍照 · 连续会话\n成片后半按返回取景，继续拍下一张。\n原片保留 · 24MP · EXTRA FINE":"编码前 LUT 单次测试\n请正常半按对焦、全按拍一张。\n保留原片，两张均为 EXTRA FINE。"):
-                ("handoff".equals(phase)?"接口验证 1：RAW 交还相机保存":(extraFine()?"单张 EXTRA FINE 保存验证":"接口验证 2：索尼显影后直接保存"))+"\n请正常半按对焦、全按拍一张。\n本次不添加 LUT。");
+            event("ready","phase="+phase+" continuous="+continuous);message(paired()?(continuous?"按快门拍照 · 连续会话\n成片后半按返回取景，继续拍下一张。\n原片保留 · 24MP · "+CaptureJpegQuality.label(captureQuality):"编码前 LUT 单次测试\n请正常半按对焦、全按拍一张。\n保留原片，两张均为 "+CaptureJpegQuality.label(captureQuality)+"。"):
+                ("handoff".equals(phase)?"接口验证 1：RAW 交还相机保存":(managedJpegQuality()?"单张 EXTRA FINE 保存验证":"接口验证 2：索尼显影后直接保存"))+"\n请正常半按对焦、全按拍一张。\n本次不添加 LUT。");
             maybeOpenGallery();
         }catch(Throwable e){failure("configure_sequence",e);close();}
     }
@@ -930,7 +946,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         try{
             if(workerActive||retainedImage!=null||originalFile==null||gradedFile==null||originalFile.equals(gradedFile))
                 throw new IllegalStateException("cannot rearm before distinct pair completes and buffers transfer");
-            if(camera.getParameters().getJpegQuality()!=95)throw new IOException("EXTRA FINE changed between shots");
+            CaptureJpegQuality.verify(captureQuality,camera.getParameters().getJpegQuality());
             prepareFilter();rearmAt=SystemClock.elapsedRealtime();
             event("next_preview_request","from_press_ms="+(rearmAt-pressAt)+" cache_preserved=true");
             // Keep the result visible while the native live view resumes behind
@@ -966,7 +982,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void showViewfinder(){
         if(!reviewing||gate.state()!=PreJpegGate.State.READY)return;
         reviewing=false;review.setVisibility(View.INVISIBLE);review.setImageBitmap(null);
-        ui.removeCallbacks(hideReviewStatus);status.setVisibility(View.VISIBLE);status.setText("按快门拍照 · 原片保留 · EXTRA FINE");
+        ui.removeCallbacks(hideReviewStatus);status.setVisibility(View.VISIBLE);status.setText("按快门拍照 · 原片保留 · "+CaptureJpegQuality.label(captureQuality));
         clearOriginalReview();if(productHud!=null){status.setVisibility(View.GONE);productLive();}
         event("viewfinder_revealed","since_ready_ms="+(SystemClock.elapsedRealtime()-nextReadyAt));
     }
@@ -974,6 +990,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(productHud==null)return;
         boolean entering=!productHud.mode.equals("live");
         productHud.setVisibility(View.VISIBLE);productHud.mode="live";
+        productHud.qualityLabel="JPEG "+CaptureJpegQuality.label(captureQuality)+" · 本机最高画质";
         productHud.liveExposure=exposure==null?"自动曝光":exposure.label();
         productHud.liveCompensation=exposure==null?"-- EV":exposure.compensationLabel();
         productHud.detail="自动曝光    "+productHud.liveExposure;
@@ -1041,7 +1058,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         return s.append("zoom=").append(p.get("zoom")).toString();}
     private void close(){if(closed||workerActive||gate.busy())return;
         if(productUi())recordPair();
-        closed=true;
+        closed=true;ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;
         if(legacyStore!=null)legacyStore.cancel();
         if(storeEvents!=null)try{storeEvents.close();storeEvents=null;}catch(Exception e){event("store_listener_close_error",cause(e).toString());}
         if(autoPreview!=null)autoPreview.close();
@@ -1095,7 +1112,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(preparePending){preparePending=false;work.post(new Runnable(){public void run(){prepare();}});}
         open();
     }
-    @Override protected void onPause(){active=false;ui.removeCallbacks(hideReviewStatus);ui.removeCallbacks(processingTick);ui.removeCallbacks(restoreGraphics);if(review!=null)review.stopDisplayTracking();close();super.onPause();}
+    @Override protected void onPause(){active=false;ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;ui.removeCallbacks(hideReviewStatus);ui.removeCallbacks(processingTick);ui.removeCallbacks(restoreGraphics);if(review!=null)review.stopDisplayTracking();close();super.onPause();}
     @Override protected void onDestroy(){destroyed=true;close();if(closed&&thread!=null&&pendingReceipts==0)thread.quit();
         if(Thread.getDefaultUncaughtExceptionHandler()==exceptionHandler)Thread.setDefaultUncaughtExceptionHandler(previousExceptionHandler);
         super.onDestroy();exitProductProcess();}
@@ -1103,7 +1120,20 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(startupFailure==null&&gate.state()!=PreJpegGate.State.FAILED)setResult(RESULT_OK);
         finish();
     }}
-    public void surfaceCreated(SurfaceHolder h){open();}public void surfaceChanged(SurfaceHolder h,int f,int w,int height){open();}public void surfaceDestroyed(SurfaceHolder h){close();}
+    public void surfaceCreated(SurfaceHolder h){if(h==holder){surfaceGate.created();event("surface_created","");open();}}
+    public void surfaceChanged(SurfaceHolder h,int f,int w,int height){if(h==holder){surfaceGate.changed();event("surface_changed","width="+w+" height="+height);open();}}
+    public void surfaceDestroyed(SurfaceHolder h){if(h==holder){
+        surfaceGate.destroyed();ui.removeCallbacks(retrySurface);event("surface_destroyed","");
+        if(!surfaceGate.started()){
+            // Precision/display changes can recreate the surface before the
+            // camera has opened. Wait for the replacement instead of closing
+            // an otherwise valid, still-preparing capture session.
+            open();return;
+        }
+        if(!closed&&active&&gate.shot()==0&&gate.state()!=PreJpegGate.State.FAILED)
+            failure("preview_surface_lost",new IOException("preview surface lost after camera open"));
+        close();
+    }}
     @Override public boolean dispatchKeyEvent(KeyEvent e){int key=e.getKeyCode(),scan=e.getScanCode();
         if(automaticNativePreview()&&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS||key==772||scan==772||key==774||scan==774)){
             if(autoPreview==null){
