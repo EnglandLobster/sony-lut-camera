@@ -30,7 +30,7 @@ RAW 提示已取得真机截图并检查排版；其他正常路径有屏幕更�
 
 ## 原生菜单自动 HDR
 
-用户从原生菜单开启自动 HDR 并重新打开测试连接。正式复测时，产品实际读到 `hdr=auto effect=off`，在参数配置前拦截，记录 `capture HDR enabled: hdr-mode=auto picture-effect=off`；持续保持 PhotoActivity 前台错误页，CameraEx 正常释放，没有退出或重启。等待用户最后确认屏幕并将原生设置恢复为测试前的 DRO 自动。
+用户从原生菜单开启自动 HDR 并重新打开测试连接。正式复测时，产品实际读到 `hdr=auto effect=off`，在参数配置前拦截，记录 `capture HDR enabled: hdr-mode=auto picture-effect=off`；持续保持 PhotoActivity 前台错误页，CameraEx 正常释放，没有退出或重启。用户确认原生自动 HDR 的提示文字清楚，并将原生设置恢复为测试前的 DRO 自动。随后复查实际读到 `hdr=off effect=off`，正常进入待拍；MENU 返回 LUT 库，曝光、画质、变焦和拍摄设置均恢复成功，boot ID 始终不变。**本轮设置兼容验收通过。**
 
 首次尝试中的“退出应用”已查清是测试脚本误操作：LibraryActivity 恢复了旧的 `options selection=3`（退出应用），脚本错误地接受同一进程历史上的 `page_ready mode=library`，随后按中央键执行正常退出。恢复的日志完整记录了 `native_exit_check_ipc → native_exit_prepare_debug_link → native_exit_requested`，这一尝试没有新拍摄会话，不能计为 HDR 崩溃。已将脚本改为核对最新页面状态、明确返回 LUT 库后才按中央键；复测增加实时落盘日志和启动时间下限，避免复用历史会话。
 
