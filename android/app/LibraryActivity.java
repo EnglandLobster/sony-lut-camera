@@ -101,7 +101,8 @@ public final class LibraryActivity extends Activity {
             for(PhotoCatalog.Pair p:photos)rows.add(new CameraPage.Row(p.lut,(p.time>946684800000L?date.format(new Date(p.time)):"日期未设置")+" · "+p.graded.getName(),p.grid+"³"));
             page.note=photos.size()+" 组照片 · 仅列出本应用拍摄的内容";page.footer="↑↓ 选择   ● 打开   MENU 返回";
         }else if(mode.equals("options")){
-            page.section="更多";page.title="拍摄之外";page.subtitle="LUT Camera · "+version();
+            page.section="更多";page.title=diagnosticExport.length()==0?"拍摄之外":"日志包已导出";
+            page.subtitle=diagnosticExport.length()==0?"LUT Camera · "+version():"SD 卡 / SONYLUT / DIAG / REPORT.ZIP";
             rows.add(new CameraPage.Row("导入 LUT","从 SD 卡 LUTS 文件夹加入色彩","打开"));
             rows.add(new CameraPage.Row("使用说明","色彩输入、按键和保存方式","查看"));
             rows.add(new CameraPage.Row("回到 LUT 库","继续选择或拍摄","返回"));
@@ -240,7 +241,7 @@ public final class LibraryActivity extends Activity {
         }else if(mode.equals("files")){if(selection==0){if(importDone)finishImport();else if(!imports.isEmpty())importFiles(-1);else scan();}
             else if(importResults.get(selection-1).startsWith("失败"))showNotice("这个文件未能导入",importResults.get(selection-1));else if(!importDone)importFiles(selection-1);
         }else if(mode.equals("gallery")){if(!photos.isEmpty())openGallery(photos.get(selection).id);
-        }else if(mode.equals("options")){if(selection==0){mode="import";selection=0;}else if(selection==1){mode="help";selection=0;}else if(selection==2){libraryPage();return;}else if(selection==3){exitToCamera();return;}else if(selection==page.rows.size()-1){mode="diagnostics";selection=0;render();return;}else if(selection==4&&SonyAppPolicy.hasDebugHelper(this)){openDebugHelper();return;}else{previewSettings();return;}render();
+        }else if(mode.equals("options")){if(selection==0){mode="import";selection=0;}else if(selection==1){mode="help";selection=0;}else if(selection==2){libraryPage();return;}else if(selection==3){exitToCamera();return;}else if(selection==page.rows.size()-1){exportDiagnostics();return;}else if(selection==4&&SonyAppPolicy.hasDebugHelper(this)){openDebugHelper();return;}else{previewSettings();return;}render();
         }else if(mode.equals("diagnostics")){if(selection==0)exportDiagnostics();else libraryPage();
         }else if(mode.equals("preview_options")||mode.equals("preview_warning")||mode.equals("preview_error")){
             if(selection==2)libraryPage();else choosePreview(selection==0);
@@ -249,10 +250,14 @@ public final class LibraryActivity extends Activity {
         }else if(mode.equals("notice")){if(selection==1){mode="diagnostics";selection=0;render();return;}if(previous.equals("loading")){initializeLibrary();return;}mode=previous;selection=0;render();}
     }
     private void exportDiagnostics(){
+        final String returnMode=mode;final int returnSelection=selection;
         runTask("正在导出诊断日志",new Task(){public void run()throws Exception{
             try{diagnosticExport=SupportDiagnostics.exportReport().getName();}
             catch(IOException error){throw new IOException("无法导出到 SD 卡，请检查写保护和剩余空间后重试。",error);}
-        }},new Runnable(){public void run(){mode="diagnostics";selection=1;render();}});
+        }},new Runnable(){public void run(){
+            mode=returnMode.equals("options")?"options":"diagnostics";
+            selection=returnMode.equals("options")?returnSelection:1;render();
+        }});
     }
     private void exitToCamera(){
         if(exiting||busy)return;exiting=true;previewRequests.next();
@@ -268,7 +273,7 @@ public final class LibraryActivity extends Activity {
         try{SonyAppPolicy.openDebugHelper(this);}
         catch(RuntimeException error){android.util.Log.e("LutUI","debug_helper_start_failed",error);showExitFailure("测试连接未能打开，请检查安装状态。");}
     }
-    @Override public void onBackPressed(){if(exiting)return;if(page==null){exitToCamera();return;}if(busy)return;if(mode.equals("library")){lastSelection=selection;mode="options";selection=0;render();}
+    @Override public void onBackPressed(){if(exiting)return;if(page==null){exitToCamera();return;}if(busy)return;if(mode.equals("library")){lastSelection=selection;diagnosticExport="";mode="options";selection=0;render();}
         else if(mode.equals("notice")){if(previous.equals("loading"))exitToCamera();else action();}else if(mode.equals("help")){mode="options";selection=1;render();}else libraryPage();}
     private void moveSelection(int delta){if(page.rows.isEmpty())return;selection=UiList.move(selection,delta,page.rows.size());render();if(mode.equals("library"))requestPreview();}
     @Override public boolean dispatchKeyEvent(KeyEvent e){if(exiting)return true;int key=UiKeys.key(e),dial=UiKeys.dial(e);if(key==UiKeys.NONE&&dial==0)return super.dispatchKeyEvent(e);if(e.getAction()!=KeyEvent.ACTION_DOWN)return true;if(page==null){if(key==UiKeys.BACK)exitToCamera();return true;}if(busy)return true;
