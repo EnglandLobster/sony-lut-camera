@@ -165,3 +165,7 @@ chmod +x ./pmca-console-v0.18-osx
 安装工具文件名及按钮名称于 2026-10-31 按 [PMCA 上游说明](https://github.com/ma1co/Sony-PMCA-RE#installation)、[v0.18 发布资源](https://github.com/ma1co/Sony-PMCA-RE/releases/tag/v0.18) 和 [安装界面源码](https://github.com/ma1co/Sony-PMCA-RE/blob/v0.18/pmca-gui.py) 核对。macOS 的来源确认步骤参考 [Apple 官方文档](https://support.apple.com/zh-cn/102445)。
 
 LUT Camera 已在 A6300 / 固件 2.01 完成安装、启动及实拍验证；本次教程更新未重新执行 Windows/macOS 各版本的全新 MTP 安装验收。图中为实际机内界面，PMCA 操作表为文字指引。
+
+## 出问题后导出日志（rc.8 起）
+
+重新打开 LUT Camera，在 LUT 库按 **MENU → 导出诊断日志 → 导出日志包**。导出完成后，用读卡器取出 SD 卡中的 **`SONYLUT/DIAG/REPORT.ZIP`**，连同屏幕现象和出错前的操作交给开发者。无需开启“测试连接”，日志包不包含照片或 LUT 文件。若应用无法打开，可先提供 `SONYLUT/DIAG/LOGS/` 文件夹。详见 [故障日志说明](DIAGNOSTICS.md)。此功能属于 rc.8 候选，公开 beta.5 不含该入口。

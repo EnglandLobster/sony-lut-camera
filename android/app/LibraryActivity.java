@@ -22,6 +22,7 @@ public final class LibraryActivity extends Activity {
     private final LutLibrary.Verifier verifier=new LutLibrary.Verifier(){public int inspect(File file)throws Exception{return LutBinaryCache.inspect(file);}};
     private final PreviewRequest previewRequests=new PreviewRequest();
     private String mode="loading",previous="library",notice="",previewId="",importFocusId;private int selection,lastSelection;private boolean busy,destroyed,importDone;
+    private String diagnosticExport="";
     private boolean displayStarted,exiting;private String selectedId;
     private LutLibrary.Entry previewEntry;
     private NativePreviewProfile fittedPreview;
@@ -66,7 +67,7 @@ public final class LibraryActivity extends Activity {
     interface Task {void run()throws Exception;}
     private void runTask(String label,final Task task,final Runnable complete){if(busy)return;busy=true;page.busy=true;page.previewMode=false;page.title=label;page.subtitle="";page.rows=new ArrayList<CameraPage.Row>();page.empty=label;page.note="";page.footer="处理中";page.invalidate();
         io.execute(new Runnable(){public void run(){try{task.run();ui.post(new Runnable(){public void run(){if(destroyed)return;busy=false;page.busy=false;complete.run();}});}
-            catch(final Exception e){android.util.Log.e("LutLibrary","operation_failed",e);ui.post(new Runnable(){public void run(){if(destroyed)return;busy=false;page.busy=false;showNotice("操作未完成",explain(e));}});}}});
+            catch(final Exception e){SupportDiagnostics.failure("library_operation",e);android.util.Log.e("LutLibrary","operation_failed",e);ui.post(new Runnable(){public void run(){if(destroyed)return;busy=false;page.busy=false;showNotice("操作未完成",explain(e));}});}}});
     }
     private static String explain(Exception e){String text=e.getMessage();if(text==null)text=e.getClass().getSimpleName();
         if(text.contains("truncated")||text.contains("too many cube rows"))return "数据行数与阶数不符，请重新导出 CUBE";
@@ -107,7 +108,14 @@ public final class LibraryActivity extends Activity {
             rows.add(new CameraPage.Row("退出应用","回到相机原生拍摄界面","退出"));
             if(SonyAppPolicy.hasDebugHelper(this))rows.add(new CameraPage.Row("测试连接","打开已安装的相机调试工具","打开"));
             rows.add(new CameraPage.Row("当前 LUT 的取景","近似色彩或原色 · 每个 LUT 单独记忆","设置"));
+            rows.add(new CameraPage.Row("导出诊断日志","出问题后导出日志包，交给开发者分析","导出"));
             page.note="当前验证机型 Sony A6300";page.footer="↑↓ 选择   ● 确认   MENU 返回";
+        }else if(mode.equals("diagnostics")){
+            page.section="诊断日志";page.title=diagnosticExport.length()==0?"导出问题记录":"日志包已导出";
+            page.subtitle=diagnosticExport.length()==0?"自动保留最近的启动、拍摄和错误记录":"SD 卡 / SONYLUT / DIAG / REPORT.ZIP";
+            rows.add(new CameraPage.Row("导出日志包","将 REPORT.ZIP 发给开发者，并描述问题发生前的操作","导出"));
+            rows.add(new CameraPage.Row("返回 LUT 库","继续选择或拍摄","返回"));
+            page.note="不包含照片或 LUT 文件，不会自动上传";page.footer="↑↓ 选择   ● 确认   MENU 返回";
         }else if(mode.equals("preview_options")||mode.equals("preview_warning")||mode.equals("preview_error")){
             page.section="取景预览";page.title=previewEntry.name;page.subtitle=mode.equals("preview_warning")?"预览与成片可能有较明显差异":mode.equals("preview_error")?"近似预览暂未生成":"只改变取景方式，不改变照片效果";
             boolean enabled=previewChoice==null||previewChoice.enabled;
@@ -131,9 +139,10 @@ public final class LibraryActivity extends Activity {
             page.note="效果参考图不是实时取景；成片保持 6000 × 4000";page.footer="MENU 返回";
         }else{
             page.section="提示";page.title="请检查后重试";page.subtitle=notice;page.note="已有 LUT 和照片均已保留";
-            rows.add(new CameraPage.Row(previous.equals("loading")?"重试":"返回",notice,"确认"));page.footer=previous.equals("loading")?"● 重试   MENU 退出":"● 返回   MENU 返回";
+            rows.add(new CameraPage.Row(previous.equals("loading")?"重试":"返回",notice,"确认"));rows.add(new CameraPage.Row("导出诊断日志","将问题记录保存到 SD 卡","导出"));page.footer=previous.equals("loading")?"● 重试   MENU 退出":"● 返回   MENU 返回";
         }
         selection=UiList.clamp(selection,rows.size());page.rows=rows;page.selected=selection;page.setContentDescription(page.title);page.invalidate();
+        SupportDiagnostics.event("ui_page","mode="+mode+" selection="+selection+" rows="+rows.size());
         android.util.Log.i("LutUI","page_ready mode="+mode+" selection="+selection+" rows="+rows.size());
     }
     private String version(){try{return getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(Exception e){return "UI 预览";}}
@@ -178,10 +187,9 @@ public final class LibraryActivity extends Activity {
         selectedId=entry.id;lastSelection=selection;
         previewEntry=entry;previewForCapture=true;fitError="";fittedPreview=null;
         runTask("正在准备 "+entry.name,new Task(){public void run()throws Exception{
-            CaptureDiagnostics diagnostic=new CaptureDiagnostics(android.os.Environment.getExternalStorageDirectory());
-            diagnostic.append("library_prepare model="+android.os.Build.MODEL+" sdk="+android.os.Build.VERSION.SDK_INT+" lut="+entry.id);
+            SupportDiagnostics.event("capture_requested","lut_id="+entry.id+" grid="+entry.size);
             library.select(entry.id);previewChoice=PreviewProfileStore.choice(entry);
-            if(previewChoice.enabled)try{diagnostic.append("preview_fit_begin");fittedPreview=PreviewFitting.ensure(entry);diagnostic.append("preview_fit_ready");}catch(Exception e){diagnostic.failure(e);fitError=explain(e);android.util.Log.w("SonyPreviewFit","prepare_failed",e);}
+            if(previewChoice.enabled)try{SupportDiagnostics.event("preview_fit_begin","");fittedPreview=PreviewFitting.ensure(entry);SupportDiagnostics.event("preview_fit_ready","");}catch(Exception e){SupportDiagnostics.failure("preview_fit",e);fitError=explain(e);android.util.Log.w("SonyPreviewFit","prepare_failed",e);}
         }},new Runnable(){public void run(){
             if(previewChoice.enabled&&fittedPreview==null){mode="preview_error";selection=0;render();return;}
             if(previewChoice.enabled&&fittedPreview.largeError()&&previewChoice.acknowledged<fittedPreview.fitVersion){mode="preview_warning";selection=0;render();return;}
@@ -217,7 +225,7 @@ public final class LibraryActivity extends Activity {
         if(request==CAPTURE_REQUEST&&data!=null&&data.hasExtra("startup_failure")){
             mode="library";render();requestPreview();
             String detail=data.getStringExtra("startup_failure");
-            if(data.getBooleanExtra("startup_diagnostic",false))detail+="\n\n诊断文件：SD卡 SONYLUT/DIAG/INIT.TXT";
+            if(data.getBooleanExtra("startup_diagnostic",false))detail+="\n\n返回后：MENU → 导出诊断日志";
             new android.app.AlertDialog.Builder(this).setTitle(data.getStringExtra("startup_title"))
                 .setMessage(detail).setPositiveButton("返回 LUT 库",null).show();return;
         }
@@ -232,12 +240,19 @@ public final class LibraryActivity extends Activity {
         }else if(mode.equals("files")){if(selection==0){if(importDone)finishImport();else if(!imports.isEmpty())importFiles(-1);else scan();}
             else if(importResults.get(selection-1).startsWith("失败"))showNotice("这个文件未能导入",importResults.get(selection-1));else if(!importDone)importFiles(selection-1);
         }else if(mode.equals("gallery")){if(!photos.isEmpty())openGallery(photos.get(selection).id);
-        }else if(mode.equals("options")){if(selection==0){mode="import";selection=0;}else if(selection==1){mode="help";selection=0;}else if(selection==2){libraryPage();return;}else if(selection==3){exitToCamera();return;}else if(selection==4&&SonyAppPolicy.hasDebugHelper(this)){openDebugHelper();return;}else{previewSettings();return;}render();
+        }else if(mode.equals("options")){if(selection==0){mode="import";selection=0;}else if(selection==1){mode="help";selection=0;}else if(selection==2){libraryPage();return;}else if(selection==3){exitToCamera();return;}else if(selection==page.rows.size()-1){mode="diagnostics";selection=0;render();return;}else if(selection==4&&SonyAppPolicy.hasDebugHelper(this)){openDebugHelper();return;}else{previewSettings();return;}render();
+        }else if(mode.equals("diagnostics")){if(selection==0)exportDiagnostics();else libraryPage();
         }else if(mode.equals("preview_options")||mode.equals("preview_warning")||mode.equals("preview_error")){
             if(selection==2)libraryPage();else choosePreview(selection==0);
         }else if(mode.equals("exit_error")){if(selection==0)exitToCamera();else if(selection==1&&SonyAppPolicy.hasDebugHelper(this))openDebugHelper();else libraryPage();
         }else if(mode.equals("help")){mode="options";selection=1;render();
-        }else if(mode.equals("notice")){if(previous.equals("loading")){initializeLibrary();return;}mode=previous;selection=0;render();}
+        }else if(mode.equals("notice")){if(selection==1){mode="diagnostics";selection=0;render();return;}if(previous.equals("loading")){initializeLibrary();return;}mode=previous;selection=0;render();}
+    }
+    private void exportDiagnostics(){
+        runTask("正在导出诊断日志",new Task(){public void run()throws Exception{
+            try{diagnosticExport=SupportDiagnostics.exportReport().getName();}
+            catch(IOException error){throw new IOException("无法导出到 SD 卡，请检查写保护和剩余空间后重试。",error);}
+        }},new Runnable(){public void run(){mode="diagnostics";selection=1;render();}});
     }
     private void exitToCamera(){
         if(exiting||busy)return;exiting=true;previewRequests.next();
@@ -266,10 +281,11 @@ public final class LibraryActivity extends Activity {
         return true;
     }
     private void showInterruptedCapture(){
+        SupportDiagnostics.event("capture_interrupted","capture returned without a normal result");
         android.util.Log.w("LutLibrary","capture_interrupted_notice");
         if(page!=null&&!busy){mode="library";render();requestPreview();}
         new android.app.AlertDialog.Builder(this).setTitle("拍摄会话意外结束")
-            .setMessage("相机未能正常完成拍摄会话。\n\n请先设为 P 模式、关闭 HDR，再重新进入。\n若仍发生，请提供 SD 卡 SONYLUT/DIAG/INIT.TXT。")
+            .setMessage("相机未能正常完成拍摄会话。\n\n请先设为 P 模式、关闭 HDR，再重新进入。\n若仍发生，请按 MENU → 导出诊断日志。")
             .setPositiveButton("返回 LUT 库",null).show();
     }
     @Override protected void onSaveInstanceState(Bundle state){

@@ -46,7 +46,6 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private boolean settingsNoticeShown;
     private CaptureStoreEvents storeEvents;
     private LegacyStoreCompletion legacyStore;
-    private CaptureDiagnostics startupDiagnostics;
     private volatile String startupFailure;
     private CaptureTelemetry telemetry;
     private int pendingReceipts;
@@ -141,8 +140,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private synchronized void event(String name,String detail){
         String line=SystemClock.elapsedRealtime()+" "+name+" "+detail+" shot="+gate.shot();
         android.util.Log.i("SonyPreJpeg",line);
-        if(startupDiagnostics!=null&&gate.shot()==0)try{startupDiagnostics.append(line);}
-        catch(IOException e){android.util.Log.e("SonyPreJpeg","startup_diagnostic_write_failed",e);}
+        if(productUi())SupportDiagnostics.event(name,detail+" shot="+gate.shot());
         long start=SystemClock.elapsedRealtime();
         if(run!=null&&!journalClosed)try{
             // Keep one descriptor for the run. Each unbuffered write still
@@ -198,10 +196,11 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void failure(final String where,final Throwable e){
         if(legacyStore!=null)legacyStore.cancel();
         final CaptureStartupError friendly=CaptureStartupError.from(e);
+        if(productUi())SupportDiagnostics.failure(where,e);
         android.util.Log.e("SonyPreJpeg","failure stage="+where,e);
         if(productUi()&&gate.shot()==0){
             startupFailure="阶段："+where+"\n"+cause(e).toString();
-            if(startupDiagnostics!=null)try{startupDiagnostics.failure(e);}catch(IOException writeError){android.util.Log.e("SonyPreJpeg","startup_diagnostic_write_failed",writeError);}
+
         }
         event("failed",where+" "+cause(e));gate.fail();message("测试停止："+where+"\n请保留当前页面，读取日志。");
         ui.post(new Runnable(){public void run(){
@@ -213,21 +212,19 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             endProcessing();
             if(productHud!=null){status.setVisibility(View.GONE);productHud.mode="error";productHud.detail=startupFailure!=null?friendly.title:"拍摄未完成";
                 productHud.progress=startupFailure!=null?friendly.message():originalFile!=null?"原片已保存":"请返回 LUT 库重新进入拍摄";
-                productHud.footer=startupFailure!=null&&startupDiagnostics!=null?"MENU 返回 · 诊断文件：SONYLUT/DIAG/INIT.TXT":"MENU 返回 LUT 库后重试";
-                if(startupFailure!=null)setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("startup_failure",friendly.message()).putExtra("startup_title",friendly.title).putExtra("startup_diagnostic",startupDiagnostics!=null));productHud.update();}
+                productHud.footer=startupFailure!=null?"MENU 返回 → 更多 → 导出诊断日志":"MENU 返回 LUT 库后重试";
+                if(startupFailure!=null)setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("startup_failure",friendly.message()).putExtra("startup_title",friendly.title).putExtra("startup_diagnostic",true));productHud.update();}
             if(active&&review!=null)try{review.showGraphicsOutput();}catch(Exception x){android.util.Log.e("SonyPreJpeg","error_graphics_restore_failed",x);}
         }});
     }
     @Override public void onCreate(Bundle state){super.onCreate(state);
         if(productUi())try{
-            startupDiagnostics=new CaptureDiagnostics(Environment.getExternalStorageDirectory());
             event("activity_create","model="+Build.MODEL+" sdk="+Build.VERSION.SDK_INT+" abi="+Build.CPU_ABI
                 +" max_heap="+Runtime.getRuntime().maxMemory()+" app="+getPackageManager().getPackageInfo(getPackageName(),0).versionName);
         }catch(Exception e){android.util.Log.e("SonyPreJpeg","startup_diagnostic_open_failed",e);}
         previousExceptionHandler=Thread.getDefaultUncaughtExceptionHandler();
         exceptionHandler=new Thread.UncaughtExceptionHandler(){public void uncaughtException(Thread thread,Throwable error){
             android.util.Log.e("SonyPreJpeg","uncaught thread="+thread.getName()+" shot="+gate.shot(),error);
-            if(startupDiagnostics!=null)try{startupDiagnostics.failure(error);}catch(Throwable ignored){}
             try{if(run!=null){PrintWriter out=new PrintWriter(new FileOutputStream(RunFiles.file(run,"CRASH.TXT"),true));
                 try{out.println("thread="+thread.getName()+" state="+gate.state()+" shot="+gate.shot());error.printStackTrace(out);out.flush();}finally{out.close();}}}
             catch(Throwable ignored){}
@@ -322,7 +319,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }catch(Throwable e){failure("review_file",e);}
     }
     private void prepare(){if(closed||destroyed)return;try{
-        sd=Environment.getExternalStorageDirectory();run=RunFiles.create(sd);event("prepare","phase="+phase+" init_only="+initOnly+" init_stage="+initStage+" run="+run+" pid="+android.os.Process.myPid()+" fresh_session="+getIntent().getBooleanExtra("fresh_session",false)+" continuous="+continuous+" verify_payloads="+verifyPayloads+" overlap_original="+overlapOriginal+" source_reference="+sourceReferenceEnabled+" probe_token="+getIntent().getStringExtra("probe_token"));
+        sd=Environment.getExternalStorageDirectory();run=productUi()?null:RunFiles.create(sd);event("prepare","phase="+phase+" init_only="+initOnly+" init_stage="+initStage+" run="+run+" pid="+android.os.Process.myPid()+" fresh_session="+getIntent().getBooleanExtra("fresh_session",false)+" continuous="+continuous+" verify_payloads="+verifyPayloads+" overlap_original="+overlapOriginal+" source_reference="+sourceReferenceEnabled+" probe_token="+getIntent().getStringExtra("probe_token"));
         if(!initOnly)photoFiles=new PhotoFiles(sd,"handoff".equals(phase)?PhotoFiles.Format.ARW:PhotoFiles.Format.JPEG);
         Class<?> props=Class.forName("com.sony.scalar.sysutil.ScalarProperties");Method get=props.getMethod("getString",String.class);
         String memory=(String)get.invoke(null,"device.memory"),pixels=(String)get.invoke(null,"mem.rawimage.size.in.mega.pixel");

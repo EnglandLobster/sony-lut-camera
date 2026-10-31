@@ -105,10 +105,12 @@ final class SonyAppPolicy {
     private static void requestNativeExit(Activity activity)throws Exception{
         Class<?> type=Class.forName("android.app.DAConnectionManager");
         Object manager=type.getConstructor(android.content.Context.class).newInstance(activity);
+        SupportDiagnostics.event("native_exit_requested","activity="+activity.getClass().getSimpleName());
         android.util.Log.i("LutUI","native_exit_requested activity="+activity.getClass().getSimpleName());
         type.getMethod("finish").invoke(manager);
     }
     static void register(Activity activity){
+        SupportDiagnostics.event("activity_resume",activity.getClass().getSimpleName());
         Intent info=new Intent("com.android.server.DAConnectionManagerService.AppInfoReceive");
         info.putExtra("package_name",activity.getPackageName());
         info.putExtra("class_name",LibraryActivity.class.getName());

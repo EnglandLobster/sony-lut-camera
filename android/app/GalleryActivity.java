@@ -27,7 +27,7 @@ public final class GalleryActivity extends Activity {
                 index=Math.max(0,Math.min(Math.max(0,photos.size()-1),index+getIntent().getIntExtra("page_offset",0)));load();}});
         }catch(final Exception e){ui.post(new Runnable(){public void run(){error(e);}});}}});
     }
-    private void error(Exception e){if(destroyed)return;hud.mode="error";hud.detail=e.getMessage()==null?"照片读取失败":e.getMessage();hud.progress="";hud.footer="MENU 返回照片列表";hud.update();}
+    private void error(Exception e){SupportDiagnostics.failure("gallery",e);if(destroyed)return;hud.mode="error";hud.detail=e.getMessage()==null?"照片读取失败":e.getMessage();hud.progress="";hud.footer="MENU 返回照片列表";hud.update();}
     private File selectedFile(){PhotoCatalog.Pair p=photos.get(index);return original?p.original:p.graded;}
     private void load(){
         if(photos==null||photos.isEmpty()){hud.mode="error";hud.name="照片";hud.detail="还没有照片";hud.progress="拍下第一张照片后，在这里回看";hud.footer="MENU 返回";hud.update();return;}

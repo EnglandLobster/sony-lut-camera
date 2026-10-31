@@ -32,6 +32,10 @@ Preserve full 33³ processing, 6000×4000, original/graded files, native memory 
 
 Review uses left/older, right/newer, center comparison, half-press shooting. Preserve full image geometry and the Sony high-precision graphics lifecycle.
 
+## Diagnostics
+
+Production diagnostics use bounded UI/CAP journals in private storage and on SD. Keep logging failures outside capture control flow; never include photos, LUT payloads, credentials or unfiltered system logcat in user exports. Sony SD does not permit reading an actively written file: close both writers under the export lock, validate the archive, and resume append without rotating away the current session. Test retained failure history, bounds, failed-export preservation and API10 compatibility when changing this contract. See `docs/DIAGNOSTICS.md`.
+
 ## Changes and Sensitive Files
 
 Use focused commits such as `fix(preview): restore display precision`. PRs explain behavior, tests, device evidence and unresolved acceptance. Do not commit SDKs, APKs, logs, private device photos, user LUT collections, credentials or signing material. Explicitly selected bundled LUTs and the reference thumbnail belong in `android-assets/` with provenance. Never wipe `out/`: local `test.keystore` is the existing installation identity. Keep third-party notices and pinned dependencies. Original code is GPL-3.0-only by owner choice. Asset permissions are separate; follow `docs/RELEASE.md`. Use `build_android.sh --release` for distribution, never the default debug package. Keep release notes accurate about full saved-image LUT processing versus approximate native preview.

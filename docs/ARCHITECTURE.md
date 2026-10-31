@@ -26,3 +26,7 @@ Java 文件按职责分目录，仍使用同一 `org.hongen.sonylutprobe` 包；
 `results/` 是原始日志、照片和实验产物，不按当前结论重写旧回执。`docs/history/` 是旧阶段叙述，`HANDOFF.md` 只写当前有效事实和待办。`archives/` 是明确暂停的研究。
 
 工作区迁移清单与完整历史日志保留在本地，不进入源码仓库。新文档使用新路径；独立构建见 [BUILD.md](BUILD.md)，已验证状态见 [STATUS.md](STATUS.md)。
+
+## 通用诊断边界
+
+`LutApplication` 在每个进程启动时安装 `SupportDiagnostics`；它只采集应用事件与有限设备属性，不打开相机。纯 Java 的 `DiagnosticStore` 负责容量限制、轮转、导出与 ZIP 校验，`DiagnosticText` 负责字段限长与路径脱敏。库页面负责用户导出入口，拍摄流程通过已有 `event()` 接入，照片数据与诊断存储分离。SD 失效保留机身副本，采集错误不改变拍摄结果。
