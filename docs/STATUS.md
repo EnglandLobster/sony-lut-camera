@@ -1,6 +1,6 @@
 # Current status
 
-Updated 2026-10-31. Release candidate **0.9.0-beta.4 / code 95**, Sony A6300 firmware 2.01. The current source and release builds have passed host checks. Beta.4 is installed on the camera: the two sample entries are removed and Fuji C200 is the default. Publication status and the external resource hold are in [RELEASE.md](RELEASE.md).
+Updated 2026-10-31. Release candidate **0.9.0-beta.5 / code 96**, Sony A6300 firmware 2.01. The current source and release builds have passed host checks. Beta.5 is installed on the camera with IMG_7554.jpeg as the LUT selector reference; Fuji C200 remains the default. Publication status and the external resource hold are in [RELEASE.md](RELEASE.md).
 
 ## Preserved product baseline
 
@@ -19,6 +19,8 @@ Independent source-export builds were checked for the existing toolchain. The pr
 Host numerical/JPEG tests, Java product tests, exact LUT-cache tests, preview-fit tests, catalog/hash validation and APK API10/DEX035/ARM/v1 checks pass. The source history audit found no tracked APKs, signing keys, saved Wi-Fi profiles, firmware dumps or private device captures. The explicitly bundled preview thumbnail and attributed LUTs remain.
 
 ## Device acceptance and remaining scope
+
+- 2026-10-31 beta.5/code96: replaced the reference with the maintainer-selected yellow-car photograph, oriented and converted from Display P3 to a 216×288 sRGB JPEG without EXIF. All ten LUTs rendered it successfully on the host; release package checks passed. The camera screenshot confirms the new reference in the selector, with 17 library entries and unchanged boot identity.
 
 - 2026-10-31 beta.4/code95: upgrade removed exactly the two sample content IDs and their source caches. All other library IDs and metadata stayed unchanged (19 → 17 entries); all ten bundled LUTs remain available. Startup completed with Fuji C200 selected, and the boot identity stayed unchanged. No new shutter capture was performed.
 

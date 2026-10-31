@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0-beta.5 — updated reference photograph
+
+- Replace the LUT selector reference with the maintainer-selected IMG_7554.jpeg, oriented and converted to an sRGB thumbnail with the full portrait composition.
+
 ## 0.9.0-beta.4 — curated LUT library
 
 - Preload the ten selected Fuji, Ilford, Kodak and Ricoh LUTs; default to Fuji C200.

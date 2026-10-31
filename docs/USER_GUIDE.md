@@ -6,12 +6,12 @@
 
 ## 安装 APK
 
-1. 下载发行页中的 `SonyLutCamera-v0.9.0-beta.4.apk`（发行页尚未提供 APK 时，表示该包仍在发布准备中）。
+1. 下载发行页中的 `SonyLutCamera-v0.9.0-beta.5.apk`（发行页尚未提供 APK 时，表示该包仍在发布准备中）。
 2. 拔掉 USB，在相机 `MENU → 设置 → USB 连接` 选择 **MTP**，再用数据线连接电脑。
 3. 用 [Sony-PMCA-RE 的 App Installer](https://github.com/ma1co/Sony-PMCA-RE#app-installer) 选择下载的 APK 安装。命令行示例：
 
    ```sh
-   python pmca-console.py install -f /path/to/SonyLutCamera-v0.9.0-beta.4.apk
+   python pmca-console.py install -f /path/to/SonyLutCamera-v0.9.0-beta.5.apk
    ```
 
    连接后相机菜单可能不可操作；需要改 USB 模式时先拔线。在 macOS 上，照片、图像捕捉等程序可能占用 MTP 连接，先退出它们。不要把普通安装与固件更新／服务模式操作混用。
