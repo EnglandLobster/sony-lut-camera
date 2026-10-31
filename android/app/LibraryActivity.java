@@ -212,7 +212,11 @@ public final class LibraryActivity extends Activity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
         if(request==CAPTURE_REQUEST&&data!=null&&data.hasExtra("startup_failure")){
-            mode="library";showNotice("无法开始拍摄",data.getStringExtra("startup_failure")+"\n诊断：SD卡 SONYLUT/DIAG/INIT.TXT");return;
+            mode="library";render();requestPreview();
+            String detail=data.getStringExtra("startup_failure");
+            if(data.getBooleanExtra("startup_diagnostic",false))detail+="\n\n诊断文件：SD卡 SONYLUT/DIAG/INIT.TXT";
+            new android.app.AlertDialog.Builder(this).setTitle(data.getStringExtra("startup_title"))
+                .setMessage(detail).setPositiveButton("返回 LUT 库",null).show();return;
         }
         if(result!=RESULT_OK||data==null)return;
         if(request==CAPTURE_REQUEST&&data.getBooleanExtra("open_gallery",false))openGallery(null,data.getIntExtra("page_offset",0));

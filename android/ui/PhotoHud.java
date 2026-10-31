@@ -131,7 +131,17 @@ final class PhotoHud extends View {
             if(mode.equals("processing"))developing(c,w);
             else{
                 text(c,fit(detail,w-72,29),36,194,29,mode.equals("error")?CameraPage.ERROR:CameraPage.TEXT);
-                text(c,fit(progress,w-72,19),36,244,19,CameraPage.ACCENT);
+                if(mode.equals("error")){
+                    p.setTextSize(19);int line=0;
+                    for(String paragraph:progress.split("\n",-1)){
+                        if(paragraph.length()==0){line++;continue;}
+                        while(paragraph.length()>0&&line<6){
+                            int count=p.breakText(paragraph,true,w-72,null);if(count<1)break;
+                            text(c,paragraph.substring(0,count),36,244+line*28,19,CameraPage.TEXT);
+                            paragraph=paragraph.substring(count);line++;
+                        }
+                    }
+                }else text(c,fit(progress,w-72,19),36,244,19,CameraPage.ACCENT);
                 text(c,fit(name,w-72,17),36,286,17,CameraPage.MUTED);
                 text(c,fit(footer,w-72,17),36,443,17,CameraPage.MUTED);
             }

@@ -188,6 +188,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     private static Throwable cause(Throwable e){while(e.getCause()!=null)e=e.getCause();return e;}
     private void failure(final String where,final Throwable e){
+        final CaptureStartupError friendly=CaptureStartupError.from(e);
         android.util.Log.e("SonyPreJpeg","failure stage="+where,e);
         if(productUi()&&gate.shot()==0){
             startupFailure="阶段："+where+"\n"+cause(e).toString();
@@ -201,10 +202,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 catch(Exception lockError){event("failure_lock_error",cause(lockError).toString());}
             }
             endProcessing();
-            if(productHud!=null){status.setVisibility(View.GONE);productHud.mode="error";productHud.detail="拍摄未完成";
-                productHud.progress=startupFailure!=null?where+": "+cause(e).toString():originalFile!=null?"原片已保存":"请返回 LUT 库重新进入拍摄";
-                productHud.footer=startupFailure!=null?"详情：SD卡 SONYLUT/DIAG/INIT.TXT · MENU 返回":"MENU 返回 LUT 库后重试";
-                if(startupFailure!=null)setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("startup_failure",startupFailure));productHud.update();}
+            if(productHud!=null){status.setVisibility(View.GONE);productHud.mode="error";productHud.detail=startupFailure!=null?friendly.title:"拍摄未完成";
+                productHud.progress=startupFailure!=null?friendly.message():originalFile!=null?"原片已保存":"请返回 LUT 库重新进入拍摄";
+                productHud.footer=startupFailure!=null&&startupDiagnostics!=null?"MENU 返回 · 诊断文件：SONYLUT/DIAG/INIT.TXT":"MENU 返回 LUT 库后重试";
+                if(startupFailure!=null)setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("startup_failure",friendly.message()).putExtra("startup_title",friendly.title).putExtra("startup_diagnostic",startupDiagnostics!=null));productHud.update();}
             if(active&&review!=null)try{review.showGraphicsOutput();}catch(Exception x){android.util.Log.e("SonyPreJpeg","error_graphics_restore_failed",x);}
         }});
     }
