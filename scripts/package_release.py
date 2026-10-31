@@ -9,6 +9,7 @@ import subprocess
 import tarfile
 import xml.etree.ElementTree as ET
 from audit_release_assets import audit_tracked, audit_apk, audit_source
+from check_git_identity import check as check_git_identity
 
 ROOT = Path(__file__).resolve().parents[1]
 A = '{http://schemas.android.com/apk/res/android}'
@@ -19,6 +20,7 @@ def git(*args, cwd=ROOT):
 
 
 def package():
+    check_git_identity()
     # The source archive below uses committed files only; unrelated local drafts are excluded.
     if git('status', '--porcelain', '--untracked-files=no').strip():
         raise SystemExit('Commit reviewed source before packaging a release.')

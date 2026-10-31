@@ -36,6 +36,10 @@ Review uses left/older, right/newer, center comparison, half-press shooting. Pre
 
 Production diagnostics use bounded UI/CAP journals in private storage and on SD. Keep logging failures outside capture control flow; never include photos, LUT payloads, credentials or unfiltered system logcat in user exports. Sony SD does not permit reading an actively written file: close both writers under the export lock, validate the archive, and resume append without rotating away the current session. Test retained failure history, bounds, failed-export preservation and API10 compatibility when changing this contract. See `docs/DIAGNOSTICS.md`.
 
+## Maintainer Git Identity
+
+Before committing from any clone or worktree, explicitly set repository-local `user.name` to `EnglandLobster` and `user.email` to `93986837+EnglandLobster@users.noreply.github.com`; never inherit an unrelated global identity. Set `core.hooksPath` to `.githooks` and run `python3 scripts/check_git_identity.py`. Check both Author and Committer before pushing. Do not publish identity overrides from another service. This is separate from the APK signing identity, which remains unchanged.
+
 ## Changes and Sensitive Files
 
 Use focused commits such as `fix(preview): restore display precision`. PRs explain behavior, tests, device evidence and unresolved acceptance. Do not commit SDKs, APKs, logs, private device photos, user LUT collections, credentials or signing material. Explicitly selected bundled LUTs and the reference thumbnail belong in `android-assets/` with provenance. Never wipe `out/`: local `test.keystore` is the existing installation identity. Keep third-party notices and pinned dependencies. Original code is GPL-3.0-only by owner choice. Asset permissions are separate; follow `docs/RELEASE.md`. Use `build_android.sh --release` for distribution, never the default debug package. Keep release notes accurate about full saved-image LUT processing versus approximate native preview.
