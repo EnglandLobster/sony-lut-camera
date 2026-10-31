@@ -21,6 +21,14 @@ public final class CaptureSetupTest {
     static void check(boolean yes,String message){if(!yes)throw new AssertionError(message);}
     public static void main(String[] args)throws Exception {
         Driver d=new Driver();Map<String,String> baseline=d.read();CaptureSetup setup=new CaptureSetup(d);
+        for(String hdr:new String[]{"on","auto"}){
+            d.values.put("hdr-mode",hdr);boolean blocked=false;try{setup.open();}catch(IOException expected){blocked=expected.getMessage().contains("HDR");}
+            check(blocked&&d.writes==0,"HDR blocked before modifying camera settings");
+        }
+        d.values.put("hdr-mode","off");d.values.put("picture-effect","hdr-art");
+        boolean hdrArtBlocked=false;try{setup.open();}catch(IOException expected){hdrArtBlocked=true;}
+        check(hdrArtBlocked&&d.writes==0,"HDR art blocked before modifying settings");
+        d.values.remove("hdr-mode");d.values.remove("picture-effect");
         setup.open();check("single".equals(d.values.get("drive-mode"))&&"jpeg".equals(d.values.get("storage-fmt"))&&"6000x4000".equals(d.values.get("picture-size")),"RAW/burst/small input normalized");
         check("daylight".equals(d.values.get("whitebalance")),"unrelated field preserved");
         setup.close();check(d.read().equals(baseline),"original settings restored");

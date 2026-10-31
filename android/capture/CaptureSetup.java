@@ -12,6 +12,9 @@ final class CaptureSetup {
     void open()throws Exception {
         if(original!=null)throw new IllegalStateException("capture settings already owned");
         Map<String,String> current=driver.read(),target=new LinkedHashMap<String,String>();
+        String hdr=current.get("hdr-mode"),effect=current.get("picture-effect");
+        if((hdr!=null&&!"off".equals(hdr))||"hdr-art".equals(effect))
+            throw new IOException("capture HDR enabled: hdr-mode="+hdr+" picture-effect="+effect);
         target.put("drive-mode","single");target.put("storage-fmt","jpeg");target.put("picture-size","6000x4000");
         if(current.get("jpeg-quality")!=null)target.put("jpeg-quality",current.get("jpeg-quality"));
         Map<String,String> saved=new LinkedHashMap<String,String>();
@@ -29,7 +32,8 @@ final class CaptureSetup {
         }
         if(saved.equals(target))return;
         original=saved;
-        driver.write(target);verify(driver.read(),target,"capture setting rejected: ");
+        try{driver.write(target);verify(driver.read(),target,"capture setting rejected: ");}
+        catch(Exception error){throw new IOException("capture settings single/JPEG/6000x4000 failed",error);}
     }
     void close()throws Exception {
         if(original==null)return;

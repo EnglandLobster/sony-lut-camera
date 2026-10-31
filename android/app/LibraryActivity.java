@@ -27,7 +27,7 @@ public final class LibraryActivity extends Activity {
     private NativePreviewProfile fittedPreview;
     private PreviewProfileStore.Choice previewChoice;
     private String fitError="";
-    private boolean previewForCapture;
+    private boolean previewForCapture,capturePending,captureAway;
     private SonyAppPolicy.ExitRequest exitRequest;
     private final Runnable exitTimeout=new Runnable(){public void run(){
         if(!destroyed&&exiting&&displayStarted){
@@ -38,6 +38,7 @@ public final class LibraryActivity extends Activity {
         }
     }};
     @Override public void onCreate(Bundle state){super.onCreate(state);
+        if(state!=null){capturePending=state.getBoolean("capture_pending");captureAway=state.getBoolean("capture_away");}
         try{UiFont.get(this);}catch(RuntimeException e){android.util.Log.e("LutLibrary","font_failed",e);android.widget.TextView error=new android.widget.TextView(this);error.setText("Font could not load. Please update LUT Camera.\nMENU: Exit");setContentView(error);return;}
         page=new CameraPage(this);setContentView(page);
         page.tap=new CameraPage.Tap(){public void select(int row){selection=row;render();action();}};
@@ -188,6 +189,7 @@ public final class LibraryActivity extends Activity {
         }});
     }
     private void launchCapture(LutLibrary.Entry entry){
+            capturePending=true;captureAway=false;
             mode="library";selection=indexOf(entry.id);render();startActivityForResult(new Intent(LibraryActivity.this,PhotoActivity.class).putExtra("lut_id",entry.id)
                     .putExtra("develop_animation",getIntent().getBooleanExtra("develop_animation",true))
                     .putExtra("develop_animation_alternate",getIntent().getBooleanExtra("develop_animation_alternate",false)),CAPTURE_REQUEST);
@@ -211,6 +213,7 @@ public final class LibraryActivity extends Activity {
         }});
     }
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
+        if(request==CAPTURE_REQUEST){capturePending=false;captureAway=false;}
         if(request==CAPTURE_REQUEST&&data!=null&&data.hasExtra("startup_failure")){
             mode="library";render();requestPreview();
             String detail=data.getStringExtra("startup_failure");
@@ -218,6 +221,7 @@ public final class LibraryActivity extends Activity {
             new android.app.AlertDialog.Builder(this).setTitle(data.getStringExtra("startup_title"))
                 .setMessage(detail).setPositiveButton("返回 LUT 库",null).show();return;
         }
+        if(request==CAPTURE_REQUEST&&result==RESULT_CANCELED){showInterruptedCapture();return;}
         if(result!=RESULT_OK||data==null)return;
         if(request==CAPTURE_REQUEST&&data.getBooleanExtra("open_gallery",false))openGallery(null,data.getIntExtra("page_offset",0));
         else if(request==GALLERY_REQUEST&&data.getBooleanExtra("return_capture",false)){mode="library";selection=indexOf(selectedId);if(!luts.isEmpty())startCapture(luts.get(selection));}
@@ -261,7 +265,19 @@ public final class LibraryActivity extends Activity {
             else if(key==UiKeys.LEFT&&mode.equals("library"))gallery();}
         return true;
     }
-    @Override protected void onResume(){super.onResume();if(exiting&&page!=null){page.busy=false;exiting=false;render();}exiting=false;SonyAppPolicy.register(this);if(page!=null)try{page.startDisplayTracking();displayStarted=true;}catch(ClassNotFoundException e){android.util.Log.i("LutLibrary","non-Sony UI preview");}catch(Exception e){showNotice("屏幕初始化失败",explain(e));}}
-    @Override protected void onPause(){ui.removeCallbacks(exitTimeout);if(exitRequest!=null)exitRequest.cancel();if(exiting)android.util.Log.i("LutUI","native_exit_activity_paused");if(displayStarted){page.stopDisplayTracking();displayStarted=false;}super.onPause();}
+    private void showInterruptedCapture(){
+        android.util.Log.w("LutLibrary","capture_interrupted_notice");
+        if(page!=null&&!busy){mode="library";render();requestPreview();}
+        new android.app.AlertDialog.Builder(this).setTitle("拍摄会话意外结束")
+            .setMessage("相机未能正常完成拍摄会话。\n\n请先设为 P 模式、关闭 HDR，再重新进入。\n若仍发生，请提供 SD 卡 SONYLUT/DIAG/INIT.TXT。")
+            .setPositiveButton("返回 LUT 库",null).show();
+    }
+    @Override protected void onSaveInstanceState(Bundle state){
+        state.putBoolean("capture_pending",capturePending);state.putBoolean("capture_away",captureAway);super.onSaveInstanceState(state);
+    }
+    @Override protected void onResume(){super.onResume();
+        if(capturePending&&captureAway){capturePending=false;captureAway=false;showInterruptedCapture();}
+if(exiting&&page!=null){page.busy=false;exiting=false;render();}exiting=false;SonyAppPolicy.register(this);if(page!=null)try{page.startDisplayTracking();displayStarted=true;}catch(ClassNotFoundException e){android.util.Log.i("LutLibrary","non-Sony UI preview");}catch(Exception e){showNotice("屏幕初始化失败",explain(e));}}
+    @Override protected void onPause(){if(capturePending)captureAway=true;ui.removeCallbacks(exitTimeout);if(exitRequest!=null)exitRequest.cancel();if(exiting)android.util.Log.i("LutUI","native_exit_activity_paused");if(displayStarted){page.stopDisplayTracking();displayStarted=false;}super.onPause();}
     @Override protected void onDestroy(){destroyed=true;previewRequests.next();io.shutdown();ui.removeCallbacksAndMessages(null);if(page!=null)page.preview=null;if(previews!=null)previews.clear();super.onDestroy();}
 }

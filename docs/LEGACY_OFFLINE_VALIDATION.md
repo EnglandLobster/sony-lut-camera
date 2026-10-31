@@ -1,8 +1,8 @@
 # A6000 / A7 一代离线验证（2026-10-31）
 
-候选：0.9.0-beta.6-rc.4 / code100。研究在没有相机连接的情况下完成。公开 beta.5 保持不变；候选尚未完成相机拍摄验收。已确认两份官方固件共同缺少 beta.5 强制使用的保存通知 API，导致拍摄初始化无法完成。
+候选：0.9.0-beta.6-rc.5 / code101。研究在没有相机连接的情况下完成。公开 beta.5 保持不变；候选尚未完成相机拍摄验收。已确认两份官方固件共同缺少 beta.5 强制使用的保存通知 API，导致拍摄初始化无法完成。
 
-本轮安装到 API10 模拟器并回归的发行 APK SHA-256：`acf4f3fd7a8861335d2e4bbbae84fd73f8c0a3463dd359158bfe70391d907774`。保持原包名、签名证书和已有用户数据。
+本轮安装到 API10 模拟器并回归的发行 APK SHA-256：`f4cd548143f5449d8c781b1e39456797a708bb86e7b7cdb98d7fc69a63193ce8`。保持原包名、签名证书和已有用户数据。
 
 ## 确认的启动兼容错误与 rc.4 修复
 
@@ -69,3 +69,9 @@ python3 scripts/emulate_legacy_memory_property.py /path/to/a6000/libcameraseq.so
 ```
 
 指令仿真需要 `unicorn`、`pyelftools`，Java 接口审计需要 `androguard`。固件、原始日志与截图仅保留在本地忽略目录 `results/legacy-emulator-20261031/`，不随源码或 APK 发布。
+
+## rc.5 设置引导与异常返回验证（2026-11-01）
+
+新增 HDR on/auto 与 HDR 绘画的启动前拦截测试，确认报错前不写相机设置；RAW／连拍／尺寸的自动配置与恢复沿用并通过 CaptureSetupTest。P 模式和 EXTRA FINE 的设置异常保留操作上下文，即使底层只返回 setParameters failed，屏幕仍给出具体设置方法。CaptureStartupErrorTest 在 API10 / 24 MB 模拟器通过。
+
+在已确认 `ro.kernel.qemu=1` 的模拟器中，仅对隔离的 `:capture` 进程注入 SIGKILL。首次实验发现 Android 2.3.7 可不派发 Activity result 就恢复库页面；补上会话返回检查后，再次注入时显示“拍摄会话意外结束”弹窗，照片库进程存活。日志 `rc5-process-death.log`，实际截图 `rc5-interrupted-dialog.png`。该测试没有连接相机或触发快门，也没有把虚拟机结果记为 A6300 各种真实菜单组合的实拍验收。

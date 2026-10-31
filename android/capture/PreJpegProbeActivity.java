@@ -426,12 +426,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 String supported=p.get("jpeg-quality-values");event("quality_capabilities","values="+supported);
                 if(supported==null||!(","+supported.replace(" ","")+",").contains(",95,"))throw new IOException("EXTRA FINE not advertised; test skipped");
                 originalQuality=p.get("jpeg-quality");if(originalQuality==null)throw new IOException("missing original JPEG quality");
-                p.setJpegQuality(95);camera.setParameters(p);
+                try{p.setJpegQuality(95);camera.setParameters(p);}
+                catch(Exception error){throw new IOException("EXTRA FINE setting failed",error);}
                 if(camera.getParameters().getJpegQuality()!=95)throw new IOException("EXTRA FINE readback failed");
                 event("quality_applied","jpeg_quality=95 original="+originalQuality);
             }
             if(productUi()){
-                exposure=new SimpleExposure(new CameraExposureDriver(camera));exposure.open();
+                exposure=new SimpleExposure(new CameraExposureDriver(camera));
+                try{exposure.open();}catch(Exception error){throw new IOException("automatic exposure setting failed",error);}
                 event("automatic_exposure_ready",exposure.state());
             }
             registerCameraListeners();
@@ -1097,7 +1099,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     @Override protected void onDestroy(){destroyed=true;close();if(closed&&thread!=null&&pendingReceipts==0)thread.quit();
         if(Thread.getDefaultUncaughtExceptionHandler()==exceptionHandler)Thread.setDefaultUncaughtExceptionHandler(previousExceptionHandler);
         super.onDestroy();exitProductProcess();}
-    @Override public void onBackPressed(){if(!workerActive&&!gate.busy())finish();}
+    @Override public void onBackPressed(){if(!workerActive&&!gate.busy()){
+        if(startupFailure==null&&gate.state()!=PreJpegGate.State.FAILED)setResult(RESULT_OK);
+        finish();
+    }}
     public void surfaceCreated(SurfaceHolder h){open();}public void surfaceChanged(SurfaceHolder h,int f,int w,int height){open();}public void surfaceDestroyed(SurfaceHolder h){close();}
     @Override public boolean dispatchKeyEvent(KeyEvent e){int key=e.getKeyCode(),scan=e.getScanCode();
         if(automaticNativePreview()&&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS||key==772||scan==772||key==774||scan==774)){
