@@ -19,4 +19,4 @@
 - Separate release packaging: debugging disabled, production Activity entries only, no legacy test photos/profiles.
 - GPL-3.0-only original code; third-party assets documented separately.
 
-Verified hardware scope: A6300 firmware 2.01. APK publication is pending clarification of the external Sony memory-configuration asset. See `docs/RELEASE.md` for live release/acceptance status.
+Verified hardware scope: A6300 firmware 2.01. See `docs/RELEASE.md` for public downloads and release/acceptance status.

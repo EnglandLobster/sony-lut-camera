@@ -1,6 +1,6 @@
 # Current status
 
-Updated 2026-10-31. Release candidate **0.9.0-beta.5 / code 96**, Sony A6300 firmware 2.01. The current source and release builds have passed host checks. Beta.5 is installed on the camera with IMG_7554.jpeg as the LUT selector reference; Fuji C200 remains the default. Publication status and the external resource hold are in [RELEASE.md](RELEASE.md).
+Updated 2026-10-31. Release candidate **0.9.0-beta.5 / code 96**, Sony A6300 firmware 2.01. The current source and release builds have passed host checks. Beta.5 is installed on the camera with IMG_7554.jpeg as the LUT selector reference; Fuji C200 remains the default. Public downloads and the release workflow are in [RELEASE.md](RELEASE.md).
 
 ## Preserved product baseline
 
@@ -29,6 +29,6 @@ Host numerical/JPEG tests, Java product tests, exact LUT-cache tests, preview-fi
 - The earlier release-mode installation, library, preview fitting and two physical captures passed on A6300. The user confirmed half-press return and original/graded comparison. Both shots saved separate 6000×4000 EXTRA FINE JPEGs; boot identity stayed unchanged.
 - A first install without any development connector, broader SD-card/library sizes, and other camera models remain unaccepted.
 - Hardware preview color-order/domain calibration  are incomplete. The fitter's reported error is a software-model metric.
-- The maintainer authorized publishing beta.5; downloads are linked in RELEASE.md. The external Sony memory-map redistribution basis remains undocumented and its provenance is retained.
+- The public beta.5 APK and source package are linked in RELEASE.md. Third-party provenance and license facts are retained in ASSET_LICENSES.md.
 
 Raw logs/photos, prior research and installation records are retained locally under ignored `results/` and `HANDOFF.md`; they are not public repository contents.
