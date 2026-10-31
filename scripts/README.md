@@ -9,7 +9,7 @@
 | 测试素材 | `generate_preview_fixture.py` 从中性数学 LUT 生成诊断参数 |
 | 字体维护 | `build_ui_font.py`；正常 APK 构建复用已审查静态字体 |
 | 拟合／性能研究 | `fit_native_preview.py`、`test_native_preview.py`、`benchmark_speed.py`、`create_lut_size_fixtures.py` |
-| 日志与设备状态 | `collect_device.py`、`collect_link_state.py`、`collect_sd.py`、`capture_android_log.py`、`capture_native_terminal.py` |
+| 日志与设备状态 | `analyze_diagnostics.py`（分析用户 REPORT.ZIP）、`collect_device.py`、`collect_link_state.py`、`collect_sd.py`、`capture_android_log.py`、`capture_native_terminal.py` |
 | 拍摄观察 | `observe_continuous.py`、`observe_prejpeg_init.py`、`prejpeg_observation.py`、`test_prejpeg_observation.py` |
 | 已暂停的 GPU／固件探索 | `gpu_lut_fixtures.py`、`emulate_camseq_options.py` |
 | 已暂停的 USB／虚拟机探索 | `inspect_usb_runtime.py`、`usb_debug_host.py`、`usb_service_probe.py`、`parallels_key_input.py`、`pd_event_route_probe.m`、`requirements-pmca.txt` |

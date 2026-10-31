@@ -2,24 +2,24 @@
 
 **让 A6300 在机内完成真正的 3D LUT 调色，拍完直接得到原片和调色 JPEG。** 无需手机、联网或电脑参与出片。支持导入自己的 `.cube`，预装 10 个指定 LUT。
 
-> 当前发行候选：**v0.9.0-beta.5**。实测机型为 **Sony A6300 / 固件 2.01**。完整 LUT 用于成片；流畅取景使用矩阵与 Gamma 近似，半按快门时恢复原色。当前发布状态见 [发行记录](docs/RELEASE.md)。
+> 当前版本：**v0.9.0-beta.6**（公开测试版）。实测机型：**Sony A6300 / 固件 2.01**。A6000 / A7 一代已加入兼容修复并完成离线验证，仍待对应真机实拍验收。支持 PMCA 安装不等于所有机型均已适配。
 
-> 旧机兼容修复候选为 **0.9.0-beta.6-rc.9 / code105**，在 `fix/a7-capture-startup` 分支；公开下载仍为 beta.5。rc.6 已完成 A6300 两张实拍；rc.7 已验证 A6300 设置自动调整与原生 HDR 拦截；rc.8 增加默认滚动日志和 MENU 中的日志包导出。A6000/A7 实拍仍待验收。
+本版新增自动选择最高 JPEG 画质、拍摄设置自动调整与屏幕提示、HDR 冲突提示，以及无需 ADB 的诊断日志导出；修复导出后无法继续上下翻菜单的问题。完整 LUT 用于保存的照片，取景使用原生矩阵/Gamma 近似。[发行说明](docs/RELEASE.md) · [更新记录](CHANGELOG.md)。
 
 ## 上手使用
 
 **第一次安装？先看 [新手安装与使用教程](docs/USER_GUIDE.md)**：Windows/macOS 工具下载、相机 MTP 设置、选择本地 APK、首次拍摄及常见问题。
 
-**[下载 beta.5 安装包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.5/SonyLutCamera-v0.9.0-beta.5.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.5) · 已验证 Sony A6300 / 固件 2.01。
+**[下载 beta.6 安装包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.6/SonyLutCamera-v0.9.0-beta.6.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.6) · 已验证 Sony A6300 / 固件 2.01。
 
-1. 从 [beta.5 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.5) 下载 `SonyLutCamera-v0.9.0-beta.5.apk`。自行编译见 [构建说明](docs/BUILD.md)。
+1. 从 [beta.6 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.6) 下载 `SonyLutCamera-v0.9.0-beta.6.apk`。自行编译见 [构建说明](docs/BUILD.md)。
 2. 用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装 APK。相机使用 MTP USB 模式；详细步骤见 [安装与使用](docs/USER_GUIDE.md)。
 3. 打开相机应用列表中的 **LUT Camera**，选一个 LUT，按中央键进入拍摄。首次打开会把预装 LUT 加入 SD 卡。
 4. 正常半按对焦、全按拍照。相机保留原片 JPEG，并另外保存应用完整 LUT 的 JPEG；成片后半按回到取景。
 
 普通拍摄不需要“测试连接”、ADB、Telnet 或 Wi-Fi。开发连接工具不随发行包提供。
 
-rc.8 起，出问题后可用 **MENU → 导出诊断日志** 生成 SD 卡 `SONYLUT/DIAG/REPORT.ZIP`，把日志包与复现步骤交给开发者。[日志说明](docs/DIAGNOSTICS.md)。
+出问题后可用 **MENU → 导出诊断日志** 生成 SD 卡 `SONYLUT/DIAG/REPORT.ZIP`，把日志包与复现步骤交给开发者。[日志说明](docs/DIAGNOSTICS.md)。
 
 ## LUT 选择
 

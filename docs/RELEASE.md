@@ -1,14 +1,26 @@
-# v0.9.0-beta.5 发行记录
+# v0.9.0-beta.6 发行记录
 
 ## 范围
 
-A6300 机内完整 3D LUT 照片处理，24MP EXTRA FINE、原片与调色 JPEG 分别保存；预装 10 个维护者指定 LUT，默认 Fuji C200。无需手机或联网计算。取景是原生矩阵/Gamma 近似，不宣称实时完整 3D LUT 视频。
+A6300 机内完整 3D LUT 照片处理，24MP、机型支持的最高 JPEG 档位、原片与调色 JPEG 分别保存；预装 10 个维护者指定 LUT，默认 Fuji C200。无需手机或联网计算。取景是原生矩阵/Gamma 近似，不宣称实时完整 3D LUT 视频。
 
 发行构建关闭 `debuggable` 和备份，仅注册 LUT 库、拍摄、相册三个 Activity。开发诊断 Activity、测试 JPEG、合成测试 LUT 和旧拟合样例不进入发行 APK；生产拍摄基类及原生处理链保留。
 
 ## 发布状态
 
-[下载 v0.9.0-beta.5](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.5)（code96，GitHub 预发行版）。
+[下载 v0.9.0-beta.6](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.6)（code106，GitHub 公开预发行版）。
+
+[APK 直链](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.6/SonyLutCamera-v0.9.0-beta.6.apk) · [安装教程](USER_GUIDE.md) · [诊断日志](DIAGNOSTICS.md)
+
+### 相比 beta.5 的更新
+
+- 修复旧机 Surface 就绪判断、保存通知接口和原生内存属性差异；A6000/A7 一代仍待对应真机实拍验收。
+- 按实际能力选择 EXTRA FINE / FINE / STANDARD，显示真实档位并在退出时恢复。
+- 自动调整 RAW、连拍、尺寸、曝光模式并显示说明；HDR 冲突保留清楚的错误页和返回路径。
+- 默认滚动诊断日志，可从更多菜单导出 REPORT.ZIP；不需要调试工具，不包含照片与 LUT 文件，不自动上传。
+- 导出成功后保留原菜单位置，上下键正常跨页。
+
+A6300 / 2.01 是完成实机验证的机型。普通 PMCA 安装教程与同签名覆盖升级流程已同步更新。旧 beta.5 继续保留。
 
 - 原始代码许可：维护者选择 GPL-3.0-only。
 - Sony 内存配置表：APK 使用的 1,860 字节 `MAP24R1.BIN` 来自 `dependencies.lock.json` 固定的 Sony-PictureEffectPlus 版本；上游没有许可文件，尚未确认该表的公开再分发依据。该来源信息保留在资源许可说明中，不将该资源声明为本项目 GPL 授权内容。源码不包含这份外部二进制。
@@ -36,3 +48,8 @@ A6300 机内完整 3D LUT 照片处理，24MP EXTRA FINE、原片与调色 JPEG 
 2026-10-31 beta.4/code95：移除预装数学示例，默认改为 Fuji C200。Java 产品及升级清理测试、精确 LUT 缓存测试、10 项目录校验、release 构建和源码/APK 资源检查通过。已安装 A6300；启动时恰好清理旧两项及源缓存，库从 19 项变为 17 项，其余条目的摘要和元数据逐项一致。全部 10 项预装 LUT 可用，默认选中 Fuji C200，启动标识未变。本轮未新增实拍。诊断和缓存测试用数学 LUT 由脚本生成，不再依赖产品预装资源。
 
 2026-10-31 beta.5/code96：选择页参考图替换为用户指定的 IMG_7554.jpeg，校正方向并转换为 216×288 sRGB 缩略图，保留完整竖构图并去除 EXIF。10 个 LUT 的主机出图与 release 包检查通过；已安装相机，截图确认新图显示正常，库仍为 17 项，启动标识未变。
+
+
+2026-11-01 beta.6/code106：发布旧机兼容修复、最高 JPEG 档位自适应、设置说明、HDR 拦截、滚动日志导出与菜单导航修复。最终发行 APK SHA-256：`f52647f3ed506372386f94a4220fd150b34773fa169145c8d53b11ecd5c2d342`。签名证书与 rc.9 相同，DEX、原生库及资源共 26 项与已测 rc.9 逐项一致，仅 AndroidManifest 版本字段和签名元数据变化。
+
+最终 APK 已在 A6300 / 2.01 覆盖安装，完成 LUT 库与拍摄页启动、导出、上下跨页、返回及设置恢复检查；没有新增实体快门拍摄。实体快门两张验收来自 rc.6，设置/HDR 来自 rc.7，日志与导航来自 rc.8–rc.9，详见对应测试记录。A6000/A7 的实际拍摄仍待验收。主机/接口/资源检查沿用同一实现的有效结果，最终发行构建和包审计通过。

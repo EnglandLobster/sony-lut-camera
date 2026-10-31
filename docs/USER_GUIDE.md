@@ -1,9 +1,9 @@
 # LUT Camera 新手安装与使用教程
 
-适用：**Sony A6300 / 固件 2.01**；当前应用版本 **0.9.0-beta.5**。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
+适用：**Sony A6300 / 固件 2.01**；当前应用版本 **0.9.0-beta.6**。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
 
-> **[直接下载 LUT Camera beta.5 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.5/SonyLutCamera-v0.9.0-beta.5.apk)**
-> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.5) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
+> **[直接下载 LUT Camera beta.6 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.6/SonyLutCamera-v0.9.0-beta.6.apk)**
+> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.6) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
 
 **操作路线：准备 APK 和安装工具 → 相机设为 MTP → 连接电脑 → 选择本地 APK 安装 → 相机里打开 LUT Camera。**
 
@@ -12,7 +12,7 @@
 - [macOS 安装工具](#三macos-准备安装工具)
 - [连接、安装与成功确认](#四连接相机并安装)
 - [第一次拍摄](#第一次拍摄) · [导入自己的 LUT](#导入自己的-lut)
-- [常见问题](#常见问题) · [覆盖更新](#覆盖更新)
+- [常见问题](#常见问题) · [覆盖更新](#覆盖更新) · [导出故障日志](#出问题后导出日志)
 
 ## 一、准备东西与相机设置
 
@@ -89,14 +89,14 @@ Windows 与 macOS 打开 PMCA 后，按钮名称相同：
 Windows PowerShell：
 
 ```powershell
-.\pmca-console-v0.18-win.exe install -f ".\SonyLutCamera-v0.9.0-beta.5.apk"
+.\pmca-console-v0.18-win.exe install -f ".\SonyLutCamera-v0.9.0-beta.6.apk"
 ```
 
 macOS 终端：
 
 ```sh
 chmod +x ./pmca-console-v0.18-osx
-./pmca-console-v0.18-osx install -f "./SonyLutCamera-v0.9.0-beta.5.apk"
+./pmca-console-v0.18-osx install -f "./SonyLutCamera-v0.9.0-beta.6.apk"
 ```
 
 如果使用 PMCA 的 Python 源码，则先按其 README 安装 Python 3 和 `requirements.txt` 里的依赖，再执行 `python3 pmca-console.py install -f "安装包完整路径"`。这不是新手图形安装路径的必需步骤。
@@ -107,9 +107,11 @@ chmod +x ./pmca-console-v0.18-osx
 
 首次打开自动加入 10 个指定 LUT，默认选择 Fuji C200，可能需要等待数秒；后续打开复用已有资源。升级时自动移除旧的两项数学示例，保留其他导入项和有效选择。上下键／拨轮选 LUT，右侧参考照片显示对应效果，中央键进入拍摄。
 
+进入拍摄时，应用会自动设置单张、JPEG、3:2 / L（24M）、P 自动曝光及机型支持的最高 JPEG 画质；发生调整时会显示具体内容，退出拍摄后恢复原设置。若提示 HDR 冲突，请先退出应用，在相机菜单关闭自动 HDR／HDR 绘画后重试。
+
 应用为所选 LUT 自动生成近似取景参数。出现差异提示时，选「继续使用近似预览」或「使用原色取景拍摄」；这项选择不改变最终完整 LUT 调色。
 
-半按完成对焦，再全按拍摄。半按时暂时显示原色属于当前设计，用于隔离预览参数与成片。等待保存完成后查看成片，半按返回取景。应用保留两张 24MP JPEG，分别为原片与调色成片。兼容候选版会选择机型支持的最高 JPEG 档位，并在取景信息栏显示：支持时为 EXTRA FINE；像反馈中只提供 50/25 的 A6000 则为 FINE，不需要寻找机身并不存在的额外精细选项。
+半按完成对焦，再全按拍摄。半按时暂时显示原色属于当前设计，用于隔离预览参数与成片。等待保存完成后查看成片，半按返回取景。应用保留两张 24MP JPEG，分别为原片与调色成片。本版会选择机型支持的最高 JPEG 档位，并在取景信息栏显示：支持时为 EXTRA FINE；像反馈中只提供 50/25 的 A6000 则为 FINE，不需要寻找机身并不存在的额外精细选项。
 
 左右键／拨轮调整亮度（曝光补偿），中央键归零；DISP 切换信息显示。
 
@@ -145,7 +147,7 @@ chmod +x ./pmca-console-v0.18-osx
 
 | 遇到的问题 | 按这个顺序检查 |
 | --- | --- |
-| Releases 页面只有源码、找不到 APK | 打开本页顶部的 beta.5 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
+| Releases 页面只有源码、找不到 APK | 打开本页顶部的 beta.6 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
 | PMCA 没有找到相机 | 确认相机已开机 → 拔线后确认 USB 连接是 MTP → 换支持数据的线 → 直连电脑 USB 口 → 退出占用相机的程序 → 重新点击 Get camera info。 |
 | 插线后相机菜单不能操作 | 先拔 USB 线，设置 MTP 后再连接。 |
 | Finder 中没有出现 SD 卡盘符 | MTP 不是普通 U 盘模式；以 PMCA 能否读取相机信息为准。复制 LUT 或照片时可以使用读卡器。 |
@@ -156,6 +158,10 @@ chmod +x ./pmca-console-v0.18-osx
 | 安装完成但找不到应用 | 先断开 USB，再进入相机的应用程序列表；若仍没有，检查 PMCA 日志是否真正完成安装。 |
 | 首次打开较慢 | 正在向 SD 卡导入预装 LUT。等列表出现再操作；若出现错误，记录文字并检查 SD 卡空间和可写性。 |
 | 导入页找不到自己的 LUT | 检查它直接位于 SD 根目录 `LUTS/`，扩展名为 `.cube` / `.cub`，不是未解压的 ZIP 或子目录。 |
+| 屏幕提示“请先关闭 HDR” | MENU 返回，再退出应用；在相机菜单关闭自动 HDR／HDR 绘画后重新进入。 |
+| 找不到 EXTRA FINE / 额外精细 | 不必强行设置。应用按固件能力选择最高 JPEG 档位，取景栏会显示实际使用的画质。 |
+| 卡在准备拍摄、启动失败或意外退出 | 保留报错内容；重开应用后用 MENU → 导出诊断日志，将 REPORT.ZIP 和复现步骤发到 Issues。 |
+| 导出日志后想回到菜单第一页 | 导出成功后仍在更多菜单，连续按上键即可跨页；MENU 直接返回 LUT 库。 |
 | 取景颜色与成片不同 | 取景为矩阵/Gamma 近似；成片按完整 LUT 计算。可在更多菜单切换当前 LUT 的取景方式。 |
 
 仍有问题时，在 [Issues](https://github.com/EnglandLobster/sony-lut-camera/issues) 提供：相机型号和固件、Windows/macOS 版本（Mac 也注明 Intel / Apple 芯片）、PMCA 版本、LUT Camera 版本、出错步骤和完整报错。日志中的相机序列号等个人信息可先遮盖。
@@ -166,6 +172,6 @@ chmod +x ./pmca-console-v0.18-osx
 
 LUT Camera 已在 A6300 / 固件 2.01 完成安装、启动及实拍验证；本次教程更新未重新执行 Windows/macOS 各版本的全新 MTP 安装验收。图中为实际机内界面，PMCA 操作表为文字指引。
 
-## 出问题后导出日志（rc.8 起）
+## 出问题后导出日志
 
-重新打开 LUT Camera，在 LUT 库按 **MENU → 导出诊断日志**。导出完成后，用读卡器取出 SD 卡中的 **`SONYLUT/DIAG/REPORT.ZIP`**，连同屏幕现象和出错前的操作交给开发者。无需开启“测试连接”，日志包不包含照片或 LUT 文件。若应用无法打开，可先提供 `SONYLUT/DIAG/LOGS/` 文件夹。详见 [故障日志说明](DIAGNOSTICS.md)。此功能属于 rc.8 候选，公开 beta.5 不含该入口。
+重新打开 LUT Camera，在 LUT 库按 **MENU → 导出诊断日志**。导出完成后，用读卡器取出 SD 卡中的 **`SONYLUT/DIAG/REPORT.ZIP`**，连同屏幕现象和出错前的操作交给开发者。无需开启“测试连接”，日志包不包含照片或 LUT 文件。若应用无法打开，可先提供 `SONYLUT/DIAG/LOGS/` 文件夹。详见 [故障日志说明](DIAGNOSTICS.md)。导出成功后仍在“更多”菜单，上下键可继续跨页浏览，MENU 返回 LUT 库。
