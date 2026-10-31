@@ -1,6 +1,6 @@
 # Current status
 
-2026-11-01 UI candidate **0.9.0-beta.6-rc.9 / code105** keeps export in the More menu. Export success preserves the selected menu item, so Up/Down can cross back to the first page. A6300 (7 menu items) and API10 emulator (6 items) passed export → Up to first item → Down to export → MENU back to library. The previous symptom was a two-item diagnostics subpage, not lost key events. A6300 now has rc.9 installed.
+2026-11-01 UI candidate **0.9.0-beta.6-rc.9 / code105** keeps export in the More menu. Export success preserves the selected menu item, so Up/Down can cross back to the first page. A6300 (7 menu items) passed export → Up to first item → Down to export → MENU back to library. API10 (6 items) passed export and Up to the first item; its remaining checks were interrupted by ADB transport timeouts. The previous symptom was a two-item diagnostics subpage, not lost key events. A6300 now has rc.9 installed.
 
 2026-11-01 diagnostics candidate: **0.9.0-beta.6-rc.8 / code104** adds bounded private/SD event journals, retained previous capture attempts, Java failure reporting and verified ZIP export from the normal menu. Host failure/rotation tests and API10 restart/forced capture-process interruption/export passed. A6300 firmware 2.01 passed startup and two consecutive on-device exports, including Sony SD exclusive-reader handling; settings were restored and the camera was left in the LUT library. No new exposure was taken for this logging change. See [diagnostics](DIAGNOSTICS.md). Public Release remains beta.5.
 
