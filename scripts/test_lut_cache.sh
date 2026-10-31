@@ -4,6 +4,10 @@ cd "$(dirname "$0")/.."
 mkdir -p out/lut-cache-tests
 python3 - <<'PY'
 from pathlib import Path
+import sys
+sys.path.insert(0, 'scripts')
+from create_lut_size_fixtures import write_lut
+write_lut(Path('out/lut-cache-tests/COLOR33.CUB'), 33)
 p=Path('out/lut-cache-tests/GRID65.CUB')
 with p.open('w') as f:
     f.write('LUT_3D_SIZE 65\nDOMAIN_MIN -0.2 0.1 0\nDOMAIN_MAX 1.2 0.9 1\n')
@@ -19,4 +23,4 @@ if [[ "${SANITIZE:-0}" == 1 ]]; then
   flags+=(-isysroot "$(xcrun --show-sdk-path)" -fsanitize=address,undefined -fno-omit-frame-pointer)
 fi
 "$compiler" "${flags[@]}" native/core.cpp native/lut_cache.cpp native/lut_cache_tests.cpp -o out/lut-cache-tests/run
-out/lut-cache-tests/run out/lut-cache-tests out/tests/ID33.CUB out/tests/DOMAIN.CUB out/tests/COLOR17.CUB out/lut-cache-tests/GRID65.CUB android-assets/COLOR33.CUB
+out/lut-cache-tests/run out/lut-cache-tests out/tests/ID33.CUB out/tests/DOMAIN.CUB out/tests/COLOR17.CUB out/lut-cache-tests/GRID65.CUB out/lut-cache-tests/COLOR33.CUB

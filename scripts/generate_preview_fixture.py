@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate an identity preview fixture from the project's mathematical LUT."""
+"""Generate a mathematical identity preview fixture, independent of product LUTs."""
 import hashlib
 import json
 from pathlib import Path
@@ -9,7 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def generate(destination):
     destination.mkdir(parents=True, exist_ok=True)
-    digest = hashlib.sha256((ROOT / 'android-assets/IDENT33.CUB').read_bytes()).hexdigest()
+    identity = 'LUT_3D_SIZE 33\n' + ''.join(
+        f'{r/32:.10f} {g/32:.10f} {b/32:.10f}\n'
+        for b in range(33) for g in range(33) for r in range(33))
+    digest = hashlib.sha256(identity.encode('ascii')).hexdigest()
     profile = 'SONY_PREVIEW_V1\n' + digest + '\nmatrix_gamma\n'
     profile += '1024 0 0 0 1024 0 0 0 1024\n'
     profile += ' '.join(str(i) for i in range(1024)) + '\n'

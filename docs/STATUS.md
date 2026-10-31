@@ -1,10 +1,10 @@
 # Current status
 
-Updated 2026-10-31. Release candidate **0.9.0-beta.3 / code 94**, Sony A6300 firmware 2.01. The current source and release builds have passed host checks; 0.9.0-beta.3 with the expanded LUT catalog is installed on the camera. Publication status and the external resource hold are in [RELEASE.md](RELEASE.md).
+Updated 2026-10-31. Release candidate **0.9.0-beta.4 / code 95**, Sony A6300 firmware 2.01. The current source and release builds have passed host checks. Beta.4 is installed on the camera: the two sample entries are removed and Fuji C200 is the default. Publication status and the external resource hold are in [RELEASE.md](RELEASE.md).
 
 ## Preserved product baseline
 
-- Full CUBE processing, 6000×4000 EXTRA FINE and separate original/graded JPEGs were tested on A6300. Built-in examples and user 33³ LUTs retain the full grid.
+- Full CUBE processing, 6000×4000 EXTRA FINE and separate original/graded JPEGs were tested on A6300. Bundled and imported LUTs retain their full grids.
 - Automatic preview fitting and recovery were physically exercised with imported LUTs. Preview uses native matrix/Gamma approximation; half-press restores the baseline before capture.
 - The user confirmed the 0.8.19 display-banding repair: Sony OSD output is ABGR8888 during app display, restored on pause. Saved photographs were unchanged.
 - 0.8.20–0.8.22 were installed and the library and photographic preview were visually checked. The enlarged reference preserves full portrait composition.
@@ -14,11 +14,13 @@ Updated 2026-10-31. Release candidate **0.9.0-beta.3 / code 94**, Sony A6300 fir
 
 The release APK builds successfully, disables debugging and exposes only the three product Activities. Diagnostics, synthetic test JPEG/LUT payloads and legacy preview profiles are excluded. The complete capture base class remains; production native libraries, memory configuration and photo quality settings are unchanged.
 
-Independent source-export builds were checked for the existing toolchain. The current candidate passes both debug and release builds, product/preview-fit tests and source/APK resource-boundary checks. Production native libraries and memory-map bytes match the previously installed build. The catalog now also includes ten maintainer-selected LUTs, preserving seven 25³ and three 33³ source grids; the original two mathematical examples and default remain.
+Independent source-export builds were checked for the existing toolchain. The previous baseline passed debug/release builds and preview-fit tests. Beta.4 passes the release build, product and upgrade-migration tests, exact LUT-cache tests and source/APK resource-boundary checks. Production native libraries and memory-map bytes match the previously installed build. The catalog contains only ten maintainer-selected LUTs, preserving seven 25³ and three 33³ source grids. Fuji C200 is the default. Upgrade migration removes only the two former mathematical samples by exact content identity and cleans their caches; other imports and valid selections remain.
 
 Host numerical/JPEG tests, Java product tests, exact LUT-cache tests, preview-fit tests, catalog/hash validation and APK API10/DEX035/ARM/v1 checks pass. The source history audit found no tracked APKs, signing keys, saved Wi-Fi profiles, firmware dumps or private device captures. The explicitly bundled preview thumbnail and attributed LUTs remain.
 
 ## Device acceptance and remaining scope
+
+- 2026-10-31 beta.4/code95: upgrade removed exactly the two sample content IDs and their source caches. All other library IDs and metadata stayed unchanged (19 → 17 entries); all ten bundled LUTs remain available. Startup completed with Fuji C200 selected, and the boot identity stayed unchanged. No new shutter capture was performed.
 
 - 2026-10-31: updated A6300 from beta.2 to beta.3 / code 94 while the development connector was foregrounded. Startup imported the new catalog successfully: all 12 bundled SHA-256 identities and grid sizes are present, with 19 total library entries including existing imports. Library startup completed and the boot identity stayed unchanged. No new shutter capture was performed for this resource update.
 

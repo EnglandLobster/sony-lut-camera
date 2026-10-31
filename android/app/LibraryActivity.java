@@ -47,9 +47,10 @@ public final class LibraryActivity extends Activity {
         previewRequests.next();previewId="";if(page!=null)page.preview=null;if(previews!=null){previews.clear();previews=null;}
         mode="loading";runTask("正在打开 LUT 库",new Task(){public void run()throws Exception{
             previews=new LutPreview(LibraryActivity.this);library=new LutLibrary(ProductFiles.library());catalog=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory());
-            String example=null;
-            for(BuiltinLuts.Entry entry:BuiltinLuts.read(getAssets().open("CATALOG.JSN"))){String id=installBuiltin(entry);if(entry.selected)example=id;}
-            selectedId=library.selectedId();if(library.find(selectedId)==null)selectedId=example;luts=library.entries();
+            library.retireBuiltinSamples(ProductFiles.builtins());
+            String defaultId=null;
+            for(BuiltinLuts.Entry entry:BuiltinLuts.read(getAssets().open("CATALOG.JSN"))){String id=installBuiltin(entry);if(entry.selected)defaultId=id;}
+            selectedId=library.selectedId();if(library.find(selectedId)==null)selectedId=defaultId;luts=library.entries();
         }},new Runnable(){public void run(){mode="library";selection=indexOf(selectedId);render();requestPreview();}});
     }
     private String installBuiltin(BuiltinLuts.Entry item)throws Exception{

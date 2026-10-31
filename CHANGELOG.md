@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0-beta.4 — curated LUT library
+
+- Preload the ten selected Fuji, Ilford, Kodak and Ricoh LUTs; default to Fuji C200.
+- Remove the example and identity entries from the product; upgrades retire their exact content identities and caches while preserving other imports and valid selections.
+- Generate mathematical test fixtures independently of the product catalog.
+
 ## 0.9.0-beta.3 — first release candidate
 
 - Camera-side full 3D LUT processing before JPEG encoding; separate original/graded 24MP EXTRA FINE files.

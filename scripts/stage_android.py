@@ -31,7 +31,6 @@ def stage(variant):
         for name in ['ID33.CUB', 'COLOR17.CUB']:
             shutil.copyfile(ROOT / 'out/tests' / name, assets / name)
         shutil.copyfile(ROOT / 'out/tests/IN6000.JPG', assets / 'TEST24.JPG')
-        shutil.copyfile(ROOT / 'android-assets/COLOR33.CUB', assets / 'COLOR33.CUB')
     ET.register_namespace('android', ANDROID[1:-1])
     tree = ET.parse(ROOT / 'android/AndroidManifest.xml')
     app = tree.getroot().find('application')

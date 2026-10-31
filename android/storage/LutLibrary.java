@@ -90,6 +90,34 @@ final class LutLibrary {
         if(id==null||!id.matches("[0-9a-f]{64}"))return null;
         for(Entry entry:entries())if(entry.id.equals(id))return entry;return null;
     }
+    private static boolean retiredSample(String id) {
+        return "06ceaf85781931e6e1d54007d148435a367a579375aeb2de3f881daca9abc743".equals(id)
+            || "a3ea0238d24b77daa43745137696aa81dffe3f1d5b44e9cb87f4e1c5d85e7f6a".equals(id);
+    }
+    /** Retire only the two former mathematical samples, including on upgrades.
+     * Rename the commit marker first so interrupted cleanup cannot expose a
+     * partial entry; retain the retirement marker until cleanup can be retried. */
+    synchronized void retireBuiltinSamples(File builtinCache)throws IOException {
+        File[] dirs=root.listFiles();if(dirs==null)throw new IOException("无法读取 LUT 库");
+        for(File dir:dirs){
+            dir=dir.getCanonicalFile();
+            if(!dir.getName().matches("L[0-9A-F]{7}")||!root.equals(dir.getParentFile()))continue;
+            File marker=new File(dir,"RETIRED.DAT"),meta=new File(dir,"ENTRY.DAT");
+            if(marker.isFile()){
+                if(!retiredSample(readProperties(marker).getProperty("id")))continue;
+            }else{
+                Entry entry=read(dir);if(entry==null||!retiredSample(entry.id))continue;
+                if(!meta.renameTo(marker))throw new IOException("无法移除旧示例 LUT");
+            }
+            File[] files=dir.listFiles();if(files==null)throw new IOException("无法清理旧示例 LUT");
+            for(File file:files)if(!file.equals(marker)&&!file.delete())throw new IOException("无法清理旧示例 LUT");
+            if(!marker.delete()||!dir.delete())throw new IOException("无法清理旧示例 LUT");
+        }
+        for(String name:new String[]{"COLOR33.CUB","IDENT33.CUB"}){
+            File file=new File(builtinCache,name);
+            if(file.exists()&&!file.delete())throw new IOException("无法清理旧示例 LUT 源缓存");
+        }
+    }
     private Entry read(File directory)throws IOException {
         directory=directory.getCanonicalFile();
         if(!directory.getName().matches("L[0-9A-F]{7}")||!root.equals(directory.getParentFile()))return null;
