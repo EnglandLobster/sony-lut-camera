@@ -14,5 +14,85 @@
     "grid": 33,
     "default": false,
     "sha256": "a3ea0238d24b77daa43745137696aa81dffe3f1d5b44e9cb87f4e1c5d85e7f6a"
+  },
+  {
+    "asset": "FJC200.CUB",
+    "name": "Fuji C200",
+    "source": "用户指定 · 预装",
+    "grid": 25,
+    "default": false,
+    "sha256": "af3f3f894ba7d050a9425319d6a8338cf43e51af6727880f060c317c5368a0f1"
+  },
+  {
+    "asset": "FJ400H.CUB",
+    "name": "Fuji Pro 400H",
+    "source": "用户指定 · 预装",
+    "grid": 25,
+    "default": false,
+    "sha256": "e293f19bc746612f3cf17db979e9234d5c19784606bb4dc3541df8c83bded821"
+  },
+  {
+    "asset": "FJPROV.CUB",
+    "name": "Fuji Provia 100F",
+    "source": "用户指定 · 预装",
+    "grid": 25,
+    "default": false,
+    "sha256": "80928b16687afe5d36d88c050dd272a58617a803978245fe3150a63e00eea202"
+  },
+  {
+    "asset": "ILDEL400.CUB",
+    "name": "Ilford Delta 400",
+    "source": "用户指定 · 预装",
+    "grid": 25,
+    "default": false,
+    "sha256": "9ccfbd2b30600dd2aaa8d8866c63c1ccfe29317de545b37dcbf32e14c4389bc0"
+  },
+  {
+    "asset": "KDPOR400.CUB",
+    "name": "Kodak Portra400",
+    "source": "用户指定 · 预装",
+    "grid": 25,
+    "default": false,
+    "sha256": "bcb7adfa5a6e07d0ddebb5376143c46dcc54a8dc08e4e5f5ccde3cef1af9d35c"
+  },
+  {
+    "asset": "KDULT400.CUB",
+    "name": "Kodak Ultramax400",
+    "source": "用户指定 · 预装",
+    "grid": 25,
+    "default": false,
+    "sha256": "5f1001062e0e3ac72964f6bf125bef2f59637fb2038c09e5e0448bc1c46f396c"
+  },
+  {
+    "asset": "KD5207.CUB",
+    "name": "Kodak5207",
+    "source": "用户指定 · 预装",
+    "grid": 25,
+    "default": false,
+    "sha256": "be3e40a3a73dc7c0075e22ffac714a02cb0b67213aa716dfecfbfa943489e956"
+  },
+  {
+    "asset": "GR3XNEG.CUB",
+    "name": "Ricoh GR3X NEG",
+    "source": "用户指定 · 预装",
+    "grid": 33,
+    "default": false,
+    "sha256": "a1dbe678abd2964a9ec0741dd49b4c7d7c19936852f3173255d9aeae83b9914f"
+  },
+  {
+    "asset": "GR3XPOS.CUB",
+    "name": "Ricoh GR3X POSI",
+    "source": "用户指定 · 预装",
+    "grid": 33,
+    "default": false,
+    "sha256": "e9ee0a1ddaac6eb832291a2cf82e90836c1e483f52c7f840de6ae0c094ea6e62"
+  },
+  {
+    "asset": "GR4CINE.CUB",
+    "name": "Ricoh GR4 CinemaGreen",
+    "source": "用户指定 · 预装",
+    "grid": 33,
+    "default": false,
+    "sha256": "957b7f4927ef68cdd626ffee76473246d6a9f999c9fa267cc17b224e0b1847f2"
   }
 ]
