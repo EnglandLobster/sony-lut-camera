@@ -54,7 +54,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private Object cameraEx,sequence,filter;private Camera camera;
     private Class<?> cameraType,sequenceType,rawType,imageType;
     private volatile boolean active,prepared,workerActive,destroyed;
-    private boolean opening,closed,initOnly;private String phase,mapPath,initStage,mapRevision;private File run,sd;
+    private boolean opening,initOnly,preparePending;private volatile boolean closed;private String phase,mapPath,initStage,mapRevision;private File run,sd;
     private boolean normalizeZoom,continuous,verifyPayloads,overlapOriginal,sourceReferenceEnabled,alternateOverlap,overlapThisShot;
     // Store notifications queue on the same worker as grading. The original
     // remains the sole pending store until confirmed, even with overlap enabled.
@@ -279,7 +279,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             status=new TextView(this);status.setText("单次测试已结束或缺少测试标识。\n正常拍照请打开 LUT Camera。");setContentView(status);return;
         }
         createPage();
-        work.post(new Runnable(){public void run(){prepare();}});
+        // Display setup runs in onResume. Do not start allocating capture
+        // resources until that prerequisite has succeeded.
+        preparePending=true;
     }
     private void createPage(){
         SurfaceView surface=new SurfaceView(this);holder=surface.getHolder();holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);holder.addCallback(this);
@@ -310,7 +312,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }});
     }catch(Throwable e){failure("review_file",e);}
     }
-    private void prepare(){try{
+    private void prepare(){if(closed||destroyed)return;try{
         sd=Environment.getExternalStorageDirectory();run=RunFiles.create(sd);event("prepare","phase="+phase+" init_only="+initOnly+" init_stage="+initStage+" run="+run+" pid="+android.os.Process.myPid()+" fresh_session="+getIntent().getBooleanExtra("fresh_session",false)+" continuous="+continuous+" verify_payloads="+verifyPayloads+" overlap_original="+overlapOriginal+" source_reference="+sourceReferenceEnabled+" probe_token="+getIntent().getStringExtra("probe_token"));
         if(!initOnly)photoFiles=new PhotoFiles(sd,"handoff".equals(phase)?PhotoFiles.Format.ARW:PhotoFiles.Format.JPEG);
         Class<?> props=Class.forName("com.sony.scalar.sysutil.ScalarProperties");Method get=props.getMethod("getString",String.class);
@@ -1056,6 +1058,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }
         if(productUi())SonyAppPolicy.register(this);
         if(review!=null)try{review.startDisplayTracking();}catch(Exception e){failure("display_geometry",e);close();return;}
+        if(preparePending){preparePending=false;work.post(new Runnable(){public void run(){prepare();}});}
         open();
     }
     @Override protected void onPause(){active=false;ui.removeCallbacks(hideReviewStatus);ui.removeCallbacks(processingTick);ui.removeCallbacks(restoreGraphics);if(review!=null)review.stopDisplayTracking();close();super.onPause();}

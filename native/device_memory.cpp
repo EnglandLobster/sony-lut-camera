@@ -15,6 +15,7 @@
 #include <cerrno>
 #include <memory>
 #include "uyvy.hpp"
+#include "device_memory_span.hpp"
 namespace {
 void* library(){static void* lib=dlopen("libcameraseq.so",RTLD_NOW);if(!lib)throw std::runtime_error("libcameraseq unavailable");return lib;}
 template<class T>T symbol(const char* name){void* p=dlsym(library(),name);if(!p)throw std::runtime_error("required device-memory symbol unavailable");return reinterpret_cast<T>(p);}
@@ -33,7 +34,8 @@ public:
     void* data=nullptr;unsigned size=0;
     explicit Mapping(void* m){
         unsigned address=0;
-        if(!symbol<int(*)(void*,unsigned*,unsigned*)>("_ZN6scalar18DeviceMemoryDiadem21getPhysicalMemoryInfoERjS1_")(m,&address,&size)||!size||size>128U*1024*1024)throw std::runtime_error("invalid image memory span");
+        sl::PhysicalMemoryInfo modern=reinterpret_cast<sl::PhysicalMemoryInfo>(dlsym(library(),"_ZN6scalar18DeviceMemoryDiadem21getPhysicalMemoryInfoERjS1_"));
+        sl::imageMemorySpan(m,modern,symbol<sl::MemoryProperty>("_ZN6scalar18DeviceMemoryDiadem11getPropertyEPKc"),address,size);
         util=symbol<void*(*)()>("_ZN6scalar13CameraSeqUtil11getInstanceEv")();
         unmap=symbol<Unmap>("_ZN6scalar13CameraSeqUtil17unmapSharedMemoryEPvji");
         if(!symbol<int(*)(void*,unsigned,unsigned,void**,void**,unsigned*,int*)>("_ZN6scalar13CameraSeqUtil15mapSharedMemoryEjjPPvS2_PjPi")(util,address,size,&data,&base,&mapped,&fd))throw std::runtime_error("Sony image mapping failed");

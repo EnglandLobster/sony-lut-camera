@@ -142,7 +142,7 @@ final class PhotoHud extends View {
                         }
                     }
                 }else text(c,fit(progress,w-72,19),36,244,19,CameraPage.ACCENT);
-                text(c,fit(name,w-72,17),36,286,17,CameraPage.MUTED);
+                if(!mode.equals("error"))text(c,fit(name,w-72,17),36,286,17,CameraPage.MUTED);
                 text(c,fit(footer,w-72,17),36,443,17,CameraPage.MUTED);
             }
         }else if(mode.equals("live")){ 
