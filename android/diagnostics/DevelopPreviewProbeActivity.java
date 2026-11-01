@@ -27,7 +27,9 @@ public final class DevelopPreviewProbeActivity extends Activity {
     private void test(){
         DevelopingPreview render=new DevelopingPreview();Bitmap target=null;
         try{
-            InputStream in=getAssets().open("PREVIEW.JPG");try{fixture=BitmapFactory.decodeStream(in);}finally{in.close();}
+            fixture=Bitmap.createBitmap(12,8,Bitmap.Config.ARGB_8888);
+            for(int y=0;y<8;y++)for(int x=0;x<12;x++)
+                fixture.setPixel(x,y,0xff000000|((x*255/11)<<16)|((y*255/7)<<8)|((x+y)*255/18));
             long begin=SystemClock.elapsedRealtime();
             DevelopingPreview.Source source=DevelopingPreview.createSource(fixture);
             long copyMs=SystemClock.elapsedRealtime()-begin;
@@ -59,6 +61,8 @@ public final class DevelopPreviewProbeActivity extends Activity {
             DevelopingPreview.Source stale=DevelopingPreview.createSource(fixture);Bitmap staleBitmap=stale.positive;
             check(!render.source(0,stale,3000)&&staleBitmap.isRecycled(),"stale source released");
             render.end();check(graded.isRecycled()&&negative.isRecycled()&&composite.isRecycled()&&!fixture.isRecycled(),"close releases only owned buffers");
+            render.end();source.release();
+            check(!render.hasSource()&&render.bytes()==0&&source.compositeCanvas==null,"repeat close clears drawing resources");
             Bitmap late=DevelopingPreview.thumbnail(fixture);check(!render.graded(1,late,3000)&&late.isRecycled(),"late graded rejected");
             android.util.Log.i("DevelopProbe","PASS camera_opened=false ownership=true copy_ms="+copyMs+" frames=32 cpu_ms="+(cpuNs/1000000.0)
                     +" wall_ms="+(wallNs/1000000.0)+" max_frame_ms="+(max/1000000.0)+" bytes=720000 files="+dir);
@@ -70,7 +74,7 @@ public final class DevelopPreviewProbeActivity extends Activity {
                     hud.gradedDeveloping(1,DevelopingPreview.thumbnail(fixture));
                 }}},2000);
                 ui.postDelayed(new Runnable(){public void run(){if(!stopped){
-                    ui.removeCallbacks(tick);hud.endDeveloping();hud.mode="loading";hud.detail="显影绘制测试完成";hud.update();
+                    ui.removeCallbacks(tick);hud.endDeveloping();hud.endDeveloping();hud.mode="loading";hud.detail="显影绘制测试完成";hud.update();
                 }}},4000);
             }
         }catch(Throwable e){android.util.Log.e("DevelopProbe","FAIL",e);if(!stopped){hud.mode="error";hud.detail="显影绘制测试失败";hud.update();}}
