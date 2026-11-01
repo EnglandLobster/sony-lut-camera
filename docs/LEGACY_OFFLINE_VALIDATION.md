@@ -1,5 +1,19 @@
 # A6000 / A7 一代离线验证（2026-10-31）
 
+## A5100 显影动画清理（PR #2 作者的 rc.1 / rc.2 历史记录）
+
+以下是 [latteye 的 PR #2](https://github.com/EnglandLobster/sony-lut-camera/pull/2) 提供的原候选验证记录。这里的 rc.1/rc.2 和开发签名属于作者分支。2026-11-02 整合后的 rc.4 使用维护者原发行签名，已补跑 API10 真实图形与整包回归，见 [审查与整合记录](compatibility/PR2_A5100_REVIEW.md)。
+
+A5100 / Android 2.3.7 的已采集异常栈指向 `DevelopingPreview.Source.release` 调用 `Canvas.setBitmap(null)`；原片与成片保存已完成。AOSP API10 在该方法中直接解引用空位图。候选改为停止动画、失效并断开当前 Source、丢弃不再复用的 Canvas 引用，再幂等释放三张独占小图；不改变 LUT 网格、6000×4000、JPEG 档位或保存协议。此前观测到的底层重启原因尚未确认。
+
+`DevelopingPreviewTest` 使用数学位图，在真实 Android 图形运行时检查渐显绘制、重复结束/释放、部分构造、过期/迟到副本及下一张复用；已加入 `test_legacy_emulator.sh`。`DevelopPreviewProbeActivity` 同样使用数学图像，包含重复结束与 View 生命周期清理，不打开相机。这些不能用主机 Android stub 或纯 Java timeline 测试替代。2026-11-01 用户报告已在 A5100 安装 rc.1，确认原拍照后退出故障修复；这不是全部机型功能或底层重启问题的完整验收。API10 真实图形回归测试仍未运行。独立 Review 未发现需要调整生产逻辑的高置信回归，rc.2 仅更新验收说明和版本标识，复用 rc.1 的本地开发签名供连续两张复测。
+
+Windows 本地候选通过 JDK17 / SDK36 / NDK r16b 的发行变体构建及 APK 检查（DEX035、minSDK10、ARMv5/ARMv7、v1 签名、生产 Activity 与资源边界）；图形测试和探针通过 Java7 编译及 min-api10 DEX 转换，尚未在 Android 图形运行时执行。针对性 timeline、拍摄 gate、预览恢复 barrier、读数、自动预览、退出 gate、缓存及 `test_legacy_capture.sh` 均通过。完整 `test_product_ui.sh` 在 `DiagnosticStoreTest` 的 Windows 符号链接权限处失败，不记为全套通过。
+
+本地原签名密钥缺失，rc.1 创建独立开发签名；证书与公开 beta.6 不同，不能声称对公开 beta.6 同签名覆盖升级。rc.2 复用 rc.1 的同一密钥。用户已自行安装验证 rc.1；本轮 agent 未连接相机、安装 APK、卸载应用或删除相机数据。
+
+手动设备验收：安全离开拍摄后用 PMCA 安装同签名候选，拍第一张确认显示成片且应用不退出，半按返回取景，再拍第二张确认连续恢复。失败后不要清数据；重开应用用 MENU 导出 `SONYLUT/DIAG/REPORT.ZIP`，保留候选版本和是否返回原生界面/发生重启的说明。签名不匹配时停止安装，不通过卸载绕过。
+
 候选：0.9.0-beta.6-rc.6 / code102。研究在没有相机连接的情况下完成。公开 beta.5 保持不变；候选已完成 [A6300 两张实拍验收](A6300_RC6_ACCEPTANCE.md)，A6000/A7 实拍仍待验收。已确认两份官方固件共同缺少 beta.5 强制使用的保存通知 API，导致拍摄初始化无法完成。
 
 本轮安装到 API10 模拟器并回归的发行 APK SHA-256：`374fb8dcca61f7d47dd119c17a689c42fa33b2227934fbb58a110fd2503cdeb8`。保持原包名、签名证书和已有用户数据。
