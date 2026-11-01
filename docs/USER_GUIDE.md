@@ -1,9 +1,9 @@
 # LUT Camera 新手安装与使用教程
 
-适用：支持安装 PMCA 的 Sony 相机；当前测试版本 **0.9.0-beta.7-rc.3**。A6300 / 固件 2.01 有历史实拍基线，本包的真机回归与其他机型验收仍待完成，见[机型范围](compatibility/README.md)。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
+适用：支持安装 PMCA 的 Sony 相机；当前测试版本 **0.9.0-beta.7-rc.4**。A6300 / 固件 2.01 有历史实拍基线，本包的真机回归与其他机型验收仍待完成，见[机型范围](compatibility/README.md)。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
 
-> **[直接下载 LUT Camera beta.7-rc.3 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.3/SonyLutCamera-v0.9.0-beta.7-rc.3.apk)**
-> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.3) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
+> **[直接下载 LUT Camera beta.7-rc.4 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.4/SonyLutCamera-v0.9.0-beta.7-rc.4.apk)**
+> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.4) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
 
 **操作路线：准备 APK 和安装工具 → 相机设为 MTP → 连接电脑 → 选择本地 APK 安装 → 相机里打开 LUT Camera。**
 
@@ -89,14 +89,14 @@ Windows 与 macOS 打开 PMCA 后，按钮名称相同：
 Windows PowerShell：
 
 ```powershell
-.\pmca-console-v0.18-win.exe install -f ".\SonyLutCamera-v0.9.0-beta.7-rc.3.apk"
+.\pmca-console-v0.18-win.exe install -f ".\SonyLutCamera-v0.9.0-beta.7-rc.4.apk"
 ```
 
 macOS 终端：
 
 ```sh
 chmod +x ./pmca-console-v0.18-osx
-./pmca-console-v0.18-osx install -f "./SonyLutCamera-v0.9.0-beta.7-rc.3.apk"
+./pmca-console-v0.18-osx install -f "./SonyLutCamera-v0.9.0-beta.7-rc.4.apk"
 ```
 
 如果使用 PMCA 的 Python 源码，则先按其 README 安装 Python 3 和 `requirements.txt` 里的依赖，再执行 `python3 pmca-console.py install -f "安装包完整路径"`。这不是新手图形安装路径的必需步骤。
@@ -147,7 +147,7 @@ chmod +x ./pmca-console-v0.18-osx
 
 | 遇到的问题 | 按这个顺序检查 |
 | --- | --- |
-| Releases 页面只有源码、找不到 APK | 打开本页顶部的 beta.7-rc.3 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
+| Releases 页面只有源码、找不到 APK | 打开本页顶部的 beta.7-rc.4 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
 | PMCA 没有找到相机 | 确认相机已开机 → 拔线后确认 USB 连接是 MTP → 换支持数据的线 → 直连电脑 USB 口 → 退出占用相机的程序 → 重新点击 Get camera info。 |
 | 插线后相机菜单不能操作 | 先拔 USB 线，设置 MTP 后再连接。 |
 | Finder 中没有出现 SD 卡盘符 | MTP 不是普通 U 盘模式；以 PMCA 能否读取相机信息为准。复制 LUT 或照片时可以使用读卡器。 |

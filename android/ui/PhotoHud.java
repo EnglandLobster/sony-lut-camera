@@ -30,9 +30,10 @@ final class PhotoHud extends View {
     }
     void gradedDeveloping(long shot,Bitmap bitmap){if(developingPreview.graded(shot,bitmap,SystemClock.uptimeMillis())){imageDirty=true;update();}}
     void endDeveloping(){
+        stopAnimation();
         if(developFrames>0)android.util.Log.i("LutUI","develop_render shot="+developShot+" frames="+developFrames
                 +" cpu_ms="+(developCpuNs/1000000.0)+" max_wall_ms="+(developMaxNs/1000000.0)+" bytes="+developingPreview.bytes());
-        developFrames=0;developingPreview.end();stopAnimation();fullFramePending=true;
+        developFrames=0;developingPreview.end();fullFramePending=true;
     }
     private void stopAnimation(){removeCallbacks(animateDeveloping);animationQueued=false;lastDevelopFrameAt=0;wasMoving=false;}
     private boolean processingVisible(){return attached&&getVisibility()==VISIBLE&&getWindowVisibility()==VISIBLE&&mode.equals("processing");}
@@ -106,8 +107,8 @@ final class PhotoHud extends View {
         if(developingPreview.hasSource()&&!c.quickReject(frame,Canvas.EdgeType.BW)){
             long wall=System.nanoTime(),cpu=android.os.Debug.threadCpuTimeNanos();
             try{developingPreview.draw(c,frame,SystemClock.uptimeMillis());}
-            catch(RuntimeException e){android.util.Log.w("LutUI","develop_draw_disabled",e);developingPreview.end();}
-            catch(OutOfMemoryError e){android.util.Log.w("LutUI","develop_draw_disabled",e);developingPreview.end();}
+            catch(RuntimeException e){android.util.Log.w("LutUI","develop_draw_disabled",e);stopAnimation();developingPreview.end();}
+            catch(OutOfMemoryError e){android.util.Log.w("LutUI","develop_draw_disabled",e);stopAnimation();developingPreview.end();}
             developCpuNs+=android.os.Debug.threadCpuTimeNanos()-cpu;
             developMaxNs=Math.max(developMaxNs,System.nanoTime()-wall);developFrames++;
         }

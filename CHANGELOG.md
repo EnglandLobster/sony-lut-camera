@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.9.0-beta.7-rc.4 · 2026-11-02 公开测试包
+
+- 合并 [latteye / Sky Yuan 的 PR #2](https://github.com/EnglandLobster/sony-lut-camera/pull/2)：修复 API10 显影动画清理时 `Canvas.setBitmap(null)` 崩溃，调整动画停止与资源回收顺序。
+- 保留 rc.3 多尺寸与保存恢复，扩展真实图形测试为 96 轮并纳入 API10 整包套件；本地已复现旧异常并验证修复。
+- 纳入固定 NDK 的 Windows host 选择与 Java apksigner 调用，保留发行签名和构建检查。详细证据与归属见 `docs/compatibility/PR2_A5100_REVIEW.md`。
+
 ## 0.9.0-beta.7-rc.3 · 2026-11-01 公开测试包
 
 - 定位 20 份固件保存链路的无截止时间等待，新增 60 项原始 ARM 传输/答复/超时仿真。

@@ -1,6 +1,6 @@
 # Build and development setup
 
-The supported build host is macOS, matching the current verified toolchain. The APK targets old Sony Android firmware; replacing the NDK or Java compatibility level requires separate validation.
+The locally verified build host is macOS; PR #2 also provides Windows Git Bash host adaptations. The APK targets old Sony Android firmware; replacing the NDK or Java compatibility level requires separate validation.
 
 ## Toolchain
 
@@ -60,3 +60,9 @@ This reuses verified OpenMemories Tweak 0.11 native components. The helper curre
 Some diagnostic collectors require an attached camera, ignored historical logs, an upstream PMCA checkout or an optional research SDK. They are not prerequisites for the build commands above. Archived results and `HANDOFF.md` belong to the original workspace and are intentionally excluded from Git.
 
 保存阻塞研究：`audit_store_rpc.py` 审计本地固件调用点，`emulate_store_rpc.py` 执行原始 ARM IPC 控制流，两者输入均为 `collect_pmca_firmware.py` 的 collection.json。`test_capture_pipeline.sh` 包含阻塞 worker 与真实跨进程持有记录测试。`test_legacy_emulator.sh` 仅接受 API10 模拟器，临时设置并恢复 Dalvik 堆属性，在单个 guest shell 内运行所有套件；结果另存 `/data/local/tmp/legacy-smoke-result.txt`，以 `PASS_ALL_API10_SUITES` 为完成标记。
+
+## Windows Git Bash and preview regression
+
+Use the same pinned JDK 17, SDK 36/build-tools 36.0.0 and Windows NDK r16b. Set `JAVA_HOME`, `ANDROID_SDK`, `ANDROID_NDK`, `PYTHONUTF8=1` and `CMAKE_GENERATOR=Ninja` for the build shell. NDK host tools are selected by platform; signing uses the apksigner JAR. The release still requires the existing signing identity. Windows host tests that create symbolic links may require additional filesystem privileges; an APK build and a full host-suite pass are separate results. Windows execution evidence for these adaptations comes from PR #2; the integrated candidate was built locally on macOS.
+
+`test_preview_graphics_emulator.sh API10_SERIAL` compares the tagged rc.3 renderer with the working-tree renderer on real API10 Bitmap/Canvas at 24 MiB. The checkout must contain `v0.9.0-beta.7-rc.3`. It requires the baseline null-Canvas exception and 96 successful fixed cycles. `test_legacy_emulator.sh` also runs these graphics cases against the installed APK. Both refuse physical cameras.

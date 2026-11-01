@@ -9,7 +9,8 @@ final class DevelopingPreview {
         Bitmap positive,negative,composite;
         Canvas compositeCanvas;
         void release(){
-            if(compositeCanvas!=null)compositeCanvas.setBitmap(null);compositeCanvas=null;
+            // API10 Canvas.setBitmap(null) throws; this canvas is never reused.
+            compositeCanvas=null;
             recycle(positive);recycle(negative);recycle(composite);positive=null;negative=null;composite=null;
         }
     }
@@ -88,6 +89,10 @@ final class DevelopingPreview {
         try{canvas.drawBitmap(display,null,fitted,imagePaint);}
         finally{canvas.setDrawFilter(previous);}
     }
-    void end(){imagePaint.setAlpha(255);timeline.end();if(source!=null){source.release();source=null;}}
+    void end(){
+        imagePaint.setAlpha(255);timeline.end();
+        Source previous=source;source=null;compositeAlpha=-1;
+        if(previous!=null)previous.release();
+    }
     static void recycle(Bitmap bitmap){if(bitmap!=null&&!bitmap.isRecycled())bitmap.recycle();}
 }

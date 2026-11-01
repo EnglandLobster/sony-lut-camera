@@ -30,7 +30,7 @@ PY_CLEAN
 "$java_home/bin/javac" --release 7 -Xlint:-options \
     -cp "out/apk/classes:$sdk/platforms/android-36/android.jar" \
     -d out/legacy-smoke/classes android-tests/LegacyRuntimeSmoke.java \
-    android-tests/CaptureSurfaceGateTest.java android-tests/CaptureJpegQualityTest.java android-tests/CaptureStoreEventsTest.java android-tests/CapturePipelineTest.java android-tests/CaptureStoreRpcTest.java android-tests/PhotoIndexTest.java android-tests/CaptureStartupErrorTest.java
+    android-tests/CaptureSurfaceGateTest.java android-tests/CaptureJpegQualityTest.java android-tests/CaptureStoreEventsTest.java android-tests/CapturePipelineTest.java android-tests/CaptureStoreRpcTest.java android-tests/PhotoIndexTest.java android-tests/CaptureStartupErrorTest.java android-tests/DevelopingPreviewTest.java
 find out/legacy-smoke/classes -name '*.class' > out/legacy-smoke/classes.txt
 "$java_home/bin/jar" cf out/legacy-smoke/app-classes.jar -C out/apk/classes .
 "$java_home/bin/java" -cp "$sdk/build-tools/36.0.0/lib/d8.jar" com.android.tools.r8.D8 \
@@ -51,7 +51,7 @@ import sys
 apk=sys.argv[1]
 lines=['#!/system/bin/sh','set -e','export CLASSPATH=/data/local/tmp/legacy-smoke.jar:'+apk,
        'app_process -Xmx24m -Djava.library.path=/data/data/org.hongen.sonylutprobe/lib /system/bin org.hongen.sonylutprobe.LegacyRuntimeSmoke /mnt/sdcard/SONYLUT/LIBRARY']
-for suite in ['CaptureSurfaceGateTest','CaptureJpegQualityTest','CaptureStoreEventsTest','CapturePipelineTest','CaptureStoreRpcTest','PhotoIndexTest','CaptureStartupErrorTest']:
+for suite in ['CaptureSurfaceGateTest','CaptureJpegQualityTest','CaptureStoreEventsTest','CapturePipelineTest','CaptureStoreRpcTest','PhotoIndexTest','CaptureStartupErrorTest','DevelopingPreviewTest']:
     lines.append('app_process -Xmx24m /system/bin org.hongen.sonylutprobe.'+suite+' /data/local/tmp')
 for action in ['--write-fence','--read-fence']:
     lines.append('app_process -Xmx24m /system/bin org.hongen.sonylutprobe.CaptureStoreRpcTest '+action+' /data/local/tmp/lut-store-fence-test')
