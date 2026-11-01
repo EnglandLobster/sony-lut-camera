@@ -49,13 +49,6 @@ cp vendor/libjpeg-turbo/LICENSE.md out/apk/assets/JPEG-LICENSE.txt
 cp vendor/libjpeg-turbo/README.ijg out/apk/assets/JPEG-IJG.txt
 cp "$ndk/sources/cxx-stl/gnu-libstdc++/4.9/NOTICE" out/apk/assets/GNU-STL-NOTICE.txt
 python3 - <<'PY'
-import hashlib
-from pathlib import Path
-source=Path('vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so')
-data=source.read_bytes()
-if hashlib.sha256(data).hexdigest()!='843b70399744074e9544d69982d8b37964747f9c93f907389c3c7b9efb759ee0':
-    raise SystemExit('Reference memory map differs from reviewed exact-platform asset')
-Path('out/apk/assets/MAP24R1.BIN').write_bytes(data)
 from PIL import Image,ImageDraw
 im=Image.new('RGB',(72,72),(18,22,28));d=ImageDraw.Draw(im)
 for i,c in enumerate([(220,70,70),(70,190,100),(70,120,230)]):d.rectangle((8+i*19,8,23+i*19,46),fill=c)

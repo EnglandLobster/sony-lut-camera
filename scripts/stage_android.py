@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import xml.etree.ElementTree as ET
 from generate_preview_fixture import generate
+from stage_capture_maps import stage as stage_maps
 
 ROOT = Path(__file__).resolve().parents[1]
 ANDROID = '{http://schemas.android.com/apk/res/android}'
@@ -19,6 +20,7 @@ def stage(variant):
     if assets.exists():
         shutil.rmtree(assets)
     assets.mkdir(parents=True)
+    stage_maps(assets)
     catalog = json.loads((ROOT / 'android-assets/CATALOG.JSN').read_text())
     names = [e['asset'] for e in catalog]
     names += ['CATALOG.JSN', 'PREVIEW.JPG', 'UIFONT.TTF', 'FONT-OFL.txt']

@@ -17,6 +17,17 @@ report={'checked_at':datetime.datetime.now().astimezone().isoformat(),
 with zipfile.ZipFile(apk) as z:
     assert z.testzip() is None
     assert z.read('classes.dex')[:8]==b'dex\n035\0'
+    maps=json.loads((root/'config/capture-maps.json').read_text())['maps']
+    map_assets={'assets/'+e['asset'] for e in maps if e.get('asset')}
+    assert {n for n in z.namelist() if re.fullmatch(r'assets/MAP[A-Z0-9]*\.BIN',n)}==map_assets
+    rows=[]
+    for entry in maps:
+        if entry.get('asset'):
+            data=z.read('assets/'+entry['asset'])
+            assert len(data)==entry['size'] and hashlib.sha256(data).hexdigest()==entry['sha256']
+        rows.append('\t'.join(map(str,[entry['memory'],entry['pixels'],entry['revision'],entry['filename'],entry.get('asset') or '-',entry['size'],entry['sha256']])))
+    assert z.read('assets/CAPMAP.TXT').decode().splitlines()[1:]==rows
+    report['capture_maps']={'bundled':len(map_assets),'catalog_rows':len(maps),'firmware_blobs_packaged':False}
     catalog=json.loads(z.read('assets/CATALOG.JSN'))
     assert sum(item.get('default',False) for item in catalog)==1
     for item in catalog:

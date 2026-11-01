@@ -44,7 +44,7 @@ public final class GalleryActivity extends Activity {
         // Storage is newest-first; display positions follow capture order, oldest = 1.
         int ordinal=photos.size()-index;
         hud.setVisibility(infoVisible?View.VISIBLE:View.INVISIBLE);hud.mode="review";hud.name=pair.lut;hud.tag=ordinal+" / "+photos.size();hud.original=original;
-        hud.detail=selectedFile().getName()+" · 24MP · EXTRA FINE";hud.footer="←→ / 拨轮翻图  ● 对照  ↑ 信息  半按拍摄";hud.update();
+        hud.detail=selectedFile().getName();hud.footer="←→ / 拨轮翻图  ● 对照  ↑ 信息  半按拍摄";hud.update();
         android.util.Log.i("LutUI","gallery_selected file="+selectedFile().getName()+" ordinal="+ordinal+" total="+photos.size()+" cache_hit="+hit+" request_ms="+(SystemClock.elapsedRealtime()-requestAt));
     }
     private void addCandidate(List<File> files,int position,boolean source){

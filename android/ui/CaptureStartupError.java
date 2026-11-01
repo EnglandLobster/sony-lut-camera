@@ -25,7 +25,7 @@ final class CaptureStartupError {
         if(text.contains("EXTRA FINE")||text.contains("JPEG quality"))
             return new CaptureStartupError("无法设置额外精细画质","应用自动设置 EXTRA FINE 未成功。","请退出应用，将画质设为 JPEG／额外精细，\n然后重新进入 LUT Camera。");
         if(text.contains("picture-size"))
-            return new CaptureStartupError("无法设置照片尺寸","应用未能使用所需的 6000×4000 尺寸。","请退出应用，设为 3:2、L（24M），\n然后重新进入 LUT Camera。");
+            return new CaptureStartupError("无法设置照片尺寸","相机未能提供与内存配置匹配的全尺寸照片。","请退出应用，选择传感器原生比例和 L 尺寸。\n若仍失败，请导出诊断日志。");
         if(text.contains("storage-fmt"))
             return new CaptureStartupError("无法切换 JPEG 格式","应用自动从 RAW 切换为 JPEG 未成功。","请退出应用，将文件格式设为 JPEG，\n然后重新进入 LUT Camera。");
         if(text.contains("drive-mode"))
@@ -34,12 +34,12 @@ final class CaptureStartupError {
             return new CaptureStartupError("无法设置自动曝光","应用未能启用 P 模式和自动 ISO。","请退出应用，将模式转盘设为 P、ISO 自动，\n关闭 HDR 后重新进入 LUT Camera。");
         if(text.contains("内存布局尚未适配")||text.contains("unvalidated platform"))
             return new CaptureStartupError("当前机型尚未适配","当前版本无法使用这台相机的内存配置。","请返回 LUT 库，并把诊断文件发给开发者。\n这不是 LUT 文件损坏。");
-        if(cause instanceof NoSuchMethodException||cause instanceof NoSuchFieldException||cause instanceof ClassNotFoundException||cause instanceof LinkageError)
+        if(text.contains("device memory API missing")||text.contains("libcameraseq unavailable")||cause instanceof NoSuchMethodException||cause instanceof NoSuchFieldException||cause instanceof ClassNotFoundException||cause instanceof LinkageError)
             return new CaptureStartupError("相机接口不兼容","当前固件缺少应用需要的拍摄接口。","请返回 LUT 库，将诊断文件发给开发者。\n文件会记录机型和固件信息。");
         if(text.contains("matrix/gamma")||text.contains("gamma buffer")||text.contains("matrix parameter"))
             return new CaptureStartupError("近似取景初始化失败","当前相机无法启用这份 LUT 的近似取景。","返回 LUT 库 → 更多 → 当前 LUT 的取景，\n选择“原色取景”后重试。");
         if(text.contains("capture setting")||text.contains("capture parameter")||text.contains("EXTRA FINE")||text.contains("zoom capability")||text.contains("RAW requires disabled"))
-            return new CaptureStartupError("拍摄参数设置失败","相机未接受应用所需的拍摄设置。","请退出应用，设为单张、JPEG、3:2、L（24M）。\n若仍失败，请提供诊断文件。");
+            return new CaptureStartupError("拍摄参数设置失败","相机未接受应用所需的拍摄设置。","请退出应用，设为单张、JPEG、原生比例和 L 尺寸。\n若仍失败，请提供诊断文件。");
         if(cause instanceof OutOfMemoryError||text.contains("cannot reserve"))
             return new CaptureStartupError("相机可用内存不足","没有足够内存完成拍摄初始化。","请退出应用后重新打开。\n若再次失败，请把诊断文件发给开发者。");
         if(text.contains("ENOSPC")||text.contains("Permission denied")||text.contains("SD folder"))

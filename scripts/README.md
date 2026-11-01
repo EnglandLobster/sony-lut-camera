@@ -4,8 +4,9 @@
 
 | 分组 | 脚本 |
 | --- | --- |
-| 常用构建 | `build_host.sh`、`build_android.sh [--release]`、`stage_android.py`、`check_package.py`、`package_release.py` |
+| 常用构建 | `build_host.sh`、`build_android.sh [--release]`、`stage_android.py`、`stage_capture_maps.py`、`check_package.py`、`package_release.py` |
 | 产品回归 | `audit_release_assets.py`、`test_builtin_catalog.py`、`test_product_ui.sh`、`test_offline.py`、`test_lut_cache.sh`、`test_preview_fit.sh` |
+| 多机型固件／计算验证 | `collect_pmca_firmware.py`、`audit_pmca_firmware.py`、`audit_sony_capture_api.py`、`emulate_legacy_memory_property.py`、`emulate_sony_mapping.py`、`audit_store_rpc.py`、`emulate_store_rpc.py`、`test_capture_compatibility.sh`、`test_capture_pipeline.sh [collection.json]`、`test_legacy_emulator.sh EMULATOR_SERIAL`；见 [逐机型报告](../docs/compatibility/README.md) |
 | 测试素材 | `generate_preview_fixture.py` 从中性数学 LUT 生成诊断参数 |
 | 字体维护 | `build_ui_font.py`；正常 APK 构建复用已审查静态字体 |
 | 拟合／性能研究 | `fit_native_preview.py`、`test_native_preview.py`、`benchmark_speed.py`、`create_lut_size_fixtures.py` |

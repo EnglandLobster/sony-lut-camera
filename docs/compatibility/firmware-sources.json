@@ -1,0 +1,237 @@
+{
+  "schema": 1,
+  "checked": "2026-11-01",
+  "device_list_source": "https://github.com/ma1co/fwtool.py/blob/master/devices.yml",
+  "models": [
+    {
+      "model": "DSC-HX60",
+      "arch": "CXD90014",
+      "apps": "2.4",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-HX60&area=jp&lang=jp&ref=update",
+      "updates": [],
+      "additional_support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-HX60&area=us&lang=en&ref=update&os=win"
+    },
+    {
+      "model": "DSC-HX90",
+      "arch": "CXD90014",
+      "apps": "2.13",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-HX90&area=jp&lang=jp&ref=update",
+      "updates": [],
+      "additional_support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-HX90&area=us&lang=en&ref=update&os=win"
+    },
+    {
+      "model": "DSC-HX400",
+      "arch": "CXD90014",
+      "apps": "2.4",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-HX400&area=jp&lang=jp&ref=update",
+      "updates": [],
+      "additional_support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-HX400&area=us&lang=en&ref=update&os=win"
+    },
+    {
+      "model": "DSC-RX1RM2",
+      "arch": "CXD90014",
+      "apps": "2.14",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-RX1RM2&area=jp&lang=jp&ref=update",
+      "updates": [],
+      "additional_support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-RX1RM2&area=us&lang=en&ref=update&os=win"
+    },
+    {
+      "model": "DSC-RX10M2",
+      "arch": "CXD90014",
+      "apps": "2.14",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-RX10M2&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX10M2V130.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "DSC-RX10M3",
+      "arch": "CXD90014",
+      "apps": "2.15",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-RX10M3&area=jp&lang=jp&ref=update",
+      "updates": [],
+      "additional_support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-RX10M3&area=us&lang=en&ref=update&os=win"
+    },
+    {
+      "model": "DSC-RX100M3",
+      "arch": "CXD90014",
+      "apps": "2.6",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-RX100M3&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX100M3V200.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "DSC-RX100M4",
+      "arch": "CXD90014",
+      "apps": "2.14",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-RX100M4&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX100M4V200.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "DSC-RX100M5",
+      "arch": "CXD90014",
+      "apps": "2.16",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-RX100M5&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX100M5V200.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "DSC-WX500",
+      "arch": "CXD90014",
+      "apps": "2.13",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-WX500&area=jp&lang=jp&ref=update",
+      "updates": [],
+      "additional_support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-WX500&area=us&lang=en&ref=update&os=win"
+    },
+    {
+      "model": "ILCE-7",
+      "arch": "CXD90014",
+      "apps": "2.3",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-7&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7V320.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-7M2",
+      "arch": "CXD90014",
+      "apps": "2.10",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-7M2&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7M2V401.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-7R",
+      "arch": "CXD90014",
+      "apps": "2.3",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-7R&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7RV320.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-7RM2",
+      "arch": "CXD90014",
+      "apps": "2.14",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-7RM2&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7RM2V401.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-7S",
+      "arch": "CXD90014",
+      "apps": "2.6",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-7S&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7SV320.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-7SM2",
+      "arch": "CXD90014",
+      "apps": "2.14",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-7SM2&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7SM2V301.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-5000",
+      "arch": "CXD90014",
+      "apps": "2.3",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-5000&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE5000V110.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-5100",
+      "arch": "CXD90014",
+      "apps": "2.7",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-5100&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE5100V310.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-6000",
+      "arch": "CXD90014",
+      "apps": "2.4",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-6000&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE6000V321.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-6300",
+      "arch": "CXD90014",
+      "apps": "2.15",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-6300&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE6300V201.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "ILCE-6500",
+      "arch": "CXD90014",
+      "apps": "2.17",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=ILCE-6500&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE6500V106.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "NEX-5R",
+      "arch": "CXD4132",
+      "apps": "1.1",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=NEX-5R&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_NEX5RV103.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "NEX-5T",
+      "arch": "CXD4132",
+      "apps": "1.1",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=NEX-5T&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_NEX5TV101.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "NEX-6",
+      "arch": "CXD4132",
+      "apps": "1.1",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=NEX-6&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_NEX6V103.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "DSC-HX60V",
+      "arch": "CXD90014",
+      "apps": "2.4",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-HX60V&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCHX60VV210.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    },
+    {
+      "model": "DSC-HX400V",
+      "arch": "CXD90014",
+      "apps": "2.4",
+      "support": "https://support.d-imaging.sony.co.jp/www/cscs/firm/?mdl=DSC-HX400V&area=jp&lang=jp&ref=update",
+      "updates": [
+        "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCHX400VV210.exe?fm=jp?fm=jp&upid=&s_tc="
+      ]
+    }
+  ],
+  "fwtool_revision": "cdba742b73eed5981480c326aeb30033aabf0223",
+  "firmware_extract_tool": "https://github.com/ma1co/fwtool.py"
+}

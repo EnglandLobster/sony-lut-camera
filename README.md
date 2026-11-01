@@ -2,17 +2,17 @@
 
 **让 A6300 在机内完成真正的 3D LUT 调色，拍完直接得到原片和调色 JPEG。** 无需手机、联网或电脑参与出片。支持导入自己的 `.cube`，预装 10 个指定 LUT。
 
-> 当前版本：**v0.9.0-beta.6**（公开测试版）。实测机型：**Sony A6300 / 固件 2.01**。A6000 / A7 一代已加入兼容修复并完成离线验证，仍待对应真机实拍验收。支持 PMCA 安装不等于所有机型均已适配。
+> 当前版本：**v0.9.0-beta.7-rc.3**（公开测试包，code109）。本版面向 PMCA 多机型兼容性测试；已完成固件、主机和 API10 模拟验证，尚未完成本版真机回归。历史实拍基线为 **Sony A6300 / 固件 2.01**，其他机型按实验适配反馈。
 
-本版新增自动选择最高 JPEG 画质、拍摄设置自动调整与屏幕提示、HDR 冲突提示，以及无需 ADB 的诊断日志导出；修复导出后无法继续上下翻菜单的问题。完整 LUT 用于保存的照片，取景使用原生矩阵/Gamma 近似。[发行说明](docs/RELEASE.md) · [更新记录](CHANGELOG.md)。
+本版接入 12/16/20/24/36/42MP 原生比例全尺寸、按平台选择内存表，并加入保存通知丢失恢复和保存超时回库。NEX 缺少近似色彩预览接口时使用原色取景，照片仍应用完整 LUT。[发行说明](docs/RELEASE.md) · [机型与验证范围](docs/compatibility/README.md)。
 
 ## 上手使用
 
 **第一次安装？先看 [新手安装与使用教程](docs/USER_GUIDE.md)**：Windows/macOS 工具下载、相机 MTP 设置、选择本地 APK、首次拍摄及常见问题。
 
-**[下载 beta.6 安装包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.6/SonyLutCamera-v0.9.0-beta.6.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.6) · 已验证 Sony A6300 / 固件 2.01。
+**[下载 beta.7-rc.3 测试包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.3/SonyLutCamera-v0.9.0-beta.7-rc.3.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.3) · 多机型实验适配，欢迎提交诊断日志。
 
-1. 从 [beta.6 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.6) 下载 `SonyLutCamera-v0.9.0-beta.6.apk`。自行编译见 [构建说明](docs/BUILD.md)。
+1. 从 [beta.7-rc.3 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.3) 下载 `SonyLutCamera-v0.9.0-beta.7-rc.3.apk`。自行编译见 [构建说明](docs/BUILD.md)。
 2. 用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装 APK。相机使用 MTP USB 模式；详细步骤见 [安装与使用](docs/USER_GUIDE.md)。
 3. 打开相机应用列表中的 **LUT Camera**，选一个 LUT，按中央键进入拍摄。首次打开会把预装 LUT 加入 SD 卡。
 4. 正常半按对焦、全按拍照。相机保留原片 JPEG，并另外保存应用完整 LUT 的 JPEG；成片后半按回到取景。
@@ -30,12 +30,12 @@
 ## 拍摄与回看
 
 - 自动曝光，左右键／拨轮调节曝光补偿，中央键归零。
-- **6000×4000、机型支持的最高 JPEG 档位**（支持时使用 EXTRA FINE；仅提供 50/25 的机型使用 FINE），原片与 LUT 成片分别保存到 SD 卡；原片指未套自定义 LUT 的 JPEG，不是 RAW 文件。
+- **本机原生比例全尺寸、机型支持的最高 JPEG 档位**（A6300 为 6000×4000）（支持时使用 EXTRA FINE；仅提供 50/25 的机型使用 FINE），原片与 LUT 成片分别保存到 SD 卡；原片指未套自定义 LUT 的 JPEG，不是 RAW 文件。
 - LUT 库右侧照片随选择显示完整 LUT 效果；这张参考图不是实时取景。
 - 播放键进入应用内相册；左看较早照片，右看较新照片，中央键比较原片和成片；半按快门返回拍摄。
 - MENU 返回 LUT 库，再从「更多 → 退出应用」返回索尼原生拍摄。
 
-完整拍摄需要数秒，耗时受场景、曝光与 SD 卡影响。Beta 暂不承诺其他机型、视频 LUT 或全分辨率实时 3D LUT 取景。详细验证边界见 [状态](docs/STATUS.md)。
+完整拍摄需要数秒，耗时受场景、曝光与 SD 卡影响。其他机型正在测试；视频 LUT 和全分辨率实时 3D LUT 取景未提供。详细验证边界见 [状态](docs/STATUS.md)。
 
 ## 开发与仓库结构
 

@@ -1,10 +1,55 @@
 {
   "format": 1,
   "git": [
-    {"path": "vendor/libjpeg-turbo", "url": "https://github.com/libjpeg-turbo/libjpeg-turbo.git", "commit": "8ecba3647edb6dd940463fedf38ca33a8e2a73d1", "version": "2.1.5.1"}
+    {
+      "path": "vendor/libjpeg-turbo",
+      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo.git",
+      "commit": "8ecba3647edb6dd940463fedf38ca33a8e2a73d1",
+      "version": "2.1.5.1"
+    }
   ],
   "files": [
-    {"path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so", "url": "https://raw.githubusercontent.com/jyswjjgdwtdtj/Sony-PictureEffectPlus/23383c34b855c987c89e7f5922c168e7f610850b/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so", "sha256": "843b70399744074e9544d69982d8b37964747f9c93f907389c3c7b9efb759ee0", "scope": "app"},
-    {"path": "vendor/packages/OpenMemories-Tweak-release-0.11.apk", "url": "https://github.com/ma1co/OpenMemories-Tweak/releases/download/v0.11/OpenMemories-Tweak-release-0.11.apk", "sha256": "80a61a3a3d50e2dd22492cdd96cf56c8b1523c83662ae3def59fd52b28675a47", "scope": "helper"}
+    {
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so",
+      "url": "https://raw.githubusercontent.com/jyswjjgdwtdtj/Sony-PictureEffectPlus/23383c34b855c987c89e7f5922c168e7f610850b/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so",
+      "sha256": "843b70399744074e9544d69982d8b37964747f9c93f907389c3c7b9efb759ee0",
+      "scope": "app"
+    },
+    {
+      "path": "vendor/packages/OpenMemories-Tweak-release-0.11.apk",
+      "url": "https://github.com/ma1co/OpenMemories-Tweak/releases/download/v0.11/OpenMemories-Tweak-release-0.11.apk",
+      "sha256": "80a61a3a3d50e2dd22492cdd96cf56c8b1523c83662ae3def59fd52b28675a47",
+      "scope": "helper"
+    },
+    {
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libDSCSC_KOJIRO4Gb20m_PictureEffectPlus_00_01.so",
+      "url": "https://raw.githubusercontent.com/jyswjjgdwtdtj/Sony-PictureEffectPlus/23383c34b855c987c89e7f5922c168e7f610850b/app/src/main/lib/armeabi/libDSCSC_KOJIRO4Gb20m_PictureEffectPlus_00_01.so",
+      "sha256": "7298061a5ce006fb92edad577e7b2db39fb0bc17f1cef3f2efcd55c9488fb7a2",
+      "scope": "app"
+    },
+    {
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libDSCSC_MUSASHI4Gb20m_PictureEffectPlus_00_01.so",
+      "url": "https://raw.githubusercontent.com/jyswjjgdwtdtj/Sony-PictureEffectPlus/23383c34b855c987c89e7f5922c168e7f610850b/app/src/main/lib/armeabi/libDSCSC_MUSASHI4Gb20m_PictureEffectPlus_00_01.so",
+      "sha256": "caaec2fc182132a266695841aff940e2de037ef3bbb562d46d3b1f3dca23893b",
+      "scope": "app"
+    },
+    {
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI4Gb20m_PictureEffectPlus_00_01.so",
+      "url": "https://raw.githubusercontent.com/jyswjjgdwtdtj/Sony-PictureEffectPlus/23383c34b855c987c89e7f5922c168e7f610850b/app/src/main/lib/armeabi/libILDCSC_MUSASHI4Gb20m_PictureEffectPlus_00_01.so",
+      "sha256": "afd275a480982275dbaea1721e05b202e0f71c2e85dcc00af5e12e4faecc6ed3",
+      "scope": "app"
+    },
+    {
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb36m_PictureEffectPlus_00_01.so",
+      "url": "https://raw.githubusercontent.com/jyswjjgdwtdtj/Sony-PictureEffectPlus/23383c34b855c987c89e7f5922c168e7f610850b/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb36m_PictureEffectPlus_00_01.so",
+      "sha256": "5bbd3b31a8191ed0190b17546ab34f84096e653f7fd6d3b40b5bc354cc034a5f",
+      "scope": "app"
+    },
+    {
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libunknown16m_PictureEffectPlus_00_00.so",
+      "url": "https://raw.githubusercontent.com/jyswjjgdwtdtj/Sony-PictureEffectPlus/23383c34b855c987c89e7f5922c168e7f610850b/app/src/main/lib/armeabi/libunknown16m_PictureEffectPlus_00_00.so",
+      "sha256": "eb71c58665c1441e9d1dac024711bc86ce56705cf300e367e222a4dc5b59ce6b",
+      "scope": "app"
+    }
   ]
 }

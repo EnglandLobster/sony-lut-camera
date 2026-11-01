@@ -16,6 +16,7 @@
 #include <memory>
 #include "uyvy.hpp"
 #include "device_memory_span.hpp"
+#include "device_memory_api.hpp"
 namespace {
 void* library(){static void* lib=dlopen("libcameraseq.so",RTLD_NOW);if(!lib)throw std::runtime_error("libcameraseq unavailable");return lib;}
 template<class T>T symbol(const char* name){void* p=dlsym(library(),name);if(!p)throw std::runtime_error("required device-memory symbol unavailable");return reinterpret_cast<T>(p);}
@@ -37,19 +38,28 @@ public:
         sl::PhysicalMemoryInfo modern=reinterpret_cast<sl::PhysicalMemoryInfo>(dlsym(library(),"_ZN6scalar18DeviceMemoryDiadem21getPhysicalMemoryInfoERjS1_"));
         sl::imageMemorySpan(m,modern,symbol<sl::MemoryProperty>("_ZN6scalar18DeviceMemoryDiadem11getPropertyEPKc"),address,size);
         util=symbol<void*(*)()>("_ZN6scalar13CameraSeqUtil11getInstanceEv")();
+        if(!util)throw std::runtime_error("Sony image mapping service unavailable");
         unmap=symbol<Unmap>("_ZN6scalar13CameraSeqUtil17unmapSharedMemoryEPvji");
         if(!symbol<int(*)(void*,unsigned,unsigned,void**,void**,unsigned*,int*)>("_ZN6scalar13CameraSeqUtil15mapSharedMemoryEjjPPvS2_PjPi")(util,address,size,&data,&base,&mapped,&fd))throw std::runtime_error("Sony image mapping failed");
+        if(!data||!base||mapped<size){
+            if(base)unmap(util,base,mapped,fd);
+            base=nullptr;
+            throw std::runtime_error("Sony image mapping returned an invalid span");
+        }
     }
     ~Mapping(){if(base)unmap(util,base,mapped,fd);}
 };
 void fail(JNIEnv* e,const char* msg){if(!e->ExceptionCheck())e->ThrowNew(e->FindClass("java/lang/IllegalStateException"),msg);}
-struct CachedLut {sl::Lut lut;sl::YuvLutTable table;int workers;std::string loadInfo;};
+struct CachedLut {sl::Lut lut;sl::YuvLutTable table;int workers;std::string loadInfo;
+    explicit CachedLut(size_t budget):table(budget){}
+};
 // Cache failures use the authoritative text parser and are explicitly recorded.
-CachedLut* prepareLut(const std::string& path,const std::string& cache,const std::string& id,int workers){
+CachedLut* prepareLut(const std::string& path,const std::string& cache,const std::string& id,int workers,int cacheMiB=32){
     if(workers<1||workers>4)throw std::runtime_error("invalid cache worker count");
+    if(cacheMiB<1||cacheMiB>32)throw std::runtime_error("invalid cache memory budget");
     double start=sl::milliseconds(),readMs=0,parseMs=0,writeMs=0,at;
     bool hit=false;const char* state=cache.empty()?"disabled":"rebuilt";
-    std::unique_ptr<CachedLut> c(new CachedLut);c->workers=workers;
+    std::unique_ptr<CachedLut> c(new CachedLut(size_t(cacheMiB)*1024*1024));c->workers=workers;
     if(!cache.empty()){
         at=sl::milliseconds();try{c->lut.loadCompiled(cache,id);hit=true;state="hit";}
         catch(const std::exception& x){__android_log_print(ANDROID_LOG_INFO,"SonyLutLoad","cache_rebuild: %s",x.what());}
@@ -66,7 +76,7 @@ CachedLut* prepareLut(const std::string& path,const std::string& cache,const std
     at=sl::milliseconds();c->table.init();double tableMs=sl::milliseconds()-at;
     std::ostringstream info;info<<"{\"cache\":\""<<state<<"\",\"lut_size\":"<<c->lut.size()
         <<",\"binary_read_ms\":"<<readMs<<",\"text_parse_ms\":"<<parseMs<<",\"binary_write_ms\":"<<writeMs
-        <<",\"table_init_ms\":"<<tableMs<<",\"native_prepare_ms\":"<<(sl::milliseconds()-start)<<"}";
+        <<",\"cache_budget_mib\":"<<cacheMiB<<",\"table_init_ms\":"<<tableMs<<",\"native_prepare_ms\":"<<(sl::milliseconds()-start)<<"}";
     c->loadInfo=info.str();return c.release();
 }
 std::string applyImage(JNIEnv* e,jobject image,const sl::Lut& lut,sl::YuvLutTable* table,int workers,const sl::PreviewTarget* preview=nullptr){
@@ -86,6 +96,18 @@ std::string applyImage(JNIEnv* e,jobject image,const sl::Lut& lut,sl::YuvLutTabl
     std::ostringstream out;out<<"{\"lut_size\":"<<lut.size()<<",\"lut_ms\":"<<elapsed<<",\"properties_ms\":"<<properties<<",\"map_ms\":"<<mapTime<<",\"unmap_ms\":"<<unmapTime<<",\"table_prepare_ms\":"<<prepare<<",\"table_resident_bytes\":"<<(table?table->residentBytes():0)<<",\"cache_page_bytes\":"<<(table?table->pageBytes():0)<<",\"cache_evicted_pages\":"<<(table?table->evictedPages():0)<<",\"cache_sampled_pairs\":"<<(table?table->sampledPairs():0)<<",\"table_entries_before\":"<<entriesBefore<<",\"table_entries_reused\":"<<entriesPrepared<<",\"table_entries\":"<<(table?table->populatedEntries():0)<<",\"workers\":"<<workers<<",\"width\":"<<w<<",\"height\":"<<h<<"}";return out.str();
 }
 }
+extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_devicePreflight(JNIEnv* e,jclass){
+    try{
+        jclass image=e->FindClass("com/sony/scalar/graphics/OptimizedImage");
+        if(!image)return nullptr;
+        jfieldID field=e->GetFieldID(image,"mNativeMemory","I");
+        e->DeleteLocalRef(image);
+        if(!field)return nullptr;
+        // Resolve only: do not invoke camera services or touch physical memory.
+        bool modern=sl::checkDeviceMemoryApi([](const char* name)->void*{return dlsym(library(),name);});
+        return e->NewStringUTF(modern?"physical_memory_info":"legacy_memory_properties");
+    }catch(const std::exception& x){fail(e,x.what());return nullptr;}
+}
 extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceLut(JNIEnv* e,jclass,jobject image,jstring cube,jint workers){
     try{
         const char* p=e->GetStringUTFChars(cube,nullptr);if(!p)return nullptr;std::string path(p);e->ReleaseStringUTFChars(cube,p);
@@ -103,6 +125,14 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_prepareDe
         p=e->GetStringUTFChars(bin,nullptr);if(!p)return 0;std::string cache(p);e->ReleaseStringUTFChars(bin,p);
         p=e->GetStringUTFChars(digest,nullptr);if(!p)return 0;std::string id(p);e->ReleaseStringUTFChars(digest,p);
         return reinterpret_cast<jlong>(prepareLut(path,cache,id,workers));
+    }catch(const std::exception& x){fail(e,x.what());return 0;}
+}
+extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_prepareDeviceLutBudget(JNIEnv* e,jclass,jstring cube,jstring bin,jstring digest,jint workers,jint cacheMiB){
+    try{
+        const char* p=e->GetStringUTFChars(cube,nullptr);if(!p)return 0;std::string path(p);e->ReleaseStringUTFChars(cube,p);
+        p=e->GetStringUTFChars(bin,nullptr);if(!p)return 0;std::string cache(p);e->ReleaseStringUTFChars(bin,p);
+        p=e->GetStringUTFChars(digest,nullptr);if(!p)return 0;std::string id(p);e->ReleaseStringUTFChars(digest,p);
+        return reinterpret_cast<jlong>(prepareLut(path,cache,id,workers,cacheMiB));
     }catch(const std::exception& x){fail(e,x.what());return 0;}
 }
 extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceLutLoadInfo(JNIEnv* e,jclass,jlong cache){

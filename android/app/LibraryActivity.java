@@ -53,7 +53,7 @@ public final class LibraryActivity extends Activity {
             String defaultId=null;
             for(BuiltinLuts.Entry entry:BuiltinLuts.read(getAssets().open("CATALOG.JSN"))){String id=installBuiltin(entry);if(entry.selected)defaultId=id;}
             selectedId=library.selectedId();if(library.find(selectedId)==null)selectedId=defaultId;luts=library.entries();
-        }},new Runnable(){public void run(){mode="library";selection=indexOf(selectedId);render();requestPreview();}});
+        }},new Runnable(){public void run(){mode="library";selection=indexOf(selectedId);render();requestPreview();if(showingCaptureRecovery)requireReleasedCapture();}});
     }
     private String installBuiltin(BuiltinLuts.Entry item)throws Exception{
         LutLibrary.Entry existing=library.find(item.sha256);
@@ -81,7 +81,7 @@ public final class LibraryActivity extends Activity {
     private void showNotice(String title,String detail){previous=mode.equals("notice")?previous:mode;mode="notice";selection=0;notice=detail;render();page.title=title;page.invalidate();}
     private void render(){if(destroyed||busy)return;List<CameraPage.Row> rows=new ArrayList<CameraPage.Row>();
         page.previewMode=mode.equals("library");page.section=mode.equals("library")?"LUT 库 · "+luts.size():"LUT CAMERA";page.title="选择你的色彩";page.subtitle="方向键 / 拨轮选择 · 中央键开始拍摄";page.empty="还没有 LUT";
-        page.note="24MP · 本机最高 JPEG 画质 · 原片与成片分别保存";page.footer="↑↓ 选择   ● 拍摄   ← 相册   → 导入   MENU 更多";
+        page.note="全尺寸 · 本机最高 JPEG 画质 · 原片与成片分别保存";page.footer="↑↓ 选择   ● 拍摄   ← 相册   → 导入   MENU 更多";
         page.emptyDetail="右键导入 · 中央键确认";
         if(mode.equals("library")){
             for(LutLibrary.Entry e:luts)rows.add(new CameraPage.Row(e.name,e.source+(e.id.equals(selectedId)?" · 当前":""),e.size+"³"));
@@ -137,7 +137,7 @@ public final class LibraryActivity extends Activity {
             rows.add(new CameraPage.Row("自动曝光与亮度","取景时左右键 / 拨轮调 EV，中央键归零","拍摄"));
             rows.add(new CameraPage.Row("一次快门，两张 JPEG","原片和 LUT 成片都保存在 DCIM","保存"));
             rows.add(new CameraPage.Row("快速对照与继续拍摄","左右翻图，中央键对照，半按返回取景","回看"));
-            page.note="效果参考图不是实时取景；成片保持 6000 × 4000";page.footer="MENU 返回";
+            page.note="效果参考图不是实时取景；成片保留本机全尺寸";page.footer="MENU 返回";
         }else{
             page.section="提示";page.title="请检查后重试";page.subtitle=notice;page.note="已有 LUT 和照片均已保留";
             rows.add(new CameraPage.Row(previous.equals("loading")?"重试":"返回",notice,"确认"));rows.add(new CameraPage.Row("导出诊断日志","将问题记录保存到 SD 卡","导出"));page.footer=previous.equals("loading")?"● 重试   MENU 退出":"● 返回   MENU 返回";
@@ -183,21 +183,35 @@ public final class LibraryActivity extends Activity {
     private void finishImport(){if(importFocusId!=null){selectedId=importFocusId;lastSelection=indexOf(importFocusId);}libraryPage();}
     private void gallery(){lastSelection=selection;mode="gallery";selection=0;runTask("正在打开照片",new Task(){public void run()throws Exception{photos=catalog.list();}},new Runnable(){public void run(){render();}});}
     private void openGallery(String pairId){openGallery(pairId,0);}
-    private void openGallery(String pairId,int offset){startActivityForResult(new Intent(this,GalleryActivity.class).putExtra("pair_id",pairId).putExtra("page_offset",offset),GALLERY_REQUEST);}
+    private boolean showingCaptureRecovery;
+    private boolean captureRecoveryBlocked(){
+        try{return CaptureRecoveryFence.local(getFilesDir()).blocked();}
+        catch(Exception error){android.util.Log.w("LutLibrary","capture_recovery_record_unavailable",error);return true;}
+    }
+    private boolean requireReleasedCapture(){
+        if(!captureRecoveryBlocked())return true;
+        showingCaptureRecovery=true;
+        if(mode.equals("loading"))mode="library";
+        showNotice("上一张照片仍在核验","暂不能再次拍摄或返回原生相机。\n可导出日志，后台恢复后自动解除。\n若持续未恢复，请待存储灯熄灭后正常关机再开机。");return false;
+    }
+    private void openGallery(String pairId,int offset){if(!requireReleasedCapture())return;startActivityForResult(new Intent(this,GalleryActivity.class).putExtra("pair_id",pairId).putExtra("page_offset",offset),GALLERY_REQUEST);}
     private void startCapture(final LutLibrary.Entry entry){
+        if(!requireReleasedCapture())return;
+        final boolean previewSupported=NativePreviewCapability.available();
         selectedId=entry.id;lastSelection=selection;
         previewEntry=entry;previewForCapture=true;fitError="";fittedPreview=null;
         runTask("正在准备 "+entry.name,new Task(){public void run()throws Exception{
             SupportDiagnostics.event("capture_requested","lut_id="+entry.id+" grid="+entry.size);
             library.select(entry.id);previewChoice=PreviewProfileStore.choice(entry);
-            if(previewChoice.enabled)try{SupportDiagnostics.event("preview_fit_begin","");fittedPreview=PreviewFitting.ensure(entry);SupportDiagnostics.event("preview_fit_ready","");}catch(Exception e){SupportDiagnostics.failure("preview_fit",e);fitError=explain(e);android.util.Log.w("SonyPreviewFit","prepare_failed",e);}
+            if(previewSupported&&previewChoice.enabled)try{SupportDiagnostics.event("preview_fit_begin","");fittedPreview=PreviewFitting.ensure(entry);SupportDiagnostics.event("preview_fit_ready","");}catch(Exception e){SupportDiagnostics.failure("preview_fit",e);fitError=explain(e);android.util.Log.w("SonyPreviewFit","prepare_failed",e);}
         }},new Runnable(){public void run(){
-            if(previewChoice.enabled&&fittedPreview==null){mode="preview_error";selection=0;render();return;}
-            if(previewChoice.enabled&&fittedPreview.largeError()&&previewChoice.acknowledged<fittedPreview.fitVersion){mode="preview_warning";selection=0;render();return;}
+            if(previewSupported&&previewChoice.enabled&&fittedPreview==null){mode="preview_error";selection=0;render();return;}
+            if(previewSupported&&previewChoice.enabled&&fittedPreview.largeError()&&previewChoice.acknowledged<fittedPreview.fitVersion){mode="preview_warning";selection=0;render();return;}
             launchCapture(entry);
         }});
     }
     private void launchCapture(LutLibrary.Entry entry){
+        if(!requireReleasedCapture())return;
             capturePending=true;captureAway=false;
             mode="library";selection=indexOf(entry.id);render();startActivityForResult(new Intent(LibraryActivity.this,PhotoActivity.class).putExtra("lut_id",entry.id)
                     .putExtra("develop_animation",getIntent().getBooleanExtra("develop_animation",true))
@@ -222,7 +236,9 @@ public final class LibraryActivity extends Activity {
         }});
     }
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
-        if(request==CAPTURE_REQUEST){capturePending=false;captureAway=false;}
+        if(request==CAPTURE_REQUEST){capturePending=false;captureAway=false;
+            if(data!=null&&data.getBooleanExtra("capture_recovery",false)){requireReleasedCapture();return;}
+        }
         if(request==CAPTURE_REQUEST&&data!=null&&data.hasExtra("startup_failure")){
             mode="library";render();requestPreview();
             String detail=data.getStringExtra("startup_failure");
@@ -247,7 +263,7 @@ public final class LibraryActivity extends Activity {
             if(selection==2)libraryPage();else choosePreview(selection==0);
         }else if(mode.equals("exit_error")){if(selection==0)exitToCamera();else if(selection==1&&SonyAppPolicy.hasDebugHelper(this))openDebugHelper();else libraryPage();
         }else if(mode.equals("help")){mode="options";selection=1;render();
-        }else if(mode.equals("notice")){if(selection==1){mode="diagnostics";selection=0;render();return;}if(previous.equals("loading")){initializeLibrary();return;}mode=previous;selection=0;render();}
+        }else if(mode.equals("notice")){if(selection==1){exportDiagnostics();return;}if(previous.equals("loading")){initializeLibrary();return;}mode=previous;selection=0;render();}
     }
     private void exportDiagnostics(){
         final String returnMode=mode;final int returnSelection=selection;
@@ -260,6 +276,7 @@ public final class LibraryActivity extends Activity {
         }});
     }
     private void exitToCamera(){
+        if(!requireReleasedCapture())return;
         if(exiting||busy)return;exiting=true;previewRequests.next();
         if(page!=null){page.busy=true;page.title="正在返回相机";page.subtitle="正在结束应用会话";page.invalidate();}
         exitRequest=new SonyAppPolicy.ExitRequest(this,new SonyAppPolicy.ExitListener(){public void failed(Exception e){
@@ -270,6 +287,7 @@ public final class LibraryActivity extends Activity {
     }
     private void showExitFailure(String detail){mode="exit_error";selection=0;notice=detail;render();}
     private void openDebugHelper(){
+        if(!requireReleasedCapture())return;
         try{SonyAppPolicy.openDebugHelper(this);}
         catch(RuntimeException error){android.util.Log.e("LutUI","debug_helper_start_failed",error);showExitFailure("测试连接未能打开，请检查安装状态。");}
     }
@@ -296,9 +314,18 @@ public final class LibraryActivity extends Activity {
     @Override protected void onSaveInstanceState(Bundle state){
         state.putBoolean("capture_pending",capturePending);state.putBoolean("capture_away",captureAway);super.onSaveInstanceState(state);
     }
+    private final Runnable recoveryRefresh=new Runnable(){public void run(){
+        if(destroyed)return;
+        if(captureRecoveryBlocked()){ui.postDelayed(this,3000);return;}
+        if(showingCaptureRecovery){showingCaptureRecovery=false;showNotice("保存会话已结束","已完成核验和清理，可重新进入拍摄。");}
+        SonyAppPolicy.register(LibraryActivity.this);
+        if(page!=null&&!displayStarted)try{page.startDisplayTracking();displayStarted=true;}catch(Exception error){android.util.Log.w("LutLibrary","display_resume_after_recovery",error);}
+    }};
     @Override protected void onResume(){super.onResume();
+        if(captureRecoveryBlocked()){ui.removeCallbacks(recoveryRefresh);ui.postDelayed(recoveryRefresh,3000);requireReleasedCapture();return;}
+
         if(capturePending&&captureAway){capturePending=false;captureAway=false;showInterruptedCapture();}
 if(exiting&&page!=null){page.busy=false;exiting=false;render();}exiting=false;SonyAppPolicy.register(this);if(page!=null)try{page.startDisplayTracking();displayStarted=true;}catch(ClassNotFoundException e){android.util.Log.i("LutLibrary","non-Sony UI preview");}catch(Exception e){showNotice("屏幕初始化失败",explain(e));}}
-    @Override protected void onPause(){if(capturePending)captureAway=true;ui.removeCallbacks(exitTimeout);if(exitRequest!=null)exitRequest.cancel();if(exiting)android.util.Log.i("LutUI","native_exit_activity_paused");if(displayStarted){page.stopDisplayTracking();displayStarted=false;}super.onPause();}
+    @Override protected void onPause(){ui.removeCallbacks(recoveryRefresh);if(capturePending)captureAway=true;ui.removeCallbacks(exitTimeout);if(exitRequest!=null)exitRequest.cancel();if(exiting)android.util.Log.i("LutUI","native_exit_activity_paused");if(displayStarted){page.stopDisplayTracking();displayStarted=false;}super.onPause();}
     @Override protected void onDestroy(){destroyed=true;previewRequests.next();io.shutdown();ui.removeCallbacksAndMessages(null);if(page!=null)page.preview=null;if(previews!=null)previews.clear();super.onDestroy();}
 }

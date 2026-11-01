@@ -19,11 +19,14 @@ final class DevelopingPreview {
     // Small preview only: nearest sampling avoids the camera's slow software
     // bilinear path on every frame. The one-time downsample remains filtered.
     private final Paint imagePaint=new Paint();
+    private final RectF fitted=new RectF();
 
     // Called on the existing capture worker only after its preview write finishes.
     static Bitmap thumbnail(Bitmap input){
-        Bitmap copy=Bitmap.createBitmap(WIDTH,HEIGHT,Bitmap.Config.ARGB_8888);
-        try{new Canvas(copy).drawBitmap(input,null,new Rect(0,0,WIDTH,HEIGHT),new Paint(Paint.FILTER_BITMAP_FLAG));return copy;}
+        float[] fit=ReviewGeometry.fit(input.getWidth(),input.getHeight(),WIDTH,HEIGHT,1);
+        int width=Math.max(1,Math.round(input.getWidth()*fit[0])),height=Math.max(1,Math.round(input.getHeight()*fit[1]));
+        Bitmap copy=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
+        try{new Canvas(copy).drawBitmap(input,null,new Rect(0,0,width,height),new Paint(Paint.FILTER_BITMAP_FLAG));return copy;}
         catch(RuntimeException e){copy.recycle();throw e;}
         catch(OutOfMemoryError e){copy.recycle();throw e;}
     }
@@ -31,7 +34,8 @@ final class DevelopingPreview {
         Source frame=new Source();
         try{
             frame.positive=thumbnail(input);
-            frame.negative=Bitmap.createBitmap(WIDTH,HEIGHT,Bitmap.Config.ARGB_8888);
+            int width=frame.positive.getWidth(),height=frame.positive.getHeight();
+            frame.negative=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
             Paint paint=new Paint();
             paint.setColorFilter(new ColorMatrixColorFilter(new float[]{
                 -.85f,0,0,0,245, 0,-.85f,0,0,205, 0,0,-.75f,0,155, 0,0,0,1,0}));
@@ -40,11 +44,11 @@ final class DevelopingPreview {
             // Bake the broad developer pools once into the negative. They
             // dissolve with it; no shader evaluation during animation frames.
             paint.setColorFilter(null);paint.setAlpha(75);
-            paint.setShader(new RadialGradient(WIDTH*.2f,HEIGHT*.8f,WIDTH*.65f,0xff080d11,0x00080d11,Shader.TileMode.CLAMP));
-            canvas.drawRect(0,0,WIDTH,HEIGHT,paint);
-            paint.setShader(new RadialGradient(WIDTH*.85f,HEIGHT*.15f,WIDTH*.6f,0xff080d11,0x00080d11,Shader.TileMode.CLAMP));
-            canvas.drawRect(0,0,WIDTH,HEIGHT,paint);
-            frame.composite=Bitmap.createBitmap(WIDTH,HEIGHT,Bitmap.Config.ARGB_8888);
+            paint.setShader(new RadialGradient(width*.2f,height*.8f,width*.65f,0xff080d11,0x00080d11,Shader.TileMode.CLAMP));
+            canvas.drawRect(0,0,width,height,paint);
+            paint.setShader(new RadialGradient(width*.85f,height*.15f,width*.6f,0xff080d11,0x00080d11,Shader.TileMode.CLAMP));
+            canvas.drawRect(0,0,width,height,paint);
+            frame.composite=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
             frame.compositeCanvas=new Canvas(frame.composite);
             return frame;
         }catch(RuntimeException e){frame.release();throw e;}
@@ -78,7 +82,10 @@ final class DevelopingPreview {
             display=source.composite;
         }
         DrawFilter previous=canvas.getDrawFilter();canvas.setDrawFilter(null);
-        try{canvas.drawBitmap(display,null,bounds,imagePaint);}
+        float scale=Math.min(bounds.width()/display.getWidth(),bounds.height()/display.getHeight());
+        float width=display.getWidth()*scale,height=display.getHeight()*scale;
+        fitted.set(bounds.centerX()-width/2,bounds.centerY()-height/2,bounds.centerX()+width/2,bounds.centerY()+height/2);
+        try{canvas.drawBitmap(display,null,fitted,imagePaint);}
         finally{canvas.setDrawFilter(previous);}
     }
     void end(){imagePaint.setAlpha(255);timeline.end();if(source!=null){source.release();source=null;}}

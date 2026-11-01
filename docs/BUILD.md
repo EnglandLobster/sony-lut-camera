@@ -17,7 +17,7 @@ export ANDROID_NDK=/absolute/path/to/android-ndk-r16b
 python3 scripts/bootstrap_dependencies.py
 ```
 
-`dependencies.lock.json` pins libjpeg-turbo and the exact 1,860-byte Sony memory-map asset. The bootstrap verifies existing inputs, refuses different/modified copies, and downloads only missing inputs. `--check` performs no downloads. These files live under ignored `vendor/`; the Sony reference asset retains its upstream provenance and is not relicensed here.
+`dependencies.lock.json` pins libjpeg-turbo and six exact Sony memory-map assets. `config/capture-maps.json` owns platform/pixel/revision identities and camera-resident map fingerprints. Staging verifies the pinned bytes and generates `CAPMAP.TXT`; firmware-only maps are not copied into the APK. The bootstrap verifies existing inputs, refuses different/modified copies, and downloads only missing inputs. `--check` performs no downloads. These files live under ignored `vendor/` and retain their upstream provenance.
 
 ## Main APK
 
@@ -25,6 +25,8 @@ python3 scripts/bootstrap_dependencies.py
 bash scripts/build_host.sh
 python3 scripts/test_offline.py
 bash scripts/test_product_ui.sh
+bash scripts/test_capture_pipeline.sh  # portable flow/fault tests, 24 MiB host heap
+bash scripts/test_capture_compatibility.sh  # full-resolution native pixel/budget checks
 bash scripts/test_lut_cache.sh
 bash scripts/test_preview_fit.sh
 bash scripts/build_android.sh --release
@@ -56,3 +58,5 @@ This reuses verified OpenMemories Tweak 0.11 native components. The helper curre
 ## Local research tools
 
 Some diagnostic collectors require an attached camera, ignored historical logs, an upstream PMCA checkout or an optional research SDK. They are not prerequisites for the build commands above. Archived results and `HANDOFF.md` belong to the original workspace and are intentionally excluded from Git.
+
+保存阻塞研究：`audit_store_rpc.py` 审计本地固件调用点，`emulate_store_rpc.py` 执行原始 ARM IPC 控制流，两者输入均为 `collect_pmca_firmware.py` 的 collection.json。`test_capture_pipeline.sh` 包含阻塞 worker 与真实跨进程持有记录测试。`test_legacy_emulator.sh` 仅接受 API10 模拟器，临时设置并恢复 Dalvik 堆属性，在单个 guest shell 内运行所有套件；结果另存 `/data/local/tmp/legacy-smoke-result.txt`，以 `PASS_ALL_API10_SUITES` 为完成标记。

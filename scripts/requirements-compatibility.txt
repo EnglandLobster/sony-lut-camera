@@ -1,0 +1,6 @@
+# Offline firmware research only; not required to build the APK.
+androguard==4.1.4
+unicorn==2.1.4
+pyelftools==0.33
+pycryptodomex==3.24.1
+PyYAML==6.0.3

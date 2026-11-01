@@ -70,7 +70,7 @@ final class SupportDiagnostics {
         event("export_begin",memory());
         String summary="LUT Camera diagnostics / schema 1\n"+metadata+"\n"+memory()+"\ninternal_free="+free(internalDir)+" sd_free="+free(Environment.getExternalStorageDirectory())
             +"\ninternal_writer="+(internal!=null)+" sd_writer="+(sd!=null)+"\ninternal_error="+DiagnosticText.clean(internalError)+"\nsd_error="+DiagnosticText.clean(sdError)
-            +"\n\nJSON lines: group by session; deduplicate mirrored events by session + seq.\n"
+            +"\ncapture_recovery_snapshot=\n"+CaptureRecoveryFence.snapshot(internalDir.getParentFile())+"\n\nJSON lines: group by session; deduplicate mirrored events by session + seq.\n"
             +"wall_ms may be wrong if the camera clock is unset. uptime_ms is monotonic within one boot.\n"
             +"A capture session without closed may have been interrupted; it is not proof of a crash.\n"
             +"No photos, LUT payloads, network credentials or system logcat are included.\n"

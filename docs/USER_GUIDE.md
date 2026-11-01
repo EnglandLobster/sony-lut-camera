@@ -1,9 +1,9 @@
 # LUT Camera 新手安装与使用教程
 
-适用：**Sony A6300 / 固件 2.01**；当前应用版本 **0.9.0-beta.6**。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
+适用：支持安装 PMCA 的 Sony 相机；当前测试版本 **0.9.0-beta.7-rc.3**。A6300 / 固件 2.01 有历史实拍基线，本包的真机回归与其他机型验收仍待完成，见[机型范围](compatibility/README.md)。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
 
-> **[直接下载 LUT Camera beta.6 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.6/SonyLutCamera-v0.9.0-beta.6.apk)**
-> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.6) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
+> **[直接下载 LUT Camera beta.7-rc.3 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.3/SonyLutCamera-v0.9.0-beta.7-rc.3.apk)**
+> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.3) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
 
 **操作路线：准备 APK 和安装工具 → 相机设为 MTP → 连接电脑 → 选择本地 APK 安装 → 相机里打开 LUT Camera。**
 
@@ -89,14 +89,14 @@ Windows 与 macOS 打开 PMCA 后，按钮名称相同：
 Windows PowerShell：
 
 ```powershell
-.\pmca-console-v0.18-win.exe install -f ".\SonyLutCamera-v0.9.0-beta.6.apk"
+.\pmca-console-v0.18-win.exe install -f ".\SonyLutCamera-v0.9.0-beta.7-rc.3.apk"
 ```
 
 macOS 终端：
 
 ```sh
 chmod +x ./pmca-console-v0.18-osx
-./pmca-console-v0.18-osx install -f "./SonyLutCamera-v0.9.0-beta.6.apk"
+./pmca-console-v0.18-osx install -f "./SonyLutCamera-v0.9.0-beta.7-rc.3.apk"
 ```
 
 如果使用 PMCA 的 Python 源码，则先按其 README 安装 Python 3 和 `requirements.txt` 里的依赖，再执行 `python3 pmca-console.py install -f "安装包完整路径"`。这不是新手图形安装路径的必需步骤。
@@ -147,7 +147,7 @@ chmod +x ./pmca-console-v0.18-osx
 
 | 遇到的问题 | 按这个顺序检查 |
 | --- | --- |
-| Releases 页面只有源码、找不到 APK | 打开本页顶部的 beta.6 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
+| Releases 页面只有源码、找不到 APK | 打开本页顶部的 beta.7-rc.3 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
 | PMCA 没有找到相机 | 确认相机已开机 → 拔线后确认 USB 连接是 MTP → 换支持数据的线 → 直连电脑 USB 口 → 退出占用相机的程序 → 重新点击 Get camera info。 |
 | 插线后相机菜单不能操作 | 先拔 USB 线，设置 MTP 后再连接。 |
 | Finder 中没有出现 SD 卡盘符 | MTP 不是普通 U 盘模式；以 PMCA 能否读取相机信息为准。复制 LUT 或照片时可以使用读卡器。 |
@@ -175,3 +175,9 @@ LUT Camera 已在 A6300 / 固件 2.01 完成安装、启动及实拍验证；本
 ## 出问题后导出日志
 
 重新打开 LUT Camera，在 LUT 库按 **MENU → 导出诊断日志**。导出完成后，用读卡器取出 SD 卡中的 **`SONYLUT/DIAG/REPORT.ZIP`**，连同屏幕现象和出错前的操作交给开发者。无需开启“测试连接”，日志包不包含照片或 LUT 文件。若应用无法打开，可先提供 `SONYLUT/DIAG/LOGS/` 文件夹。详见 [故障日志说明](DIAGNOSTICS.md)。导出成功后仍在“更多”菜单，上下键可继续跨页浏览，MENU 返回 LUT 库。
+
+## 本测试包的保存恢复与反馈
+
+保存等待超过 30 秒后，可按 MENU 返回 LUT 库，后台继续核验。核验与相机资源清理完成后自动允许再次拍摄。等待期间暂不能重新拍摄、进入硬件相册或退出到原生相机；若持续未恢复，待存储灯熄灭后正常关机再开机。不要用反复重进拍摄来重试同一张。
+
+反馈请提供 **机型、固件版本、应用版本、出错前的操作、停在哪个阶段**，以及菜单导出的 `SONYLUT/DIAG/REPORT.ZIP`。日志不包含照片和 LUT 内容；本版额外记录保存等待阶段。

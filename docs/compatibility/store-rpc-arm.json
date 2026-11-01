@@ -1,0 +1,785 @@
+{
+  "kind": "original ARM control flow; transport and pthread calls mocked",
+  "models": [
+    {
+      "model": "DSC-RX10M2",
+      "library": "lib/libsdcom.so",
+      "sha256": "371438c38436946d616305dbef62b3cd8552d1860b4872c71ffebfb63f8c1ee7",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "DSC-RX100M3",
+      "library": "lib/libsdcom.so",
+      "sha256": "6dd9fb7b9424d07022506233571fce4a26f435cf601f6937043ba7e6073f5d21",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "DSC-RX100M4",
+      "library": "lib/libsdcom.so",
+      "sha256": "2af0ed4af972dc1d505819744b2d5a25218a1e9075eb49d9e0b6191396e60a36",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "DSC-RX100M5",
+      "library": "lib/libsdcom.so",
+      "sha256": "905860042d075ebb574111738880521f5dc4a6dee25bdecd7a2f6f84fdf56ddc",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-7",
+      "library": "lib/libsdcom.so",
+      "sha256": "c601faa2fa174aca064b4e7725f9e1d20cf426e42a8722ffcaa543044f99144c",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-7M2",
+      "library": "lib/libsdcom.so",
+      "sha256": "aabe2383d7130b31289d6a37c2e659ad61eab8d3505f22bc2c21684c0bd2b0de",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-7R",
+      "library": "lib/libsdcom.so",
+      "sha256": "ffca38a3c611142ee382f7ce345d77b2768982a5960ae7730f2a48adc3d1330f",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-7RM2",
+      "library": "lib/libsdcom.so",
+      "sha256": "d9d7f4f6d9b949de65a3c900e01fdd9b3ea9a7f6f6f6fb0b800d8a9bb2b428ee",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-7S",
+      "library": "lib/libsdcom.so",
+      "sha256": "e8d8d7d0b85e8bce7ac9407954e125f5db5b19d0419a8cd7babfca92f7288adb",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-7SM2",
+      "library": "lib/libsdcom.so",
+      "sha256": "256f5adbff5571d83610df577f60d2f96bf10f3dcc5a5d308156c8c358bf327c",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-5000",
+      "library": "lib/libsdcom.so",
+      "sha256": "7d4384efdae5ac2b1e77666e46d88f50067814f2a678e7759a0affd76b78e8c5",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-5100",
+      "library": "lib/libsdcom.so",
+      "sha256": "e9767670fa16d935308dc787b4fb05d90b4af3f633116c94940e004169fdb5ba",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-6000",
+      "library": "lib/libsdcom.so",
+      "sha256": "58ba7e86d287cab494e6ecac1cfc1b68248a4f5e87bdacd857945791c8e8fb92",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-6300",
+      "library": "lib/libsdcom.so",
+      "sha256": "0fd4b291993cb33f069d29d4cc1a47acc1001e6a59ef1951fb9e30b7800759b4",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "ILCE-6500",
+      "library": "lib/libsdcom.so",
+      "sha256": "46c27d5c569b4f7af03a25fefe514271adb4a1bbd14171744cc09269777e8abc",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x510c",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "NEX-5R",
+      "library": "lib/libsdcom.so",
+      "sha256": "394176c63b43c58ca8410aba99590a0f6607f64e8f0c17131badb719c415d679",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "NEX-5T",
+      "library": "lib/libsdcom.so",
+      "sha256": "a42808f32b70168385fdc23d74cbe999bfb3b6bcaa9ffc895382e024146bbb6d",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "NEX-6",
+      "library": "lib/libsdcom.so",
+      "sha256": "6099046b2c899da35c27f909ed75edac490b0c9e6a88a176f2c642c0daf20d3a",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x50d4",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "DSC-HX60V",
+      "library": "lib/libsdcom.so",
+      "sha256": "2e206993447d80049cb77b596032e32f9bb0ce192b24105edce1964ede6eca48",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    },
+    {
+      "model": "DSC-HX400V",
+      "library": "lib/libsdcom.so",
+      "sha256": "29c600b4ece10c501f01861cb256f63bf520f766f3852ad758a0229d43772649",
+      "cases": [
+        {
+          "scenario": "missing_reply",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "unbounded_wait",
+            "unbounded_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "transport_block",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send"
+          ],
+          "verified": true
+        },
+        {
+          "scenario": "timed",
+          "entry": "0x5168",
+          "calls": [
+            "add_wait",
+            "transport_send",
+            "timed_wait",
+            "delete_wait"
+          ],
+          "verified": true
+        }
+      ]
+    }
+  ]
+}

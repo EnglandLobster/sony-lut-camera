@@ -1,0 +1,823 @@
+{
+  "kind": "static firmware declarations and ARM argument setup",
+  "models": [
+    {
+      "model": "DSC-RX10M2",
+      "sha256": "3935790d04c11cf82e8e2e0dc030296681e15d861cad952021cfe1bbf0fbf180",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7e34",
+      "store_calls": [
+        "7f3c:\teb001a1a \tbl\te7ac <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "7fb4:\teb001a6a \tbl\te964 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>"
+      ],
+      "send_entry": "0xe48c",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e584:\te1a01005 \tmov\tr1, r5\n    e588:\te28d200c \tadd\tr2, sp, #12\n    e58c:\te3a03000 \tmov\tr3, #0\n    e590:\tebffde4b \tbl\t5ec4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e6d4:\te1a01005 \tmov\tr1, r5\n    e6d8:\te28d200c \tadd\tr2, sp, #12\n    e6dc:\te3a03000 \tmov\tr3, #0\n    e6e0:\tebffddf7 \tbl\t5ec4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7b9c",
+      "release_calls": [
+        "7bd4:\tebfff809 \tbl\t5c00 <__android_log_print@plt>",
+        "7bfc:\tebfff814 \tbl\t5c54 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c1c:\tebfff80c \tbl\t5c54 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c3c:\tebfff804 \tbl\t5c54 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c64:\tebfff7dc \tbl\t5bdc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7c6c:\tebfff7dd \tbl\t5be8 <_ZN7android10VectorImplD2Ev@plt>",
+        "7c78:\tebfff7d7 \tbl\t5bdc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7c80:\tebfff7d8 \tbl\t5be8 <_ZN7android10VectorImplD2Ev@plt>",
+        "7c8c:\tebfff7d2 \tbl\t5bdc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7c94:\tebfff7d3 \tbl\t5be8 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "DSC-RX100M3",
+      "sha256": "aad77df4afe8809d4f2c5bc6a9d3c38d86fb40ef409afcfd1096ed6a0567fd0c",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7c94",
+      "store_calls": [
+        "7cb0:\teb000bd3 \tbl\tac04 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7d9c:\teb001b94 \tbl\tebf4 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "7e24:\teb001be8 \tbl\tedcc <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "7e48:\teb000b6d \tbl\tac04 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xe618",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e71c:\te1a01005 \tmov\tr1, r5\n    e720:\te28d2014 \tadd\tr2, sp, #20\n    e724:\te3a03000 \tmov\tr3, #0\n    e728:\tebffdae4 \tbl\t52c0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e884:\te1a01005 \tmov\tr1, r5\n    e888:\te28d2014 \tadd\tr2, sp, #20\n    e88c:\te3a03000 \tmov\tr3, #0\n    e890:\tebffda8a \tbl\t52c0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x8104",
+      "release_calls": [
+        "8144:\tebfff3a0 \tbl\t4fcc <__android_log_print@plt>",
+        "8178:\tebfff3b7 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "8194:\tebfff3b0 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "81b8:\tebfff3a7 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "81e0:\tebfff385 \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "81e8:\tebfff386 \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>",
+        "81f4:\tebfff380 \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "81fc:\tebfff381 \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>",
+        "8208:\tebfff37b \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "8210:\tebfff37c \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "DSC-RX100M4",
+      "sha256": "3935790d04c11cf82e8e2e0dc030296681e15d861cad952021cfe1bbf0fbf180",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7e34",
+      "store_calls": [
+        "7f3c:\teb001a1a \tbl\te7ac <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "7fb4:\teb001a6a \tbl\te964 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>"
+      ],
+      "send_entry": "0xe48c",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e584:\te1a01005 \tmov\tr1, r5\n    e588:\te28d200c \tadd\tr2, sp, #12\n    e58c:\te3a03000 \tmov\tr3, #0\n    e590:\tebffde4b \tbl\t5ec4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e6d4:\te1a01005 \tmov\tr1, r5\n    e6d8:\te28d200c \tadd\tr2, sp, #12\n    e6dc:\te3a03000 \tmov\tr3, #0\n    e6e0:\tebffddf7 \tbl\t5ec4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7b9c",
+      "release_calls": [
+        "7bd4:\tebfff809 \tbl\t5c00 <__android_log_print@plt>",
+        "7bfc:\tebfff814 \tbl\t5c54 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c1c:\tebfff80c \tbl\t5c54 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c3c:\tebfff804 \tbl\t5c54 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c64:\tebfff7dc \tbl\t5bdc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7c6c:\tebfff7dd \tbl\t5be8 <_ZN7android10VectorImplD2Ev@plt>",
+        "7c78:\tebfff7d7 \tbl\t5bdc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7c80:\tebfff7d8 \tbl\t5be8 <_ZN7android10VectorImplD2Ev@plt>",
+        "7c8c:\tebfff7d2 \tbl\t5bdc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7c94:\tebfff7d3 \tbl\t5be8 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "DSC-RX100M5",
+      "sha256": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7ea4",
+      "store_calls": [
+        "7fac:\teb001a7c \tbl\te9a4 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "8024:\teb001acc \tbl\teb5c <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>"
+      ],
+      "send_entry": "0xe684",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e77c:\te1a01005 \tmov\tr1, r5\n    e780:\te28d200c \tadd\tr2, sp, #12\n    e784:\te3a03000 \tmov\tr3, #0\n    e788:\tebffdde9 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e8cc:\te1a01005 \tmov\tr1, r5\n    e8d0:\te28d200c \tadd\tr2, sp, #12\n    e8d4:\te3a03000 \tmov\tr3, #0\n    e8d8:\tebffdd95 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7c0c",
+      "release_calls": [
+        "7c44:\tebfff809 \tbl\t5c70 <__android_log_print@plt>",
+        "7c6c:\tebfff814 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c8c:\tebfff80c \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cac:\tebfff804 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cd4:\tebfff7dc \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cdc:\tebfff7dd \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7ce8:\tebfff7d7 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cf0:\tebfff7d8 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7cfc:\tebfff7d2 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7d04:\tebfff7d3 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-7",
+      "sha256": "69a732e2b9a114d36064343c1dd02b3a83ac809cbfb6bb9edab9f50ecc0f222b",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x6f28",
+      "store_calls": [
+        "6f44:\teb000bd2 \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7030:\teb001926 \tbl\td4d0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "70b8:\teb00197a \tbl\td6a8 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "70dc:\teb000b6c \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xcef4",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    cff8:\te1a01005 \tmov\tr1, r5\n    cffc:\te28d2014 \tadd\tr2, sp, #20\n    d000:\te3a03000 \tmov\tr3, #0\n    d004:\tebffdf2e \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    d160:\te1a01005 \tmov\tr1, r5\n    d164:\te28d2014 \tadd\tr2, sp, #20\n    d168:\te3a03000 \tmov\tr3, #0\n    d16c:\tebffded4 \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x74cc",
+      "release_calls": [
+        "750c:\tebfff532 \tbl\t49dc <__android_log_print@plt>",
+        "7540:\tebfff549 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "755c:\tebfff542 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "7580:\tebfff539 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "75a8:\tebfff517 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75b0:\tebfff518 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75bc:\tebfff512 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75c4:\tebfff513 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75d0:\tebfff50d \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75d8:\tebfff50e \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-7M2",
+      "sha256": "dc1fa97518ff5ce026ca6b9bcf4b0043a289cdf87d9df105e10931afe08bbb80",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7ea4",
+      "store_calls": [
+        "7fac:\teb001a5d \tbl\te928 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "8024:\teb001aad \tbl\teae0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>"
+      ],
+      "send_entry": "0xe608",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e700:\te1a01005 \tmov\tr1, r5\n    e704:\te28d200c \tadd\tr2, sp, #12\n    e708:\te3a03000 \tmov\tr3, #0\n    e70c:\tebffde08 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e850:\te1a01005 \tmov\tr1, r5\n    e854:\te28d200c \tadd\tr2, sp, #12\n    e858:\te3a03000 \tmov\tr3, #0\n    e85c:\tebffddb4 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7c0c",
+      "release_calls": [
+        "7c44:\tebfff809 \tbl\t5c70 <__android_log_print@plt>",
+        "7c6c:\tebfff814 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c8c:\tebfff80c \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cac:\tebfff804 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cd4:\tebfff7dc \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cdc:\tebfff7dd \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7ce8:\tebfff7d7 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cf0:\tebfff7d8 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7cfc:\tebfff7d2 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7d04:\tebfff7d3 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-7R",
+      "sha256": "69a732e2b9a114d36064343c1dd02b3a83ac809cbfb6bb9edab9f50ecc0f222b",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x6f28",
+      "store_calls": [
+        "6f44:\teb000bd2 \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7030:\teb001926 \tbl\td4d0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "70b8:\teb00197a \tbl\td6a8 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "70dc:\teb000b6c \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xcef4",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    cff8:\te1a01005 \tmov\tr1, r5\n    cffc:\te28d2014 \tadd\tr2, sp, #20\n    d000:\te3a03000 \tmov\tr3, #0\n    d004:\tebffdf2e \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    d160:\te1a01005 \tmov\tr1, r5\n    d164:\te28d2014 \tadd\tr2, sp, #20\n    d168:\te3a03000 \tmov\tr3, #0\n    d16c:\tebffded4 \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x74cc",
+      "release_calls": [
+        "750c:\tebfff532 \tbl\t49dc <__android_log_print@plt>",
+        "7540:\tebfff549 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "755c:\tebfff542 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "7580:\tebfff539 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "75a8:\tebfff517 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75b0:\tebfff518 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75bc:\tebfff512 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75c4:\tebfff513 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75d0:\tebfff50d \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75d8:\tebfff50e \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-7RM2",
+      "sha256": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7ea4",
+      "store_calls": [
+        "7fac:\teb001a7c \tbl\te9a4 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "8024:\teb001acc \tbl\teb5c <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>"
+      ],
+      "send_entry": "0xe684",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e77c:\te1a01005 \tmov\tr1, r5\n    e780:\te28d200c \tadd\tr2, sp, #12\n    e784:\te3a03000 \tmov\tr3, #0\n    e788:\tebffdde9 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e8cc:\te1a01005 \tmov\tr1, r5\n    e8d0:\te28d200c \tadd\tr2, sp, #12\n    e8d4:\te3a03000 \tmov\tr3, #0\n    e8d8:\tebffdd95 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7c0c",
+      "release_calls": [
+        "7c44:\tebfff809 \tbl\t5c70 <__android_log_print@plt>",
+        "7c6c:\tebfff814 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c8c:\tebfff80c \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cac:\tebfff804 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cd4:\tebfff7dc \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cdc:\tebfff7dd \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7ce8:\tebfff7d7 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cf0:\tebfff7d8 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7cfc:\tebfff7d2 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7d04:\tebfff7d3 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-7S",
+      "sha256": "924f26a8835fec51c03c65b22de6141d748e869ba37fbc081ea0d9f84eb220c9",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7c94",
+      "store_calls": [
+        "7cb0:\teb000bd3 \tbl\tac04 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7d9c:\teb001b94 \tbl\tebf4 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "7e24:\teb001be8 \tbl\tedcc <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "7e48:\teb000b6d \tbl\tac04 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xe618",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e71c:\te1a01005 \tmov\tr1, r5\n    e720:\te28d2014 \tadd\tr2, sp, #20\n    e724:\te3a03000 \tmov\tr3, #0\n    e728:\tebffdae4 \tbl\t52c0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e884:\te1a01005 \tmov\tr1, r5\n    e888:\te28d2014 \tadd\tr2, sp, #20\n    e88c:\te3a03000 \tmov\tr3, #0\n    e890:\tebffda8a \tbl\t52c0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x8104",
+      "release_calls": [
+        "8144:\tebfff3a0 \tbl\t4fcc <__android_log_print@plt>",
+        "8178:\tebfff3b7 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "8194:\tebfff3b0 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "81b8:\tebfff3a7 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "81e0:\tebfff385 \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "81e8:\tebfff386 \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>",
+        "81f4:\tebfff380 \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "81fc:\tebfff381 \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>",
+        "8208:\tebfff37b \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "8210:\tebfff37c \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-7SM2",
+      "sha256": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7ea4",
+      "store_calls": [
+        "7fac:\teb001a7c \tbl\te9a4 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "8024:\teb001acc \tbl\teb5c <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>"
+      ],
+      "send_entry": "0xe684",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e77c:\te1a01005 \tmov\tr1, r5\n    e780:\te28d200c \tadd\tr2, sp, #12\n    e784:\te3a03000 \tmov\tr3, #0\n    e788:\tebffdde9 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e8cc:\te1a01005 \tmov\tr1, r5\n    e8d0:\te28d200c \tadd\tr2, sp, #12\n    e8d4:\te3a03000 \tmov\tr3, #0\n    e8d8:\tebffdd95 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7c0c",
+      "release_calls": [
+        "7c44:\tebfff809 \tbl\t5c70 <__android_log_print@plt>",
+        "7c6c:\tebfff814 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c8c:\tebfff80c \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cac:\tebfff804 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cd4:\tebfff7dc \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cdc:\tebfff7dd \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7ce8:\tebfff7d7 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cf0:\tebfff7d8 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7cfc:\tebfff7d2 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7d04:\tebfff7d3 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-5000",
+      "sha256": "69a732e2b9a114d36064343c1dd02b3a83ac809cbfb6bb9edab9f50ecc0f222b",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x6f28",
+      "store_calls": [
+        "6f44:\teb000bd2 \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7030:\teb001926 \tbl\td4d0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "70b8:\teb00197a \tbl\td6a8 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "70dc:\teb000b6c \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xcef4",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    cff8:\te1a01005 \tmov\tr1, r5\n    cffc:\te28d2014 \tadd\tr2, sp, #20\n    d000:\te3a03000 \tmov\tr3, #0\n    d004:\tebffdf2e \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    d160:\te1a01005 \tmov\tr1, r5\n    d164:\te28d2014 \tadd\tr2, sp, #20\n    d168:\te3a03000 \tmov\tr3, #0\n    d16c:\tebffded4 \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x74cc",
+      "release_calls": [
+        "750c:\tebfff532 \tbl\t49dc <__android_log_print@plt>",
+        "7540:\tebfff549 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "755c:\tebfff542 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "7580:\tebfff539 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "75a8:\tebfff517 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75b0:\tebfff518 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75bc:\tebfff512 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75c4:\tebfff513 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75d0:\tebfff50d \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75d8:\tebfff50e \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-5100",
+      "sha256": "c127fad908bdd2b06e366e82455674f8142f5ac1ab9c3fe68d6b01365843db52",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7c94",
+      "store_calls": [
+        "7cb0:\teb000bd1 \tbl\tabfc <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7d9c:\teb001b97 \tbl\tec00 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "7e24:\teb001beb \tbl\tedd8 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "7e48:\teb000b6b \tbl\tabfc <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xe624",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e728:\te1a01005 \tmov\tr1, r5\n    e72c:\te28d2014 \tadd\tr2, sp, #20\n    e730:\te3a03000 \tmov\tr3, #0\n    e734:\tebffdae1 \tbl\t52c0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e890:\te1a01005 \tmov\tr1, r5\n    e894:\te28d2014 \tadd\tr2, sp, #20\n    e898:\te3a03000 \tmov\tr3, #0\n    e89c:\tebffda87 \tbl\t52c0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x8104",
+      "release_calls": [
+        "8144:\tebfff3a0 \tbl\t4fcc <__android_log_print@plt>",
+        "8178:\tebfff3b7 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "8194:\tebfff3b0 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "81b8:\tebfff3a7 \tbl\t505c <_ZN7android10VectorImplC2Ejj@plt>",
+        "81e0:\tebfff385 \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "81e8:\tebfff386 \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>",
+        "81f4:\tebfff380 \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "81fc:\tebfff381 \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>",
+        "8208:\tebfff37b \tbl\t4ffc <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "8210:\tebfff37c \tbl\t5008 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-6000",
+      "sha256": "ca96d7fbd87ff774b3c5cc95b1f7dba7c3acf5e639e2808ffe84982acb4da36b",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x6f28",
+      "store_calls": [
+        "6f44:\teb000bd4 \tbl\t9e9c <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7030:\teb001928 \tbl\td4d8 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "70b8:\teb00197c \tbl\td6b0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "70dc:\teb000b6e \tbl\t9e9c <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xcefc",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    d000:\te1a01005 \tmov\tr1, r5\n    d004:\te28d2014 \tadd\tr2, sp, #20\n    d008:\te3a03000 \tmov\tr3, #0\n    d00c:\tebffdf2c \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    d168:\te1a01005 \tmov\tr1, r5\n    d16c:\te28d2014 \tadd\tr2, sp, #20\n    d170:\te3a03000 \tmov\tr3, #0\n    d174:\tebffded2 \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x74cc",
+      "release_calls": [
+        "750c:\tebfff532 \tbl\t49dc <__android_log_print@plt>",
+        "7540:\tebfff549 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "755c:\tebfff542 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "7580:\tebfff539 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "75a8:\tebfff517 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75b0:\tebfff518 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75bc:\tebfff512 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75c4:\tebfff513 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75d0:\tebfff50d \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75d8:\tebfff50e \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-6300",
+      "sha256": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7ea4",
+      "store_calls": [
+        "7fac:\teb001a7c \tbl\te9a4 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "8024:\teb001acc \tbl\teb5c <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>"
+      ],
+      "send_entry": "0xe684",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e77c:\te1a01005 \tmov\tr1, r5\n    e780:\te28d200c \tadd\tr2, sp, #12\n    e784:\te3a03000 \tmov\tr3, #0\n    e788:\tebffdde9 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e8cc:\te1a01005 \tmov\tr1, r5\n    e8d0:\te28d200c \tadd\tr2, sp, #12\n    e8d4:\te3a03000 \tmov\tr3, #0\n    e8d8:\tebffdd95 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7c0c",
+      "release_calls": [
+        "7c44:\tebfff809 \tbl\t5c70 <__android_log_print@plt>",
+        "7c6c:\tebfff814 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c8c:\tebfff80c \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cac:\tebfff804 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cd4:\tebfff7dc \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cdc:\tebfff7dd \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7ce8:\tebfff7d7 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cf0:\tebfff7d8 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7cfc:\tebfff7d2 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7d04:\tebfff7d3 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "ILCE-6500",
+      "sha256": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x7ea4",
+      "store_calls": [
+        "7fac:\teb001a7c \tbl\te9a4 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "8024:\teb001acc \tbl\teb5c <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>"
+      ],
+      "send_entry": "0xe684",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    e77c:\te1a01005 \tmov\tr1, r5\n    e780:\te28d200c \tadd\tr2, sp, #12\n    e784:\te3a03000 \tmov\tr3, #0\n    e788:\tebffdde9 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    e8cc:\te1a01005 \tmov\tr1, r5\n    e8d0:\te28d200c \tadd\tr2, sp, #12\n    e8d4:\te3a03000 \tmov\tr3, #0\n    e8d8:\tebffdd95 \tbl\t5f34 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7c0c",
+      "release_calls": [
+        "7c44:\tebfff809 \tbl\t5c70 <__android_log_print@plt>",
+        "7c6c:\tebfff814 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7c8c:\tebfff80c \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cac:\tebfff804 \tbl\t5cc4 <_ZN7android10VectorImplC2Ejj@plt>",
+        "7cd4:\tebfff7dc \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cdc:\tebfff7dd \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7ce8:\tebfff7d7 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7cf0:\tebfff7d8 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>",
+        "7cfc:\tebfff7d2 \tbl\t5c4c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7d04:\tebfff7d3 \tbl\t5c58 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "NEX-5R",
+      "sha256": "ada369479b2c6478dadcac8d8f0c433c1aec2d32747815eab81b29c9d67c7c15",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x67d0",
+      "store_calls": [
+        "67e8:\teb000d08 \tbl\t9c10 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "6874:\teb00178d \tbl\tc6b0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "68cc:\teb001777 \tbl\tc6b0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "68e8:\teb000cc8 \tbl\t9c10 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xbef4",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    bff8:\te1a01005 \tmov\tr1, r5\n    bffc:\te28d2014 \tadd\tr2, sp, #20\n    c000:\te3a03000 \tmov\tr3, #0\n    c004:\tebffe2b1 \tbl\t4ad0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    c164:\te1a01005 \tmov\tr1, r5\n    c168:\te28d2014 \tadd\tr2, sp, #20\n    c16c:\te3a03000 \tmov\tr3, #0\n    c170:\tebffe256 \tbl\t4ad0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7240",
+      "release_calls": [
+        "7280:\tebfff55b \tbl\t47f4 <__android_log_print@plt>",
+        "72ac:\tebfff574 \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "72d0:\tebfff56b \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "72f4:\tebfff562 \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "731c:\tebfff540 \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7324:\tebfff541 \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>",
+        "7330:\tebfff53b \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7338:\tebfff53c \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>",
+        "7344:\tebfff536 \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "734c:\tebfff537 \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "NEX-5T",
+      "sha256": "ada369479b2c6478dadcac8d8f0c433c1aec2d32747815eab81b29c9d67c7c15",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x67d0",
+      "store_calls": [
+        "67e8:\teb000d08 \tbl\t9c10 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "6874:\teb00178d \tbl\tc6b0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "68cc:\teb001777 \tbl\tc6b0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "68e8:\teb000cc8 \tbl\t9c10 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xbef4",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    bff8:\te1a01005 \tmov\tr1, r5\n    bffc:\te28d2014 \tadd\tr2, sp, #20\n    c000:\te3a03000 \tmov\tr3, #0\n    c004:\tebffe2b1 \tbl\t4ad0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    c164:\te1a01005 \tmov\tr1, r5\n    c168:\te28d2014 \tadd\tr2, sp, #20\n    c16c:\te3a03000 \tmov\tr3, #0\n    c170:\tebffe256 \tbl\t4ad0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7240",
+      "release_calls": [
+        "7280:\tebfff55b \tbl\t47f4 <__android_log_print@plt>",
+        "72ac:\tebfff574 \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "72d0:\tebfff56b \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "72f4:\tebfff562 \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "731c:\tebfff540 \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7324:\tebfff541 \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>",
+        "7330:\tebfff53b \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7338:\tebfff53c \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>",
+        "7344:\tebfff536 \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "734c:\tebfff537 \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "NEX-6",
+      "sha256": "ada369479b2c6478dadcac8d8f0c433c1aec2d32747815eab81b29c9d67c7c15",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x67d0",
+      "store_calls": [
+        "67e8:\teb000d08 \tbl\t9c10 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "6874:\teb00178d \tbl\tc6b0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "68cc:\teb001777 \tbl\tc6b0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "68e8:\teb000cc8 \tbl\t9c10 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xbef4",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    bff8:\te1a01005 \tmov\tr1, r5\n    bffc:\te28d2014 \tadd\tr2, sp, #20\n    c000:\te3a03000 \tmov\tr3, #0\n    c004:\tebffe2b1 \tbl\t4ad0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    c164:\te1a01005 \tmov\tr1, r5\n    c168:\te28d2014 \tadd\tr2, sp, #20\n    c16c:\te3a03000 \tmov\tr3, #0\n    c170:\tebffe256 \tbl\t4ad0 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x7240",
+      "release_calls": [
+        "7280:\tebfff55b \tbl\t47f4 <__android_log_print@plt>",
+        "72ac:\tebfff574 \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "72d0:\tebfff56b \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "72f4:\tebfff562 \tbl\t4884 <_ZN7android10VectorImplC2Ejj@plt>",
+        "731c:\tebfff540 \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7324:\tebfff541 \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>",
+        "7330:\tebfff53b \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "7338:\tebfff53c \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>",
+        "7344:\tebfff536 \tbl\t4824 <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "734c:\tebfff537 \tbl\t4830 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "DSC-HX60V",
+      "sha256": "052946d815a2e629605176346bfbdcea7ab035d98e2a310f679f48616298bfe1",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x6f28",
+      "store_calls": [
+        "6f44:\teb000bd2 \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7030:\teb001926 \tbl\td4d0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "70b8:\teb00197a \tbl\td6a8 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "70dc:\teb000b6c \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xcef4",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    cff8:\te1a01005 \tmov\tr1, r5\n    cffc:\te28d2014 \tadd\tr2, sp, #20\n    d000:\te3a03000 \tmov\tr3, #0\n    d004:\tebffdf2e \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    d160:\te1a01005 \tmov\tr1, r5\n    d164:\te28d2014 \tadd\tr2, sp, #20\n    d168:\te3a03000 \tmov\tr3, #0\n    d16c:\tebffded4 \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x74cc",
+      "release_calls": [
+        "750c:\tebfff532 \tbl\t49dc <__android_log_print@plt>",
+        "7540:\tebfff549 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "755c:\tebfff542 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "7580:\tebfff539 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "75a8:\tebfff517 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75b0:\tebfff518 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75bc:\tebfff512 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75c4:\tebfff513 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75d0:\tebfff50d \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75d8:\tebfff50e \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    },
+    {
+      "model": "DSC-HX400V",
+      "sha256": "052946d815a2e629605176346bfbdcea7ab035d98e2a310f679f48616298bfe1",
+      "java_store_release_methods": [
+        "nativeRelease()V",
+        "nativeSetReleaseLock(Z)V",
+        "nativeStoreImage(Lcom/sony/scalar/hardware/DeviceMemory; Z Z)V",
+        "release()V",
+        "setReleaseLock(Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z)V",
+        "storeImage(Lcom/sony/scalar/graphics/OptimizedImage; Z Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z)V",
+        "storeImage(Lcom/sony/scalar/hardware/CameraSequence$RawData; Z Z)V"
+      ],
+      "java_cancel_method_present": false,
+      "store_entry": "0x6f28",
+      "store_calls": [
+        "6f44:\teb000bd2 \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>",
+        "7030:\teb001926 \tbl\td4d0 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPKN7android6VectorIP13SDComMsgParamEEPiPS6_SB_SB_>",
+        "70b8:\teb00197a \tbl\td6a8 <_ZN6scalar13CameraSeqUtil12sendSDComMsgEN15ScalarDaemonMsg10MESSAGE_IDEPK13SDComMsgParamPiPPS3_S8_S8_>",
+        "70dc:\teb000b6c \tbl\t9e94 <_ZN6scalar18DeviceMemoryDiadem9getTicketEv>"
+      ],
+      "send_entry": "0xcef4",
+      "sendSync_timeout_argument": 0,
+      "sendSync_call_evidence": [
+        "    cff8:\te1a01005 \tmov\tr1, r5\n    cffc:\te28d2014 \tadd\tr2, sp, #20\n    d000:\te3a03000 \tmov\tr3, #0\n    d004:\tebffdf2e \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>",
+        "    d160:\te1a01005 \tmov\tr1, r5\n    d164:\te28d2014 \tadd\tr2, sp, #20\n    d168:\te3a03000 \tmov\tr3, #0\n    d16c:\tebffded4 \tbl\t4cc4 <_ZN8SDComIPC8sendSyncEP8SDComMsgPS1_i@plt>"
+      ],
+      "release_entry": "0x74cc",
+      "release_calls": [
+        "750c:\tebfff532 \tbl\t49dc <__android_log_print@plt>",
+        "7540:\tebfff549 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "755c:\tebfff542 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "7580:\tebfff539 \tbl\t4a6c <_ZN7android10VectorImplC2Ejj@plt>",
+        "75a8:\tebfff517 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75b0:\tebfff518 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75bc:\tebfff512 \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75c4:\tebfff513 \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>",
+        "75d0:\tebfff50d \tbl\t4a0c <_ZN7android10VectorImpl13finish_vectorEv@plt>",
+        "75d8:\tebfff50e \tbl\t4a18 <_ZN7android10VectorImplD2Ev@plt>"
+      ]
+    }
+  ]
+}

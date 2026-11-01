@@ -62,7 +62,7 @@ def package():
     info = {'version': version, 'version_code': int(manifest.get(A + 'versionCode')),
             'source_commit': commit, 'variant': 'release', 'apk_sha256': digest,
             'apk_bytes': apk.stat().st_size, 'libjpeg_commit': jpeg['commit'],
-            'verified_camera': 'Sony A6300 firmware 2.01',
+            'hardware_validation': 'See docs/RELEASE.md for version-specific physical acceptance; offline validation is separate',
             'public_apk_status': 'packaged'}
     (dest / 'BUILDINFO.json').write_text(json.dumps(info, indent=2) + '\n')
     files = sorted(p for p in dest.iterdir() if p.is_file() and p.name != 'SHA256SUMS')

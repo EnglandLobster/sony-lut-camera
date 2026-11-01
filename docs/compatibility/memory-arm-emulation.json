@@ -1,0 +1,262 @@
+[
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "DSC-RX10M2"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "DSC-RX100M3"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "DSC-RX100M4"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "DSC-RX100M5"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-7"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-7M2"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-7R"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-7RM2"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-7S"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-7SM2"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-5000"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-5100"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-6000"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-6300"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "ILCE-6500"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "NEX-5R"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "NEX-5T"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "NEX-6"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "DSC-HX60V"
+  },
+  {
+    "backend_ids": [
+      1,
+      2
+    ],
+    "returned_strings": [
+      "-2128396288",
+      "48000000"
+    ],
+    "shared_buffer": true,
+    "result": "PASS",
+    "model": "DSC-HX400V"
+  }
+]

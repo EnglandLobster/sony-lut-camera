@@ -13,19 +13,21 @@ public final class LegacyRuntimeSmoke {
         System.out.println("runtime sdk="+Build.VERSION.SDK_INT+" heap="+heap);
         int count=0;
         for(LutLibrary.Entry entry:new LutLibrary(new File(args[0])).entries()){
+          for(int budget:new int[]{8,16,32}){
             long cache=0;Bitmap a=null,b=null;
             try{
                 LutBinaryCache.verifySource(entry);
-                cache=Native.prepareDeviceLutCompiled(entry.file.getPath(),LutBinaryCache.binary(entry.file).getPath(),entry.id,4);
+                cache=Native.prepareDeviceLutBudget(entry.file.getPath(),LutBinaryCache.binary(entry.file).getPath(),entry.id,budget==8?1:4,budget);
                 if(cache==0)throw new AssertionError("null native cache");
-                a=Bitmap.createBitmap(750,500,Bitmap.Config.ARGB_8888);
-                b=Bitmap.createBitmap(750,500,Bitmap.Config.ARGB_8888);
+                a=Bitmap.createBitmap(budget==8?666:750,500,Bitmap.Config.ARGB_8888);
+                b=Bitmap.createBitmap(budget==8?666:750,500,Bitmap.Config.ARGB_8888);
                 a.eraseColor(0xff123456);b.eraseColor(0xff654321);
                 if(a.getPixel(1,1)!=0xff123456||b.getPixel(1,1)!=0xff654321)throw new AssertionError("bitmap mismatch");
                 System.out.println("PASS "+entry.name+" grid="+entry.size+" "+Native.deviceLutLoadInfo(cache));count++;
             }finally{
                 if(a!=null)a.recycle();if(b!=null)b.recycle();if(cache!=0)Native.releaseDeviceLut(cache);
             }
+          }
         }
         if(count==0)throw new AssertionError("empty library");
         System.out.println("PASS legacy startup allocations count="+count);

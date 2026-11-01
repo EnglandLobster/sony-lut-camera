@@ -1,0 +1,1522 @@
+[
+  {
+    "model": "DSC-RX10M2",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "DSC-RX100M3",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "DSC-RX100M4",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "DSC-RX100M5",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-7",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-7M2",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-7R",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-7RM2",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-7S",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-7SM2",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-5000",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-5100",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-6000",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-6300",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "ILCE-6500",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "NEX-5R",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "NEX-5T",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "NEX-6",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "DSC-HX60V",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  },
+  {
+    "model": "DSC-HX400V",
+    "scenarios": [
+      {
+        "scenario": "aligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "munmap",
+            50331648,
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "unaligned",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000023
+          ],
+          [
+            "munmap",
+            50331648,
+            48000023
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      },
+      {
+        "scenario": "open_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ]
+        ]
+      },
+      {
+        "scenario": "mmap_failure",
+        "result": "PASS",
+        "calls": [
+          [
+            "open"
+          ],
+          [
+            "mmap",
+            48000000
+          ],
+          [
+            "close",
+            7
+          ]
+        ]
+      }
+    ],
+    "result": "PASS"
+  }
+]

@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "maps": [
+    {
+      "memory": "DSCSC_KOJIRO4Gb",
+      "pixels": 20,
+      "revision": 1,
+      "filename": "libDSCSC_KOJIRO4Gb20m_PictureEffectPlus_00_01.so",
+      "asset": "MAP1.BIN",
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libDSCSC_KOJIRO4Gb20m_PictureEffectPlus_00_01.so",
+      "size": 1600,
+      "sha256": "7298061a5ce006fb92edad577e7b2db39fb0bc17f1cef3f2efcd55c9488fb7a2"
+    },
+    {
+      "memory": "DSCSC_MUSASHI4Gb",
+      "pixels": 20,
+      "revision": 1,
+      "filename": "libDSCSC_MUSASHI4Gb20m_PictureEffectPlus_00_01.so",
+      "asset": "MAP2.BIN",
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libDSCSC_MUSASHI4Gb20m_PictureEffectPlus_00_01.so",
+      "size": 1600,
+      "sha256": "caaec2fc182132a266695841aff940e2de037ef3bbb562d46d3b1f3dca23893b"
+    },
+    {
+      "memory": "ILDCSC_MUSASHI4Gb",
+      "pixels": 20,
+      "revision": 1,
+      "filename": "libILDCSC_MUSASHI4Gb20m_PictureEffectPlus_00_01.so",
+      "asset": "MAP3.BIN",
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI4Gb20m_PictureEffectPlus_00_01.so",
+      "size": 1600,
+      "sha256": "afd275a480982275dbaea1721e05b202e0f71c2e85dcc00af5e12e4faecc6ed3"
+    },
+    {
+      "memory": "ILDCSC_MUSASHI8Gb",
+      "pixels": 24,
+      "revision": 1,
+      "filename": "libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so",
+      "asset": "MAP24R1.BIN",
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so",
+      "size": 1860,
+      "sha256": "843b70399744074e9544d69982d8b37964747f9c93f907389c3c7b9efb759ee0"
+    },
+    {
+      "memory": "ILDCSC_MUSASHI8Gb",
+      "pixels": 36,
+      "revision": 1,
+      "filename": "libILDCSC_MUSASHI8Gb36m_PictureEffectPlus_00_01.so",
+      "asset": "MAP5.BIN",
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libILDCSC_MUSASHI8Gb36m_PictureEffectPlus_00_01.so",
+      "size": 1860,
+      "sha256": "5bbd3b31a8191ed0190b17546ab34f84096e653f7fd6d3b40b5bc354cc034a5f"
+    },
+    {
+      "memory": "unknown",
+      "pixels": 16,
+      "revision": 0,
+      "filename": "libunknown16m_PictureEffectPlus_00_00.so",
+      "asset": "MAP6.BIN",
+      "path": "vendor/sony-picture-effect-plus/app/src/main/lib/armeabi/libunknown16m_PictureEffectPlus_00_00.so",
+      "size": 1680,
+      "sha256": "eb71c58665c1441e9d1dac024711bc86ce56705cf300e367e222a4dc5b59ce6b"
+    },
+    {
+      "memory": "DSCSC_MUSASHI8Gb",
+      "pixels": 20,
+      "revision": 0,
+      "filename": "libDSCSC_MUSASHI8Gb20m_PictureEffectPlus_00_00.so",
+      "asset": null,
+      "size": 2020,
+      "sha256": "04c59bda4f9f3ede866ef15f4c3d53a043e7fb0e771707929dc7cc82b6c847cf",
+      "firmware_model": "DSC-RX10M2",
+      "source_url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX10M2V130.exe?fm=jp?fm=jp&upid=&s_tc="
+    },
+    {
+      "memory": "ILDCSC_MUSASHI8Gb",
+      "pixels": 24,
+      "revision": 2,
+      "filename": "libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_02.so",
+      "asset": null,
+      "size": 1840,
+      "sha256": "02f1960f8211156b48eb9609a2d867ff078b49e0baa7a9eb10b08dd6e97f44c8",
+      "firmware_model": "ILCE-7",
+      "source_url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7V320.exe?fm=jp?fm=jp&upid=&s_tc="
+    },
+    {
+      "memory": "ILDCSC_MUSASHI8Gb",
+      "pixels": 36,
+      "revision": 2,
+      "filename": "libILDCSC_MUSASHI8Gb36m_PictureEffectPlus_00_02.so",
+      "asset": null,
+      "size": 1840,
+      "sha256": "0c0eabf162de5e5539fca6a3c5241bd479f417f764c55fd849eabae2772d1236",
+      "firmware_model": "ILCE-7R",
+      "source_url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7RV320.exe?fm=jp?fm=jp&upid=&s_tc="
+    },
+    {
+      "memory": "ILDCSC_MUSASHI8Gb",
+      "pixels": 42,
+      "revision": 0,
+      "filename": "libILDCSC_MUSASHI8Gb42m_PictureEffectPlus_00_00.so",
+      "asset": null,
+      "size": 1980,
+      "sha256": "a869d22be91332d494f0fe26f6285f998938f4480bf24efe2db86bb37305a621",
+      "firmware_model": "ILCE-7RM2",
+      "source_url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7RM2V401.exe?fm=jp?fm=jp&upid=&s_tc="
+    },
+    {
+      "memory": "ILDCSC_MUSASHI8Gb",
+      "pixels": 12,
+      "revision": 0,
+      "filename": "libILDCSC_MUSASHI8Gb12m_PictureEffectPlus_00_00.so",
+      "asset": null,
+      "size": 1860,
+      "sha256": "843b70399744074e9544d69982d8b37964747f9c93f907389c3c7b9efb759ee0",
+      "firmware_model": "ILCE-7S",
+      "source_url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7SV320.exe?fm=jp?fm=jp&upid=&s_tc="
+    },
+    {
+      "memory": "ILDCSC_MUSASHI8Gb",
+      "pixels": 24,
+      "revision": 0,
+      "filename": "libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_00.so",
+      "asset": null,
+      "size": 1020,
+      "sha256": "cd6d9c10705dc7c71dfc78291df64361b90225ceb98047e34b67e21b58653762",
+      "firmware_model": "ILCE-6300",
+      "source_url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE6300V201.exe?fm=jp?fm=jp&upid=&s_tc="
+    },
+    {
+      "memory": "ILDCSC_MUSASHI8Gb",
+      "pixels": 24,
+      "revision": 1,
+      "filename": "libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so",
+      "asset": null,
+      "size": 1880,
+      "sha256": "53716ade0a2bea99f81e7e91cded1b5e0cb25f364e4d9a4a4f904e16412be142",
+      "firmware_model": "ILCE-6500",
+      "source_url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE6500V106.exe?fm=jp?fm=jp&upid=&s_tc="
+    },
+    {
+      "memory": "DSCSC_KOJIRO4Gb",
+      "pixels": 20,
+      "revision": 0,
+      "filename": "libDSCSC_KOJIRO4Gb20m_PictureEffectPlus_00_00.so",
+      "asset": null,
+      "size": 1500,
+      "sha256": "b86513d8e88883dc2b1d336fbe19b6e908b108b5ef4d5a0679307a8fde107fbf",
+      "firmware_model": "DSC-HX400V",
+      "source_url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCHX400VV210.exe?fm=jp?fm=jp&upid=&s_tc="
+    }
+  ]
+}

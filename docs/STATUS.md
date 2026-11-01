@@ -1,6 +1,8 @@
 # Current status
 
-Current release: **v0.9.0-beta.6 / code106**, public prerelease, 2026-11-01. The release APK uses the existing signing identity and upgrades over beta.5 without uninstalling. Downloads and validation are in [RELEASE.md](RELEASE.md); installation and user log export are in [USER_GUIDE.md](USER_GUIDE.md).
+Current release: **v0.9.0-beta.7-rc.3 / code109**, public experimental prerelease, 2026-11-01. The APK retains the signing identity and tested rc.3 payload. This package has host/firmware/API10 validation; physical capture/exit regression is pending. Downloads, scope and known issues are in [RELEASE.md](RELEASE.md); user log export is in [USER_GUIDE.md](USER_GUIDE.md). Beta.6 remains available as an earlier release.
+
+Published compatibility test package: **0.9.0-beta.7-rc.3 / code109**, not installed on a camera in this round. The [store RPC recovery implementation](compatibility/STORE_RPC_RECOVERY.md) isolates file/index observation from blocked Sony calls, requires both disk confirmation and RPC return, and permits timeout return to the library while retaining native ownership. A private cross-process fence prevents reopening until cleanup or a new kernel boot. Twenty firmware paths and sixty original ARM IPC scenarios were checked. The [12–42MP implementation](compatibility/IMPLEMENTATION.md) and [firmware matrix](compatibility/README.md) remain active; physical acceptance is pending.
 
 - A6300 / firmware 2.01: two physical captures on the rc.6 candidate; RAW/RAW+JPEG, burst/bracket, size, M-mode, HDR guidance and settings restoration tested on rc.7; bounded logs and repeat export tested on rc.8; export/menu pagination tested on rc.9. Exact records: [capture](A6300_RC6_ACCEPTANCE.md), [settings](A6300_SETTINGS_ACCEPTANCE.md), [diagnostics](DIAGNOSTICS.md).
 - Beta.6 promotes the rc.9 implementation with a new version name/code. Final release payload comparison and installation checks are recorded in RELEASE.md; earlier physical capture tests are not relabeled as shots taken with the final APK.
@@ -34,6 +36,6 @@ Host numerical/JPEG tests, Java product tests, exact LUT-cache tests, preview-fi
 - The earlier release-mode installation, library, preview fitting and two physical captures passed on A6300. The user confirmed half-press return and original/graded comparison. Both shots saved separate 6000×4000 EXTRA FINE JPEGs; boot identity stayed unchanged.
 - A first install without any development connector, broader SD-card/library sizes, and other camera models remain unaccepted.
 - Hardware preview color-order/domain calibration  are incomplete. The fitter's reported error is a software-model metric.
-- The public beta.6 APK and source package are linked in RELEASE.md. Third-party provenance and license facts are retained in ASSET_LICENSES.md.
+- The current test APK and source package are linked in RELEASE.md. Third-party provenance and license facts are retained in ASSET_LICENSES.md.
 
 Raw logs/photos, prior research and installation records are retained locally under ignored `results/` and `HANDOFF.md`; they are not public repository contents.

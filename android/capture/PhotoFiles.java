@@ -13,6 +13,8 @@ final class PhotoFiles {
     private final Set<String> known=new HashSet<String>();
     private String candidate,stored;
     private long length=-1,modified=-1;
+    private CaptureGeometry geometry;
+    synchronized void expect(CaptureGeometry value){geometry=value;}
     PhotoFiles(File sd) throws IOException {
         this(sd,Format.JPEG);
     }
@@ -35,15 +37,19 @@ final class PhotoFiles {
         }
         return found;
     }
-    void refresh() throws IOException {
+    synchronized void refresh() throws IOException {
         known.clear();for(File f:imageFiles())known.add(f.getPath());resetCandidate();
     }
-    void resetCandidate(){candidate=null;length=-1;modified=-1;}
-    File pollReady() throws IOException {
+    synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;}
+    synchronized File pollReady() throws IOException {
         return pollReady(false);
     }
-    File pollReady(boolean awaitStoreNotification) throws IOException {
+    synchronized File pollReady(boolean awaitStoreNotification) throws IOException {
         if(awaitStoreNotification)return pollStored();
+        return pollFresh(false);
+    }
+    synchronized File pollRecovery()throws IOException{return pollFresh(true);}
+    private File pollFresh(boolean requireComplete)throws IOException{
         List<File> fresh=new ArrayList<File>();for(File f:imageFiles())if(!known.contains(f.getPath()))fresh.add(f);
         if(fresh.size()>1)throw new IOException("more than one new "+format+"; use single-shot mode");
         if(fresh.isEmpty()){resetCandidate();return null;}
@@ -51,8 +57,8 @@ final class PhotoFiles {
         boolean stable=f.getPath().equals(candidate)&&size==length&&time==modified;
         candidate=f.getPath();length=size;modified=time;
         if(!stable || size<4)return null;
-        if(f.getPath().equals(stored))return f;
-        return complete(f)?f:null;
+        if(!requireComplete&&f.getPath().equals(stored))return f;
+        return (requireComplete?completeStructure(f):complete(f))?f:null;
     }
     private File pollStored() throws IOException {
         // StoreImageComplete names the exact new file. Do not enumerate DCIM
@@ -63,22 +69,25 @@ final class PhotoFiles {
         // unnotified/recovery path still checks stability and JPEG markers.
         return file.length()>=4?file:null;
     }
-    void confirmStored(String directory,String name) throws IOException {
+    synchronized void confirmStored(String directory,String name) throws IOException {
         File file=storedFile(directory,name);
         if(!known.contains(file.getPath()))stored=file.getPath();
     }
-    boolean knownStore(String directory,String name) throws IOException {
+    synchronized boolean knownStore(String directory,String name) throws IOException {
         return known.contains(storedFile(directory,name).getPath());
     }
     private File storedFile(String directory,String name) throws IOException {
         if(directory==null||name==null||!directory.matches("DCIM/[0-9]{3}[A-Z0-9_]{5}/?")
                 ||!name.matches("[A-Z0-9_]{1,8}(\\"+format.suffix+")?"))throw new IOException("invalid Sony store notification path for "+format);
         File file=new File(new File(dcim.getParentFile(),directory),name.endsWith(format.suffix)?name:name+format.suffix).getCanonicalFile();
+        if(!file.getPath().startsWith(dcim.getPath()+File.separator))throw new IOException("store notification outside DCIM");
         return file;
     }
     boolean complete(File file) throws IOException {
-        return format==Format.JPEG?completeJpeg(file):ArwFile.completeA6300(file);
+        return expectedHeader(file)&&completeStructure(file);
     }
+    boolean completeStructure(File file)throws IOException{return format==Format.JPEG?completeJpeg(file):ArwFile.completeA6300(file);}
+    boolean expectedHeader(File file)throws IOException{return format!=Format.JPEG||geometry==null||jpegHeader(file,geometry.width,geometry.height);}
     // Fast structural check after Sony's completed-store event. Full entropy/EOI
     // validation can follow first-frame display without stalling the pipeline.
     static boolean jpegHeader(File file,int width,int height)throws IOException{
@@ -188,5 +197,5 @@ final class PhotoFiles {
         }
         return text.toString();
     }
-    void accepted(File file){known.add(file.getPath());if(file.getPath().equals(stored))stored=null;resetCandidate();}
+    synchronized void accepted(File file){known.add(file.getPath());if(file.getPath().equals(stored))stored=null;resetCandidate();}
 }

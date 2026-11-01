@@ -7,10 +7,10 @@ import java.io.*;
 import java.util.*;
 
 /** Uses the same bounded DCF queries as HardwareJpeg, without decoding a photo. */
-final class LegacyStoreIndex implements LegacyStoreCompletion.Registration {
+final class CaptureStoreIndex implements CaptureStoreCompletion.Registration {
     private final PhotoIndex index;
     private long before;
-    LegacyStoreIndex(final Context context,File sd)throws Exception{
+    CaptureStoreIndex(final Context context,File sd)throws Exception{
         Class<?> media=Class.forName("com.sony.scalar.provider.AvindexStore$Images$Media");
         final Uri external=(Uri)media.getField("EXTERNAL_CONTENT_URI").get(null);
         index=new PhotoIndex(new PhotoIndex.Query(){

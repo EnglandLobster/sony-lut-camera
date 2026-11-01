@@ -1,0 +1,1387 @@
+{
+  "schema": 1,
+  "kind": "static firmware evidence",
+  "models": [
+    {
+      "model": "DSC-HX60",
+      "status": "no_package_on_checked_page",
+      "reason": "no firmware package on checked Sony page"
+    },
+    {
+      "model": "DSC-HX90",
+      "status": "no_package_on_checked_page",
+      "reason": "no firmware package on checked Sony page"
+    },
+    {
+      "model": "DSC-HX400",
+      "status": "no_package_on_checked_page",
+      "reason": "no firmware package on checked Sony page"
+    },
+    {
+      "model": "DSC-RX1RM2",
+      "status": "no_package_on_checked_page",
+      "reason": "no firmware package on checked Sony page"
+    },
+    {
+      "model": "DSC-RX10M2",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX10M2V130.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "d2944a5ac5805de898c37645bf731b6eccc2c6a524a0576a917d34d8c3da9ecf",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "83892e14048135a306b5aaa7bcdc2f7d744dd984563537ecdb7983ad807581bf",
+        "framework/framework.odex": "1309018c6b7fe9bb99c475a7bd4725f6006ec50e26b3ad952c858897fe9e5d47",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "1d79536d8575e0917186f955c7cc0e8bde4926827da4ce46007e9a7dec7a25d5",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "9642bff2f4e892da0ca88250251240174cb58184aa3642128103f289c043ed29",
+        "framework/com.sony.scalar.sysutil.Property.odex": "40fbeb4d24f6665810531783dbe2140a3b5572b3a75d63918a5c09e537fca0b2",
+        "framework/com.sony.scalar.database_library.odex": "e3416f9ba5cb7b39eb69febdf9d753cb4308b056d4fa83564206664d1d59f634",
+        "lib/libcameraseq.so": "3935790d04c11cf82e8e2e0dc030296681e15d861cad952021cfe1bbf0fbf180"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "4.1.2",
+        "ro.build.version.sdk": "16",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "DSCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libDSCSC_MUSASHI8Gb20m_PictureEffectPlus_00_00.so",
+          "bytes": 2020,
+          "sha256": "04c59bda4f9f3ede866ef15f4c3d53a043e7fb0e771707929dc7cc82b6c847cf"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "1.30"
+    },
+    {
+      "model": "DSC-RX10M3",
+      "status": "no_package_on_checked_page",
+      "reason": "no firmware package on checked Sony page"
+    },
+    {
+      "model": "DSC-RX100M3",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX100M3V200.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "c22dee6b3a3732607d6fde6a5cda72a8ede44b6b78250841e18cb80863e413c3",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "eb43c69f8957661b0d2341db04ee8c67af2f8ec5f802e158c4a7c0b8e156345d",
+        "framework/framework.odex": "76adaa57a8f9ad8cdae641c437679097c1ee13d56386265f3822e9ef6361908e",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "5c369788710498b8dbfb6573f04ed12d418c00d2a7f9ce657b0fb8af38733aa7",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "5f459434679bacba25ea16f4d1bb22d9a69cdad4df2a1369c6dc721e2c6cb3e1",
+        "framework/com.sony.scalar.sysutil.Property.odex": "fd92edd882feca2b97878c3ee2e82c8fa01b75407615b3e5ada9ee791d95bc4c",
+        "framework/com.sony.scalar.database_library.odex": "d4fa454e99459ea44e5bf1b4144753e6dfee67369accd4ec6915bca73ccbc5a1",
+        "lib/libcameraseq.so": "aad77df4afe8809d4f2c5bc6a9d3c38d86fb40ef409afcfd1096ed6a0567fd0c"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "DSCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libDSCSC_MUSASHI8Gb20m_PictureEffectPlus_00_00.so",
+          "bytes": 2020,
+          "sha256": "04c59bda4f9f3ede866ef15f4c3d53a043e7fb0e771707929dc7cc82b6c847cf"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "2.00"
+    },
+    {
+      "model": "DSC-RX100M4",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX100M4V200.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "5bd7d20be00114b16095acc288bdd7d7cde2aa33ec3f2f3f50f765b5898a8590",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "9e48c766ef4e3dd8a2ed3a7ae0faf31835555883728d0b4aedce570799831721",
+        "framework/framework.odex": "b9d89017fb46510b0a8e8a2e3146b7ced614b17438d02f089f67d5ecb21b21d9",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "fb8325f1ddfd04d5e5835106f36d15752c9b23c41bc0e06c188bac322645239e",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "d6a7ad391f10074caa52f357c12222ee4fa1ea6e0a36653043ae7277d38520e9",
+        "framework/com.sony.scalar.sysutil.Property.odex": "477c39c32713ba73c6a1c982fc13df21b4a1879911d0e0071e2cfeb279bd8d91",
+        "framework/com.sony.scalar.database_library.odex": "d719d796216dc740394d16489c57a6aa087b0644f0839b7c76b40de31f50bc4d",
+        "lib/libcameraseq.so": "3935790d04c11cf82e8e2e0dc030296681e15d861cad952021cfe1bbf0fbf180"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "4.1.2",
+        "ro.build.version.sdk": "16",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "DSCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libDSCSC_MUSASHI8Gb20m_PictureEffectPlus_00_00.so",
+          "bytes": 2020,
+          "sha256": "04c59bda4f9f3ede866ef15f4c3d53a043e7fb0e771707929dc7cc82b6c847cf"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "2.00"
+    },
+    {
+      "model": "DSC-RX100M5",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCRX100M5V200.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "105004cce589cf201a3b05d466b12709c9ac3203de9ca5a2269a8fb9d87aca9c",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "ce3e6e62a6cea637a9107877581cd4ca29847de6b6c2d4239fa4401cdb754e6d",
+        "framework/framework.odex": "256567ca0c63ef677b77950e2dd3d90aaa55233eb067f92c854b89452feeed3a",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "54bda28f2861f76d220a096200c42857025614600d306865c390f25f099877a9",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "d3fca9c4331c73fe1cc9c326a014cb5736d22c8937cf54327dc7b5eed157dc89",
+        "framework/com.sony.scalar.sysutil.Property.odex": "288901068f3a7c2375d55df7adecf29a7535573ca533b05398db043784550b86",
+        "framework/com.sony.scalar.database_library.odex": "5524b6eda64fea3d72151afb7276ddf7727f044469bf77ab6d5ff8b453038eb4",
+        "lib/libcameraseq.so": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "4.1.2",
+        "ro.build.version.sdk": "16",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "DSCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libDSCSC_MUSASHI8Gb20m_PictureEffectPlus_00_00.so",
+          "bytes": 2020,
+          "sha256": "04c59bda4f9f3ede866ef15f4c3d53a043e7fb0e771707929dc7cc82b6c847cf"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "2.00"
+    },
+    {
+      "model": "DSC-WX500",
+      "status": "no_package_on_checked_page",
+      "reason": "no firmware package on checked Sony page"
+    },
+    {
+      "model": "ILCE-7",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7V320.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "cbce144ff4176c90d1c9d5121b9b1edba18ab91ac8f213abd5b18c6edc3aaa68",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "64a1adeb1dcd0af474761ca921ea7458f84d181a4bb81b4a3d8174b22cd01c20",
+        "framework/framework.odex": "5744885724bc39e7098dead06881773e20b6177a49d7304426f73c07cb497e2c",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "5cf316be5cf540406d0d91c9fd24989e7bf1c680f45c68138dbd646f5ae39c7d",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "42ffd4d7cdecb1fc9c05b828040a669f82dd7a1f03460489acb06f388b650353",
+        "framework/com.sony.scalar.sysutil.Property.odex": "4567cd0a9340374f086746fe9f23a6a0d47b114c1d46d75d202e7177476e34ca",
+        "framework/com.sony.scalar.database_library.odex": "692730b93f0d7ef8a722c14e94942758a639c9b335543a4c343b47784dcfa447",
+        "lib/libcameraseq.so": "69a732e2b9a114d36064343c1dd02b3a83ac809cbfb6bb9edab9f50ecc0f222b"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_02.so",
+          "bytes": 1840,
+          "sha256": "02f1960f8211156b48eb9609a2d867ff078b49e0baa7a9eb10b08dd6e97f44c8"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "3.20"
+    },
+    {
+      "model": "ILCE-7M2",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7M2V401.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "697813d1bebbb7a7e20f11880fdfe0a7ce6c25805eb4fb8a8de10d107390ee61",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "978828eebb366f4fe63c8c08f1c671781cae7295e80591a91d9305541fd58143",
+        "framework/framework.odex": "137a426ae73cf995532f64b2d7035ad4c50215fe21e31dc598c4e150247a67a3",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "ffb3b24d6f219c12de74fba4ea949be308f715140703a555397aa50f3f9209fd",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "edc17c871d2a3eeba382b6ac6c0b0059df6c762ad50d03785dd76a76db453527",
+        "framework/com.sony.scalar.sysutil.Property.odex": "f321dadf4bb3b782a513fa997a164a82df85cf65d9019391e8e697e02df16cec",
+        "framework/com.sony.scalar.database_library.odex": "c9ba1e999d7f0b34c36ea6c11fd84cbceb7fa76da5cd913bd2f4d59eedeac6f3",
+        "lib/libcameraseq.so": "dc1fa97518ff5ce026ca6b9bcf4b0043a289cdf87d9df105e10931afe08bbb80"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "4.1.2",
+        "ro.build.version.sdk": "16",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "4.01"
+    },
+    {
+      "model": "ILCE-7R",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7RV320.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "a7b581b5f9ba422c5bf4dcee61b770c5133f15a271e5860f43753a352edbc929",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "b752c23d23acf1508c2334996d38b07e6ff261d8c606304560ea16e7d4a36cc3",
+        "framework/framework.odex": "0baf442fbbb3fd3a56b351ea4adf57facc43196bfcdce134995570f76cbc9465",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "0508a6fcde9633f1fadfdcd028fd38260a51c3c79def3c859f1bb6a4fa643412",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "6f13c40c8f9fb0b61593ee982869f41c339630ccfebc92b6e7437335e2921a8e",
+        "framework/com.sony.scalar.sysutil.Property.odex": "de990e25aa21654a5bff1d229d9a9112cb07ffc08b6ff715ca51a75243ed8e78",
+        "framework/com.sony.scalar.database_library.odex": "79eb499228e4996112f6dba39ace74a01b8de3675e86ee2653852885848465a3",
+        "lib/libcameraseq.so": "69a732e2b9a114d36064343c1dd02b3a83ac809cbfb6bb9edab9f50ecc0f222b"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libILDCSC_MUSASHI8Gb36m_PictureEffectPlus_00_02.so",
+          "bytes": 1840,
+          "sha256": "0c0eabf162de5e5539fca6a3c5241bd479f417f764c55fd849eabae2772d1236"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "3.20"
+    },
+    {
+      "model": "ILCE-7RM2",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7RM2V401.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "257690fc2a8e3cc81cc0bfb257de89de3c4cd30c846526fba20c8ebfe2210cb8",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "98f15d66513b741c1d52b00f57e4ad30d525a9eda1e0ec2257939587586ed103",
+        "framework/framework.odex": "c513ba15c957514b62a5d153a201e69c27d76bca3455f30729c1757f36013859",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "daa15d848698d4dba150b1ca0d8b33a249e2ba2fc978bd3bbfed7a7402e223a5",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "5d5a032878a5039ec30c070aa4c3732ea6bf036222d5d51b35457f89e9f639c5",
+        "framework/com.sony.scalar.sysutil.Property.odex": "971fb2810a8124fb9135755c89bf2efd2c7685be5d25badcc9bac22a035daa30",
+        "framework/com.sony.scalar.database_library.odex": "e3858ee0bf003e67d10e9170c46a8cac016bf119293c4a321928372526911667",
+        "lib/libcameraseq.so": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "4.1.2",
+        "ro.build.version.sdk": "16",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libILDCSC_MUSASHI8Gb42m_PictureEffectPlus_00_00.so",
+          "bytes": 1980,
+          "sha256": "a869d22be91332d494f0fe26f6285f998938f4480bf24efe2db86bb37305a621"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "4.01"
+    },
+    {
+      "model": "ILCE-7S",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7SV320.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "80c84ff15eb152ebf2f847d44b95f1474689b4d5fb23876c627062a4352ef5a9",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "56863bf9deadc8ea7675295f8319d7774804556f8633ad610fe790cfc9117d47",
+        "framework/framework.odex": "4c0787875cb134d5e0b7802c0086fb9729dba8e9bcc8ba83c64c044ee5630be0",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "3934a92660da03078893fc9dc57a64d7d52e6dbc665234749cd3f0e6fa52c9f6",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "040300d741013915322bbd705c5692da4797aaa1f4b3089bd2f8f61e36285888",
+        "framework/com.sony.scalar.sysutil.Property.odex": "cf0526960271a91db4a25f93e92b48c9a476c0691f60f6abe81f24472cb63144",
+        "framework/com.sony.scalar.database_library.odex": "e1f2dfc84c23ea3c4730b4c6719977e052950250d8e04f0c8bbe16a110c415ca",
+        "lib/libcameraseq.so": "924f26a8835fec51c03c65b22de6141d748e869ba37fbc081ea0d9f84eb220c9"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libILDCSC_MUSASHI8Gb12m_PictureEffectPlus_00_00.so",
+          "bytes": 1860,
+          "sha256": "843b70399744074e9544d69982d8b37964747f9c93f907389c3c7b9efb759ee0"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "3.20"
+    },
+    {
+      "model": "ILCE-7SM2",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE7SM2V301.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "359fa0428133df5a819208e777edc0ee3ef4fe2868468404ed0041bf1b2c2262",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "460ee87c53d8e406eb01eb95a8fbe0612f970b9bc51987f7817957f92dc4b41a",
+        "framework/framework.odex": "b80ef8360a2b97119873885d47266e874d8898b577f38e7765c890a9a3b2f56c",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "afbee105a64044059542c488604dc5f02713ac81f64e32546ec38a1b47942419",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "c6c26459c3f1782a4edb16bd78afed458b50ec147d34599f385305a101e57892",
+        "framework/com.sony.scalar.sysutil.Property.odex": "a045b03385e7ed30db907fee21b26918e7b5b0d6539b7b040ec7e73521cc4f07",
+        "framework/com.sony.scalar.database_library.odex": "f397ed0a6e5cf0ee584e0272d8b7a39494a8c5afbee77012a0ffbb3ad4ed1a41",
+        "lib/libcameraseq.so": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "4.1.2",
+        "ro.build.version.sdk": "16",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libILDCSC_MUSASHI8Gb12m_PictureEffectPlus_00_00.so",
+          "bytes": 1860,
+          "sha256": "843b70399744074e9544d69982d8b37964747f9c93f907389c3c7b9efb759ee0"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "3.01"
+    },
+    {
+      "model": "ILCE-5000",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE5000V110.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "1c17535dd13ef777589805ae5a2edb6c45798d1c4f95d204e8b8d483f2780c8f",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "1c96dbb01037509d44e545452c715410c25955c5abb6d4f8cad70d1f3b6c49f4",
+        "framework/framework.odex": "8c30378ae96d0ef8a72fccfa3031594a0f248b11a9598ad4338b28c981c0d6e7",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "a4eae3aa672fd56979478d337373958f24fc4107cbcda1e14946946e9f8ebfc5",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "db488c5c4564145c9b2c7fb2c9d609afd64609d3afc84f5b925c94a8fd89b680",
+        "framework/com.sony.scalar.sysutil.Property.odex": "5d4142c69b633e8a66b65018e7f5927b2291765b1815cbf1b37bf0526450b382",
+        "framework/com.sony.scalar.database_library.odex": "378c93061efb2618b5fdf6b01f6f271782903a1c94a3b1919cc52f40073e7eed",
+        "lib/libcameraseq.so": "69a732e2b9a114d36064343c1dd02b3a83ac809cbfb6bb9edab9f50ecc0f222b"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI4Gb"
+      ],
+      "firmware_picture_effect_maps": [],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "1.10"
+    },
+    {
+      "model": "ILCE-5100",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE5100V310.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "a1a3a42a3bc68874c3a0af56dad241ad02f7cdb35941e5ab9bd4ce2426c2e113",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "77c350c15654119c731f8497d718d2d9e84d5c876f8fb27a06a374916f57a983",
+        "framework/framework.odex": "d360db6ce6297d9122cd83180ac8f56ce9e95892085d803357a9531ccfa61ee0",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "f3adcd837c87f7114b488c5e89fd95447c25528422bd1f4691bbe4c1324e3e54",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "316cf1c92ed186f30f99f5534be8b34edcb8e72dbe9bd0b8c44e26b85357533f",
+        "framework/com.sony.scalar.sysutil.Property.odex": "c3d1ff2848759a873762a8262260335c7258a52a5a80ebe1715b8a32c3bbdc71",
+        "framework/com.sony.scalar.database_library.odex": "64fb249b8f052cd6d700b0040197f4d9809921fde53cce98aa3fd1939c3e8c39",
+        "lib/libcameraseq.so": "c127fad908bdd2b06e366e82455674f8142f5ac1ab9c3fe68d6b01365843db52"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "3.10"
+    },
+    {
+      "model": "ILCE-6000",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE6000V321.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "0c3e61b03daafa469f4dfcb04decf0983088e609d7c32a29f356dab57ce45d57",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "af3b450ce48bd052de16b6e2f1264f8b743faab683dbfa7b823407737a24448f",
+        "framework/framework.odex": "a6342a04e6e208107928980f5c00f1066cda62e2b124e0b2d8a20a1a3890cd61",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "30461f373b0b05f4809fe11fbf3c15f330b757c84feb9bd6c986064d9dcd869c",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "0698fde5577a83a5085b1eb32703ca4c26eefa92d65e835af999f715c3055084",
+        "framework/com.sony.scalar.sysutil.Property.odex": "896ede6c1f89753d0dc0d56fa21df46889ceac000fe74bc27982ac0667f86be1",
+        "framework/com.sony.scalar.database_library.odex": "b677a53cded6b072d5b647b083700421cdf4f724d22903869f22c02a908c7d48",
+        "lib/libcameraseq.so": "ca96d7fbd87ff774b3c5cc95b1f7dba7c3acf5e639e2808ffe84982acb4da36b"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "3.21"
+    },
+    {
+      "model": "ILCE-6300",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE6300V201.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "0677b93f7ba550bd33c9c8732b20fb3d3302c14e943436f22b60ae8264188942",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "36f3c54545f4cdd5c166ac3355499d23d922b3488cb57a9d91240a48f2eba3f3",
+        "framework/framework.odex": "4bb20f589497378e830e474be439a97154e73eb61877fe939e4775b6b043678f",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "908acff674d0d6ccd8850e616188f6b647a51b2fe7f0797a837a58d4e1f087e5",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "4e7d38da57520dd50fb79836777f81a33f4d26d7965b3342051d6cedad781b1f",
+        "framework/com.sony.scalar.sysutil.Property.odex": "d790a6f1a81487d44e60c7bdca499e85bd57a6f04e9d967d5e3b0eac7cb8c034",
+        "framework/com.sony.scalar.database_library.odex": "fddabf6dcda1d476c4b7679c5b21a08017f96f224aeaa758ced3ac1f3dc492d7",
+        "lib/libcameraseq.so": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "4.1.2",
+        "ro.build.version.sdk": "16",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_00.so",
+          "bytes": 1020,
+          "sha256": "cd6d9c10705dc7c71dfc78291df64361b90225ceb98047e34b67e21b58653762"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "2.01"
+    },
+    {
+      "model": "ILCE-6500",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_ILCE6500V106.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "9832a5597a1eb8ae495157ef476e0210af40b5b8999c45c0dc0e5929ba32f3fc",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 52,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": true,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "named"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "972d2acc65c3fb092ddad25cadd747e18ab0a7614a54106be21297c74a9f6d50",
+        "framework/framework.odex": "9fe20d22afeba3147af7ee98de850f98b48a12d5e8bfb383a57ab0b21e88056b",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "0b03cd3ab1d40dc1198768e93bbb520f6bfac75c3de02d8e2fd64d2bcdfe24d2",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "1fed194125e9e3e19091270a408fe469f831bde15c36819899d16630fce92ce1",
+        "framework/com.sony.scalar.sysutil.Property.odex": "d5b1f904fb79c0624979e11207aeeff2f4f42890f00fb8cdb2cf9f62dfa1999b",
+        "framework/com.sony.scalar.database_library.odex": "c3663a8fa51a8e1d8cb0e6d5cbc37306a1d923aec808f4f08bfe5bb5d3b29295",
+        "lib/libcameraseq.so": "ca46d902d70db7fa5d6dd4e1d6cf306972e1da2fd1438f1f5fc1c3527577a6ab"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "4.1.2",
+        "ro.build.version.sdk": "16",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "physical_memory_info"
+      },
+      "backup_memory_strings": [
+        "ILDCSC_MUSASHI8Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libILDCSC_MUSASHI8Gb24m_PictureEffectPlus_00_01.so",
+          "bytes": 1880,
+          "sha256": "53716ade0a2bea99f81e7e91cded1b5e0cb25f364e4d9a4a4f904e16412be142"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "1.06"
+    },
+    {
+      "model": "NEX-5R",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_NEX5RV103.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "1280665fb47a0a7b4d8580a73b906e741b032a355d4d57ef51d10edb61e161ab",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "createGammaTable",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "getExtendedGammaTable",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "setExtendedGammaTable",
+            "args": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "getSize",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "write",
+            "args": "Ljava/io/InputStream;",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "read",
+            "args": "[B",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "release",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "setPictureEffectGammaForceOff",
+            "args": "Z",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$ParametersModifier;",
+            "method": "setRGBMatrix",
+            "args": "[I",
+            "present": false
+          }
+        ],
+        "missing_capture_methods": [],
+        "native_color_preview_available": false,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "0f4fd430f301e2a436f29239780939deb0860e952126e56ee5729a3fbd546179",
+        "framework/framework.odex": "e5bab553665093245aa1fbef8618c290c0db8f929def25b8de0c34415df470aa",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "d472bd085217e22fcb07041499fb0121efaa840a6908fcfe9f559bdaf08cc97c",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "d00fc821014e679c5c993f38fa3cd20d888c2e8b36e3331ad843e88d4ba6b527",
+        "framework/com.sony.scalar.sysutil.Property.odex": "ffe6dc98f28eaafbfc3b27e8a3ed523be30bfdde9f195e940fc92d49277ae6a2",
+        "framework/com.sony.scalar.database_library.odex": "aab39c10dfe7844b394279f924396f6da09bfe52039d17abeb843afa41db9bf0",
+        "lib/libcameraseq.so": "ada369479b2c6478dadcac8d8f0c433c1aec2d32747815eab81b29c9d67c7c15"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [],
+      "firmware_picture_effect_maps": [],
+      "static_api_complete": false,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "1.03"
+    },
+    {
+      "model": "NEX-5T",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_NEX5TV101.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "695677247ab2a8e4bed0a55c023a03ef59e9f0ced4bcd9261b4b731c4d5eca0a",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "createGammaTable",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "getExtendedGammaTable",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "setExtendedGammaTable",
+            "args": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "getSize",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "write",
+            "args": "Ljava/io/InputStream;",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "read",
+            "args": "[B",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "release",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "setPictureEffectGammaForceOff",
+            "args": "Z",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$ParametersModifier;",
+            "method": "setRGBMatrix",
+            "args": "[I",
+            "present": false
+          }
+        ],
+        "missing_capture_methods": [],
+        "native_color_preview_available": false,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "3092a819487f449a4004865447719ec2cfc08c7a85f617b79f2cebcd61e17fee",
+        "framework/framework.odex": "505b19e0f80d97adab7ee580416116d57e7b95ca7c346f14790a133244862956",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "5ce6e2a8a00218cf3a572ef9e5674202a1fc88a251422a5b6b90dbd059bbc906",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "efeba801a224989225230676b379d0bf19d41f6414d439c9ab760d6aa1c59dc9",
+        "framework/com.sony.scalar.sysutil.Property.odex": "b31d4359c64a13ae734ed1374ef21a41b44097368137ec02bd566ddbfe6c98e0",
+        "framework/com.sony.scalar.database_library.odex": "9f062074459619d087c69699f55b93e75a3ddbb582962ab09c66979047caf6bb",
+        "lib/libcameraseq.so": "ada369479b2c6478dadcac8d8f0c433c1aec2d32747815eab81b29c9d67c7c15"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [],
+      "firmware_picture_effect_maps": [],
+      "static_api_complete": false,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "1.01"
+    },
+    {
+      "model": "NEX-6",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_NEX6V103.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "202e045ad773490fca9129aa35e19855e49835ee7bac78d09ec9fcd51223cdc1",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "createGammaTable",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "getExtendedGammaTable",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx;",
+            "method": "setExtendedGammaTable",
+            "args": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "getSize",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "write",
+            "args": "Ljava/io/InputStream;",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "read",
+            "args": "[B",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "release",
+            "args": "",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$GammaTable;",
+            "method": "setPictureEffectGammaForceOff",
+            "args": "Z",
+            "present": false
+          },
+          {
+            "owner": "Lcom/sony/scalar/hardware/CameraEx$ParametersModifier;",
+            "method": "setRGBMatrix",
+            "args": "[I",
+            "present": false
+          }
+        ],
+        "missing_capture_methods": [],
+        "native_color_preview_available": false,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "bbb59b6291eb1d2599412c6e41344ad4237731b6eb3ae621e911cecdacbe2625",
+        "framework/framework.odex": "aa634c6e213ae8d6a3c805fff54671778bbf94f254970c7487d1f9e861455db8",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "05231c669f308c39afc4ce7bcdae849a4525be448f362128d8648d7c2bce394e",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "392e124345258768ad09681b92e8341a614ac52cc104ad24d88ea40e3760fc78",
+        "framework/com.sony.scalar.sysutil.Property.odex": "72b4a2cda9a6812955d05004c0f892ad304a06029aeeb77dd9f81850182e01d3",
+        "framework/com.sony.scalar.database_library.odex": "6bb279036c54aff68bbb8453c34c25b9aca8dabded340554bdddd12fb0fe967a",
+        "lib/libcameraseq.so": "ada369479b2c6478dadcac8d8f0c433c1aec2d32747815eab81b29c9d67c7c15"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [],
+      "firmware_picture_effect_maps": [],
+      "static_api_complete": false,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "1.03"
+    },
+    {
+      "model": "DSC-HX60V",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCHX60VV210.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "c778fccae9e247d882cb2d4420936d60ad07a09029898623acd64fd7935474ec",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "52a87304d4024d281b5b1213c67c185ea749eb7124e44ea22696da09711f8e3e",
+        "framework/framework.odex": "200a7adf6c1542cd7d879254a35cb8aab5f4618ea48ae223c84d690b6c3f2eed",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "d501f4fe3f020503d508a09358e8c8071e35cfea6da37f2a8086c7dc2b5de855",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "dd18a4f8fe10317a4ffe5dbb2ce43438d6d28af2e5ecb3ed21138b4362eabe85",
+        "framework/com.sony.scalar.sysutil.Property.odex": "4ede27a21ea595c4ee122482dbc2d3f609e27f9d057576ee22980877fe2dba54",
+        "framework/com.sony.scalar.database_library.odex": "fa07de49e968f65f413ec833a089b28f82b7613e853d08724baa493a113936ef",
+        "lib/libcameraseq.so": "052946d815a2e629605176346bfbdcea7ab035d98e2a310f679f48616298bfe1"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [
+        "DSCSC_KOJIRO4Gb"
+      ],
+      "firmware_picture_effect_maps": [],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "2.10"
+    },
+    {
+      "model": "DSC-HX400V",
+      "url": "https://support.d-imaging.sony.co.jp/download/IMT/Update_DSCHX400VV210.exe?fm=jp?fm=jp&upid=&s_tc=",
+      "sha256": "cfc01b406cb525f86d3c608c8edaae4ad8ef586f0163a7c5c7391b5d10faeb2d",
+      "status": "extracted",
+      "java": {
+        "inputs": [
+          "framework/sony.cameraex.odex",
+          "framework/framework.odex",
+          "framework/com.sony.scalar.hardware.avio.DisplayManager.odex",
+          "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex",
+          "framework/com.sony.scalar.sysutil.Property.odex",
+          "framework/com.sony.scalar.database_library.odex"
+        ],
+        "required_methods": 51,
+        "missing": [],
+        "missing_capture_methods": [],
+        "native_color_preview_available": true,
+        "missing_fields": [],
+        "named_store_callback": false,
+        "legacy_jpeg_callback": true,
+        "legacy_index_available": true,
+        "store_protocol": "indexed_file"
+      },
+      "inputs": {
+        "framework/sony.cameraex.odex": "ed7148e4de18592329401b3b19b66ab4f443c1ad81c4e9661f515fa5f465b994",
+        "framework/framework.odex": "10a5b0d39a5c7fbdbea4112b489e937b23a18a0654e3321fe61a8e65aeb4f385",
+        "framework/com.sony.scalar.hardware.avio.DisplayManager.odex": "f5f34ba172597f32a9a083435fce983e6ca350a9034bcdc14874acd2e98ae531",
+        "framework/com.sony.scalar.sysutil.didep.Gpelibrary.odex": "f54362316557f674e7ec5fba11d0511cd9ae2fa601e21c6f797b876d9d1a13ec",
+        "framework/com.sony.scalar.sysutil.Property.odex": "3ea351242683fecd9d890e39a5b5167a141b8c8c45eb2ff1e8d42c1b1d7233ef",
+        "framework/com.sony.scalar.database_library.odex": "1a6597abfc4789da47f249fc80fa99f58d66b92988674ea8e5319d23d72e7c80",
+        "lib/libcameraseq.so": "052946d815a2e629605176346bfbdcea7ab035d98e2a310f679f48616298bfe1"
+      },
+      "android": {
+        "ro.product.model": "ScalarA",
+        "ro.build.version.release": "2.3.7",
+        "ro.build.version.sdk": "10",
+        "ro.product.cpu.abi": "armeabi-v7a",
+        "dalvik.vm.heapsize": "24m"
+      },
+      "elf": {
+        "machine": "EM_ARM",
+        "bits": 32
+      },
+      "native": {
+        "missing": [],
+        "memory_access": "legacy_memory_properties"
+      },
+      "backup_memory_strings": [
+        "DSCSC_KOJIRO4Gb"
+      ],
+      "firmware_picture_effect_maps": [
+        {
+          "path": "etc/memmap/libDSCSC_KOJIRO4Gb20m_PictureEffectPlus_00_00.so",
+          "bytes": 1500,
+          "sha256": "b86513d8e88883dc2b1d336fbe19b6e908b108b5ef4d5a0679307a8fde107fbf"
+        }
+      ],
+      "static_api_complete": true,
+      "physical_capture": "not tested in this audit",
+      "firmware_version": "2.10"
+    }
+  ]
+}

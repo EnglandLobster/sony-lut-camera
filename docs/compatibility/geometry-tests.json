@@ -1,0 +1,101 @@
+[
+  {
+    "width": 4240,
+    "height": 2832,
+    "workers": 1,
+    "cache_budget_mib": 8,
+    "cache_resident_bytes": 8388608,
+    "image_bytes": 24066464,
+    "host_processing_ms": 196.3,
+    "exact_pixels": true,
+    "guards": true
+  },
+  {
+    "width": 4912,
+    "height": 3264,
+    "workers": 2,
+    "cache_budget_mib": 8,
+    "cache_resident_bytes": 8388608,
+    "image_bytes": 32124416,
+    "host_processing_ms": 147.75,
+    "exact_pixels": true,
+    "guards": true
+  },
+  {
+    "width": 4896,
+    "height": 3672,
+    "workers": 2,
+    "cache_budget_mib": 8,
+    "cache_resident_bytes": 8388608,
+    "image_bytes": 36022448,
+    "host_processing_ms": 159.11,
+    "exact_pixels": true,
+    "guards": true
+  },
+  {
+    "width": 5456,
+    "height": 3632,
+    "workers": 4,
+    "cache_budget_mib": 16,
+    "cache_resident_bytes": 16777216,
+    "image_bytes": 39697888,
+    "host_processing_ms": 116.5,
+    "exact_pixels": true,
+    "guards": true
+  },
+  {
+    "width": 5472,
+    "height": 3648,
+    "workers": 4,
+    "cache_budget_mib": 16,
+    "cache_resident_bytes": 16777216,
+    "image_bytes": 39989504,
+    "host_processing_ms": 112.42,
+    "exact_pixels": true,
+    "guards": true
+  },
+  {
+    "width": 6000,
+    "height": 4000,
+    "workers": 4,
+    "cache_budget_mib": 32,
+    "cache_resident_bytes": 33554432,
+    "image_bytes": 48072128,
+    "host_processing_ms": 128.22,
+    "exact_pixels": true,
+    "guards": true
+  },
+  {
+    "width": 7360,
+    "height": 4912,
+    "workers": 4,
+    "cache_budget_mib": 32,
+    "cache_resident_bytes": 33554432,
+    "image_bytes": 72393184,
+    "host_processing_ms": 174.23,
+    "exact_pixels": true,
+    "guards": true
+  },
+  {
+    "width": 7952,
+    "height": 5304,
+    "workers": 4,
+    "cache_budget_mib": 32,
+    "cache_resident_bytes": 33554432,
+    "image_bytes": 84450416,
+    "host_processing_ms": 190.87,
+    "exact_pixels": true,
+    "guards": true
+  },
+  {
+    "width": 6000,
+    "height": 4000,
+    "workers": 4,
+    "cache_budget_mib": 1,
+    "cache_resident_bytes": 1048576,
+    "image_bytes": 48072128,
+    "host_processing_ms": 123.89,
+    "exact_pixels": true,
+    "guards": true
+  }
+]

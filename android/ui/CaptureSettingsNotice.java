@@ -10,7 +10,7 @@ final class CaptureSettingsNotice {
             add(changes,("rawjpeg".equals(before.get("storage-fmt"))?"RAW+JPEG":"RAW")+" → JPEG");
         if(changed(before,after,"drive-mode")&&"single".equals(after.get("drive-mode")))
             add(changes,("burst".equals(before.get("drive-mode"))?"连拍":"包围曝光")+" → 单张");
-        if(changed(before,after,"picture-size"))add(changes,"尺寸 → 24M（3:2）");
+        if(changed(before,after,"picture-size"))add(changes,"尺寸 → "+after.get("picture-size"));
         if(changed(before,after,"scene-mode")&&"program-auto".equals(after.get("scene-mode")))add(changes,"曝光 → P 自动");
         if(changed(before,after,"jpeg-quality")){
             String value=after.get("jpeg-quality");
