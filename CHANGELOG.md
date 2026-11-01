@@ -1,5 +1,15 @@
 # 更新记录
 
+## 0.9.0-beta.7-rc.2 — reviewed A5100 retest candidate
+
+- Independent review found no high-confidence regression requiring a production-logic change; update acceptance notes and version identification only, retaining the rc.1 signing identity.
+
+## 0.9.0-beta.7-rc.1 — A5100 animation cleanup candidate
+
+- Avoid the API10 `Canvas.setBitmap(null)` crash after saving; stop animation callbacks and detach the current source before releasing only owned thumbnails.
+- Add real Android graphics lifecycle regressions with mathematical fixtures; preserve full LUT processing, photo dimensions and the capture/save interfaces.
+- User reports installing rc.1 on A5100 and confirming the original post-capture exit is fixed. Full device acceptance and real API10 graphics-test execution remain pending; the previously observed system restart remains unexplained.
+
 ## v0.9.0-beta.6 · 2026-11-01
 
 - 旧机兼容：使用 Surface 生命周期判断取景就绪；缺少新版保存回调时采用媒体索引与文件完成检查；适配旧版原生内存属性接口。A6000 / A7 一代已做官方固件接口审计及 API10 离线验证，实拍仍待验收。
