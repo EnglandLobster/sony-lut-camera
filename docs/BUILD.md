@@ -1,6 +1,8 @@
 # Build and development setup
 
-The supported build host is macOS, matching the current verified toolchain. The APK targets old Sony Android firmware; replacing the NDK or Java compatibility level requires separate validation.
+The original verified build host is macOS; Windows Git Bash APK builds use the host adaptations below. The APK targets old Sony Android firmware; replacing the NDK or Java compatibility level requires separate validation.
+
+For a Windows build, use Git Bash with the same JDK 17, Android SDK 36/build-tools 36.0.0 and Windows NDK r16b. Set `JAVA_HOME`, `ANDROID_SDK`, `ANDROID_NDK`, `PYTHONUTF8=1` and the CMake/Ninja executable paths only for the build shell; use `CMAKE_GENERATOR=Ninja`. The Android build and package checker select the native NDK host tools, and signing uses the build-tools apksigner JAR. This does not change the target ABI, STL, Java/API compatibility or signing-key requirement. Some host tests require POSIX symlinks and cannot run on an unprivileged Windows account; a host test failure or missing API10 emulator must be reported separately from APK build checks.
 
 ## Toolchain
 

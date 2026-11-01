@@ -14,6 +14,12 @@ sdk="${ANDROID_SDK:-/opt/homebrew/share/android-commandlinetools}"
 ndk="${ANDROID_NDK:-$root/vendor/toolchains/android-ndk-r16b}"
 java_home="${JAVA_HOME:-$(/usr/libexec/java_home -v 17)}"
 export JAVA_HOME="$java_home" PATH="$java_home/bin:$PATH"
+case "$(uname -s)" in
+  Darwin) ndk_host="darwin-x86_64" ;;
+  Linux) ndk_host="linux-x86_64" ;;
+  MINGW*|MSYS*|CYGWIN*) ndk_host="windows-x86_64" ;;
+  *) echo "Unsupported NDK build host." >&2; exit 1 ;;
+esac
 bt="$sdk/build-tools/36.0.0"
 jar="$sdk/platforms/android-36/android.jar"
 cmake -S vendor/libjpeg-turbo -B out/jpeg-android \
@@ -69,7 +75,7 @@ javac -encoding UTF-8 --release 7 -Xlint:-options -cp "$jar" -d out/apk/classes 
 find out/apk/classes -name '*.class' > out/apk/classes.txt
 java -cp "$bt/lib/d8.jar" com.android.tools.r8.D8 --min-api 10 --lib "$jar" --output out/apk/dex @out/apk/classes.txt
 cp out/android/libsonylut.so out/apk/package/lib/armeabi-v7a/
-stripper="$ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-strip"
+stripper="$ndk/toolchains/arm-linux-androideabi-4.9/prebuilt/$ndk_host/bin/arm-linux-androideabi-strip"
 "$stripper" --strip-unneeded out/apk/package/lib/armeabi-v7a/libsonylut.so
 cp out/android-armv5/libsonylut.so out/apk/package/lib/armeabi/
 "$stripper" --strip-unneeded out/apk/package/lib/armeabi/libsonylut.so
@@ -87,9 +93,9 @@ if [ ! -f out/test.keystore ]; then
   keytool -genkeypair -keystore out/test.keystore -alias lut-test -keyalg RSA -keysize 2048 \
     -validity 3650 -storepass android -keypass android -dname 'CN=Sony LUT Test'
 fi
-"$bt/apksigner" sign --ks out/test.keystore --ks-pass pass:android --key-pass pass:android \
+java -jar "$bt/lib/apksigner.jar" sign --ks out/test.keystore --ks-pass pass:android --key-pass pass:android \
   --min-sdk-version 10 --v1-signing-enabled true --v2-signing-enabled false --v3-signing-enabled false \
   --out dist/SonyLutTest.apk out/apk/aligned.apk
-"$bt/apksigner" verify --min-sdk-version 10 --verbose dist/SonyLutTest.apk
+java -jar "$bt/lib/apksigner.jar" verify --min-sdk-version 10 --verbose dist/SonyLutTest.apk
 python3 scripts/check_package.py --variant "$variant"
 echo "Built dist/SonyLutTest.apk and dist/sony-lut-armv7"

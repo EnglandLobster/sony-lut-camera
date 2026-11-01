@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Inspect the offline artifacts; no camera connection."""
-import argparse,datetime,hashlib,json,os,pathlib,re,subprocess,zipfile
+import argparse,datetime,hashlib,json,os,pathlib,re,subprocess,sys,zipfile
 from audit_release_assets import audit_apk
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--variant", choices=["debug","release"], default="debug")
@@ -8,7 +8,9 @@ variant=parser.parse_args().variant
 root=pathlib.Path(__file__).resolve().parents[1]
 ndk=pathlib.Path(os.environ.get('ANDROID_NDK',root/'vendor/toolchains/android-ndk-r16b'))
 sdk=pathlib.Path(os.environ.get('ANDROID_SDK','/opt/homebrew/share/android-commandlinetools'))
-readelf=ndk/'toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-readelf'
+ndk_host={'darwin':'darwin-x86_64','linux':'linux-x86_64','win32':'windows-x86_64'}.get(sys.platform)
+if ndk_host is None:raise RuntimeError('Unsupported NDK build host: '+sys.platform)
+readelf=ndk/('toolchains/arm-linux-androideabi-4.9/prebuilt/'+ndk_host+'/bin/arm-linux-androideabi-readelf')
 apk=root/'dist/SonyLutTest.apk'
 def elf(args):return subprocess.check_output([str(readelf)]+[str(x) for x in args],text=True)
 report={'checked_at':datetime.datetime.now().astimezone().isoformat(),
