@@ -15,6 +15,7 @@ public final class CapturePipelineTest {
     static class Index implements CaptureStoreCompletion.Registration {
         File visible;int before;int order;
         public void begin(){before=order;}
+        public void accepted(File file){}
         public PhotoIndex.Entry saved()throws Exception{
             if(order-before>1)throw new IOException("ambiguous new index entries");
             if(order<=before||visible==null)return null;
@@ -89,16 +90,16 @@ public final class CapturePipelineTest {
             check(gate.beginRearm(gate.shot())&&gate.rearmed(gate.shot()),"safe next shot");
             long c=returnedStore(completion,41000);File third=new File(dir,"DSC00004.JPG");write(third,jpeg(width,height,true));
             completion.notified(c,"DCIM/100MSDCF/",third.getName());
-            check(completion.poll(c,41200)==null,"named file also waits for index before the next watermark");
-            index.saved(third);completion.poll(c,41300);CaptureStoreCompletion.Receipt named=completion.poll(c,41400);
-            check(named!=null&&!named.recovered,"named receipt and matching index confirmed");files.accepted(named.file);
+            check(completion.poll(c,41200)==null,"named file waits for stable file metadata");
+            index.saved(third);CaptureStoreCompletion.Receipt named=completion.poll(c,41400);
+            check(named!=null&&!named.recovered,"named receipt confirms the stable complete file");files.accepted(named.file);
             long stopping=returnedStore(completion,41500);completion.requestStop();
             check(completion.pending()&&completion.poll(stopping,41600)==null,"stop request retains pending ownership");
             File stoppingFile=new File(dir,"DSC00007.JPG");write(stoppingFile,jpeg(width,height,true));index.saved(stoppingFile);
             completion.poll(stopping,42600);CaptureStoreCompletion.Receipt stopped=completion.poll(stopping,42800);
             check(stopped!=null&&stopped.stopRequested,"confirmed stop returns preserved photo");files.accepted(stopped.file);
             boolean furtherBlocked=false;try{completion.begin(42900);}catch(IllegalStateException e){furtherBlocked=true;}
-            check(furtherBlocked,"stop cannot accidentally submit graded/next photo");
+            check(furtherBlocked,"stop cannot accidentally start another capture");
             completion=new CaptureStoreCompletion(files,index,modern);
             long uncertain=returnedStore(completion,42000);File extra=new File(dir,"DSC00005.JPG"),extra2=new File(dir,"DSC00006.JPG");
             write(extra,jpeg(width,height,true));write(extra2,jpeg(width,height,true));

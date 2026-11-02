@@ -163,8 +163,8 @@ public final class LibraryActivity extends Activity {
         }});
     }
     private void scan(){mode="files";selection=0;runTask("正在扫描 SD 卡",new Task(){public void run()throws Exception{
-        imports=LutLibrary.scan(new File(Environment.getExternalStorageDirectory(),"LUTS"));importResults=new ArrayList<String>();for(File f:imports)importResults.add("等待导入");importDone=false;importFocusId=null;
-    }},new Runnable(){public void run(){notice=imports.isEmpty()?"没有找到文件：请将 CUBE 直接放入 LUTS 文件夹":"支持 .cube / .cub；TITLE 将作为显示名称";render();}});}
+        imports=LutLibrary.scanImports(Environment.getExternalStorageDirectory());importResults=new ArrayList<String>();for(File f:imports)importResults.add("等待导入");importDone=false;importFocusId=null;
+    }},new Runnable(){public void run(){notice=imports.isEmpty()?"未找到文件：请将 .cube / .cub 直接放入根目录 LUTS 或 LUT 文件夹":"支持 .cube / .cub；TITLE 将作为显示名称";render();}});}
     private void importFiles(final int index){runTask("正在校验并导入 LUT",new Task(){public void run()throws Exception{
         int added=0,existing=0,failed=0;importFocusId=null;
         for(int i=0;i<imports.size();i++){if(index>=0&&i!=index)continue;

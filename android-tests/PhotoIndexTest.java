@@ -33,7 +33,9 @@ public final class PhotoIndexTest {
             reject(new Check(){public void run()throws Exception{index.source(new File(path));}},"bad path accepted: "+path);
         fake.rows=Arrays.asList(entry(40));
         if(index.latestOrder()!=40||fake.limit!=1||!"rec_order DESC".equals(fake.order)||fake.selection!=null)throw new AssertionError("unbounded save marker");
-        fake.rows=Collections.emptyList();if(index.latestOrder()!=0)throw new AssertionError("empty index watermark");
+        fake.rows=Collections.emptyList();if(index.latestOrder()!=-1)throw new AssertionError("empty index watermark must precede valid record zero");
+        fake.rows=Arrays.asList(new PhotoIndex.Entry("avindex://1000/00000001-default/00000001-00000001",0,100,1));
+        if(index.savedAfter(-1,"").order!=0)throw new AssertionError("first record zero skipped");
         fake.rows=Arrays.asList(entry(41));if(index.savedAfter(40,entry(39).uri).order!=41||fake.limit!=2||!"rec_order>40".equals(fake.selection))throw new AssertionError("incremental save query");
         fake.rows=Collections.emptyList();notReady(new Check(){public void run()throws Exception{index.savedAfter(40,entry(39).uri);}});
         fake.rows=Arrays.asList(entry(41),entry(42));reject(new Check(){public void run()throws Exception{index.savedAfter(40,entry(39).uri);}},"multiple new outputs accepted");

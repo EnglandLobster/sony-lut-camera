@@ -32,7 +32,7 @@ public final class CaptureStoreRpcTest {
                 final PhotoFiles files=new PhotoFiles(sd);files.expect(new CaptureGeometry(6000,4000));
                 final boolean[] indexed={false};final int[] queries={0};
                 final CaptureStoreCompletion completion=new CaptureStoreCompletion(files,new CaptureStoreCompletion.Registration(){
-                    public void begin(){}public PhotoIndex.Entry saved()throws IOException{
+                    public void begin(){}public void accepted(File file){}public PhotoIndex.Entry saved()throws IOException{
                         queries[0]++;return indexed[0]?new PhotoIndex.Entry("avindex://test/00000000-default/00000000-00000001",1,100,1):null;
                     }
                 },modern);

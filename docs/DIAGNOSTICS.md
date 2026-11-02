@@ -48,3 +48,5 @@ rc.8 发行 APK SHA-256：`7a64cfee39b6ec93a589580d771bc771a1b2fb00dda4a07a1dbb0
 rc.9 导航回归：修复“导出成功后按上键无法回到更多菜单第一页”。普通菜单直接导出并保留原位置，成功不跳入两项子页面。A6300 的 7 项菜单已验证跨页上翻、下翻及 MENU 回库；API10 的 6 项菜单验证导出后上翻到第一项，后续步骤因 ADB 连接超时中断；日志与回执在本地 `results/diagnostics-navigation-20261101/`。
 
 rc.5 在拍摄进程主动退出和 Java 未捕获异常处理时显式关闭私有/SD 日志写入端。保存等待快照增加 `confirmation_stage`、`index_queries/index_ms` 和 `file_checks/file_ms`，区分原生保存阻塞、索引未出现和目标文件核验；快照仍只写私有存储。
+
+rc.7 恢复 `stored_notification` 记录，区分 `named_receipt` / `index_recovery` 完成路径；快照包含 `index_polls`、实际 `index_queries_submitted`、`index_worker_active` / `index_worker_ms` 和有界 `last_error` 原因链。索引服务阻塞与照片文件检查不再混为一项等待。

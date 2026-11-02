@@ -30,6 +30,10 @@ public final class ProductStorageTest {
             File scan=new File(root,"LUTS");scan.mkdir();write(new File(scan,"B.CUB"),"x");write(new File(scan,"a.cube"),"y");write(new File(scan,"notes.txt"),"z");
             Files.createSymbolicLink(new File(scan,"outside.cube").toPath(),same.toPath());
             require(LutLibrary.scan(scan).size()==2&&LutLibrary.scan(scan).get(0).getName().equals("a.cube"),"sorted scan and source containment");
+            File alias=new File(root,"lut");alias.mkdir();write(new File(alias,"third.CUBE"),"z");
+            File nested=new File(alias,"nested");nested.mkdir();write(new File(nested,"hidden.cube"),"z");
+            write(new File(alias,"wrong.cube.txt"),"z");
+            require(LutLibrary.scanImports(root).size()==3,"LUTS and lowercase singular lut are accepted; nested and double-extension files stay excluded");
             File emptyBase=new File(root,"EMPTY");emptyBase.mkdir();
             File sonyEmpty=new File(emptyBase.getPath()){@Override public File[] listFiles(){File[] f=super.listFiles();return f!=null&&f.length==0?null:f;}};
             require(LutLibrary.scan(sonyEmpty).isEmpty()&&new File(emptyBase,"README.TXT").isFile(),"Sony empty-directory null enumeration");

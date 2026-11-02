@@ -3,6 +3,8 @@ package org.hongen.sonylutprobe;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.Collections;
 
 /** DCF identity and bounded index queries; no file-number/URI arithmetic. */
 final class PhotoIndex {
@@ -18,6 +20,7 @@ final class PhotoIndex {
                 throw new IOException("invalid Sony image index entry");
             this.uri=uri;this.order=order;this.folder=folder;this.file=file;
         }
+        String key(){return folder+"/"+file;}
     }
     interface Query {
         List<Entry> read(String selection,String order,int limit) throws IOException;
@@ -41,16 +44,32 @@ final class PhotoIndex {
     }
     long latestOrder() throws IOException {
         List<Entry> rows=query.read(null,"rec_order DESC",1);
-        return rows.isEmpty()?0:rows.get(0).order;
+        return rows.isEmpty()?-1:rows.get(0).order;
     }
     Entry savedAfter(long before,String sourceUri) throws IOException {
-        if(before<0)throw new IOException("invalid save watermark");
-        List<Entry> rows=query.read("rec_order>"+before,"rec_order DESC",2);
-        if(rows.isEmpty())throw new NotReady("saved photo not yet visible in Sony image index");
-        if(rows.size()!=1)throw new IOException("Sony save produced "+rows.size()+" new index entries");
-        Entry entry=rows.get(0);
-        if(entry.order<=before||entry.uri.equals(sourceUri))throw new IOException("Sony save did not create a new photo");
-        return entry;
+        return savedAfter(before,sourceUri,Collections.<String>emptySet());
+    }
+    Entry savedAfter(long before,String sourceUri,Set<String> accepted)throws IOException{
+        if(before< -1)throw new IOException("invalid save watermark");
+        int limit=Math.min(66,accepted.size()+2);
+        List<Entry> rows=query.read("rec_order>"+before,"rec_order DESC",limit);Entry result=null;
+        for(Entry entry:rows){
+            if(entry.order<=before||entry.uri.equals(sourceUri))throw new IOException("Sony save did not create a new photo");
+            // Both records may become visible only when RECORD_COUNT=2 ends.
+            // A callback-confirmed original is not a second unknown output.
+            if(accepted.contains(entry.key()))continue;
+            if(result!=null)throw new IOException("Sony save produced multiple unconfirmed index entries");
+            result=entry;
+        }
+        if(rows.size()>=limit)throw new IOException("Sony index result exceeds confirmation window");
+        if(result==null)throw new NotReady("saved photo not yet visible in Sony image index");
+        return result;
+    }
+    String key(File file)throws IOException{
+        File parent=file.getAbsoluteFile().getParentFile();String name=file.getName();
+        if(parent==null||!dcim.equals(parent.getParentFile())||!parent.getName().matches("[0-9]{3}[A-Z0-9_]{5}")
+            ||!name.matches("[A-Z0-9_]{4}[0-9]{4}\\.JPG"))throw new IOException("unsupported confirmed DCF path");
+        return Integer.parseInt(parent.getName().substring(0,3))+"/"+Integer.parseInt(name.substring(4,8));
     }
     boolean registeredAfter(long before,File file)throws IOException {
         try{

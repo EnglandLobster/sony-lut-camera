@@ -49,6 +49,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private boolean settingsNoticeShown;
     private CaptureStoreEvents storeEvents;
     private CaptureStoreCompletion storeCompletion;
+    private CaptureStoreIndex storeIndex;
     private volatile boolean stopAfterStore,recoveryNoticeShown;
     private volatile boolean storeRpcActive;
     private Runnable pendingStorePoll;
@@ -739,13 +740,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             cameraType.getMethod("set"+kind,Class.forName(name)).invoke(cameraEx,value);
         }
         storeEvents=new CaptureStoreEvents(owner,new CaptureStoreEvents.Sink(){
-            public void named(Object value,final String directory,final String file){
+            public void named(final Object value,final String directory,final String file){
                 if(closed||cameraEx!=owner)return;
                 final long shot=gate.shot(),at=SystemClock.elapsedRealtime();
                 final boolean success=value instanceof Number&&((Number)value).intValue()==0;
                 final long token=storeCompletion==null?0:storeCompletion.token();
                 storeObserver.post(new Runnable(){public void run(){
                     if(closed||shot!=gate.shot()){event("stale_store_ignored","event_shot="+shot+" file="+file);return;}
+                    event("stored_notification","status="+value+" success="+success+" dir="+directory+" file="+file+" token="+token+" state="+gate.state());
                     try{if(photoFiles.knownStore(directory,file)){event("duplicate_store_ignored","file="+file);return;}}
                     catch(IOException e){failure("store_path",e);return;}
                     if(storeCompletion!=null){
@@ -756,7 +758,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }
             public void failed(Throwable error){if(!closed&&cameraEx==owner)failure("store_notification",error);}
         });
-        if(!initOnly&&develops())storeCompletion=new CaptureStoreCompletion(photoFiles,new CaptureStoreIndex(this,sd),storeEvents.hasNamedReceipt());
+        if(!initOnly&&develops()){
+            storeIndex=new CaptureStoreIndex(this,sd);
+            storeCompletion=new CaptureStoreCompletion(photoFiles,storeIndex,storeEvents.hasNamedReceipt());
+        }
         event("store_protocol",storeEvents.hasNamedReceipt()?"named_store_complete_with_index_recovery":"index_and_complete_file; overlap_original=false");
     }
     private void storeToCamera(Class<?> type,Object image,boolean releaseSource)throws Exception{
@@ -766,7 +771,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(recoveryFence!=null)recoveryFence.acquire();
             storeCallStage="index_snapshot";
             ui.post(new Runnable(){public void run(){ui.removeCallbacks(storeWatchdog);ui.postDelayed(storeWatchdog,1000);}});
-            token=storeCompletion==null?0:storeCompletion.begin(SystemClock.elapsedRealtime());recoveryNoticeShown=false;
+            token=storeCompletion==null?0:paired()&&originalFile!=null&&gate.state()==PreJpegGate.State.SAVING
+                ?storeCompletion.beginFinalStore(SystemClock.elapsedRealtime()):storeCompletion.begin(SystemClock.elapsedRealtime());recoveryNoticeShown=false;
         }
         catch(Exception error){
             // Callers have handed ownership over when releaseSource is true.
@@ -810,7 +816,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     if(closed||shot!=gate.shot())return;
                     if(receipt.stopRequested)stopAfterStore=true;
                     File file=receipt.file;
-                    event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" confirmation=index_first_after_rpc "+storeCompletion.diagnostics());
+                    event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" confirmation="+(receipt.recovered?"index_recovery":"named_receipt")+" "+storeCompletion.diagnostics());
                     verifyStored("DCIM/"+file.getParentFile().getName()+"/",file.getName(),SystemClock.elapsedRealtime());
                 }});return;
             }
@@ -824,6 +830,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 if(!active)ui.post(new Runnable(){public void run(){close();}});
             }});return;
         }catch(Throwable error){
+            storeCompletion.readFailed(error);
             android.util.Log.w("SonyPreJpeg","store_recovery_read_failed",error);
             if(storeCompletion.overdue(token,SystemClock.elapsedRealtime()))showStoreRecovery();
         }
@@ -844,6 +851,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             .append(" stage=").append(storeCallStage).append(" shot=").append(gate.shot()).append(" state=").append(gate.state()).append(" rpc_active=").append(storeRpcActive)
             .append(" disk_confirmed=").append(storeCompletion!=null&&storeCompletion.confirmed())
             .append(' ').append(storeCompletion==null?"confirmation=none":storeCompletion.diagnostics())
+            .append(' ').append(storeIndex==null?"index_worker=none":storeIndex.diagnostics())
             .append(" observer_last_ms=").append(storeObserverAt).append(" detached=").append(recoveryDetached).append('\n');
         detail.append("worker_tid=").append(captureWorkerTid).append(" wchan=").append(procWait("wchan",false)).append(" syscall=").append(procWait("syscall",true)).append('\n');
         if(thread!=null){detail.append("worker_state=").append(thread.getState()).append('\n');
@@ -857,9 +865,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(destroyed||!active||closed||storeCompletion==null||!storeCompletion.pending())return;
             endProcessing();
             if(productHud!=null){productHud.mode="error";productHud.detail=stopAfterStore?"正在结束此次拍摄":"正在核验照片保存";
+                String stage=storeCompletion.stage();
                 productHud.progress=storeRpcActive?"正在等待相机完成保存。"
-                    :"正在等待照片与索引确认。\n确认后会自动继续。";
-                productHud.footer=storeCompletion.overdue(storeCompletion.token(),SystemClock.elapsedRealtime())?"MENU 返回 LUT 库，后台继续核验":"MENU 停止后续调色，保存确认后返回";productHud.update();}
+                    :stage.equals("index_error")?"照片索引查询失败，正在重试。"
+                    :stage.equals("file_error")?"照片读取失败，正在重试。"
+                    :stage.equals("await_notification")?"正在等待相机保存完成通知。"
+                    :stage.equals("await_index")||stage.equals("index_query")?"正在等待相机照片索引更新。"
+                    :"正在检查已保存照片的完整性。";
+                productHud.footer=storeCompletion.overdue(storeCompletion.token(),SystemClock.elapsedRealtime())?"MENU 返回 LUT 库，后台继续核验":"MENU 完成本次保存后返回";productHud.update();}
         }});
     }
     private void cancelShutter(){
@@ -1002,10 +1015,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 +" notification_to_check_ms="+(checkBegin-notifiedAt)+" file_lookup_ms="+(headerBegin-checkBegin)+" header_ms="+(checkedAt-headerBegin));
         if(original){
             originalFile=file;gate.originalSaved();
-            if(stopAfterStore){
-                event("capture_stopped_after_store","original preserved; no graded submission");
-                gate.fail();ui.post(new Runnable(){public void run(){setResult(RESULT_OK);finish();}});return;
-            }
+            // RECORD_COUNT=2 was declared before exposure. Even a MENU/stop
+            // request must drain its second record before leaving the sequence.
+            if(stopAfterStore)event("capture_finishing_pair","stop requested; completing declared second record");
             if(!lutApplied)applyRetainedLut("original_file_confirmed");
             gate.savingGraded();storeAt=SystemClock.elapsedRealtime();event("store_begin","type=YC role=graded release_source=true");
             processing(CaptureProgress.Stage.SAVE,"正在保存成片");
@@ -1243,6 +1255,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(recoveryDetached&&review!=null)review.stopDisplayTracking();
         ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;
         if(storeCompletion!=null)storeCompletion.cancel();
+        if(storeIndex!=null){storeIndex.close();storeIndex=null;}
         if(storeEvents!=null)try{storeEvents.close();storeEvents=null;}catch(Exception e){event("store_listener_close_error",cause(e).toString());}
         if(autoPreview!=null)autoPreview.close();
         if(isolationBarrier!=null)isolationBarrier.fail();

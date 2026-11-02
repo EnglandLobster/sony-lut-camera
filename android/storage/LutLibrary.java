@@ -34,6 +34,18 @@ final class LutLibrary {
         return clean.length()>80?clean.substring(0,80):clean;
     }
     static boolean cubeFile(File f){String n=f.getName().toLowerCase(Locale.US);return f.isFile()&&(n.endsWith(".cube")||n.endsWith(".cub"));}
+    static List<File> scanImports(File sd)throws IOException{
+        File root=sd.getCanonicalFile();ensureDirectory(new File(root,"LUTS"));
+        File[] folders=root.listFiles();if(folders==null)throw new IOException("无法读取 SD 卡 LUT 文件夹");
+        Set<String> seen=new HashSet<String>();List<File> found=new ArrayList<File>();
+        for(File folder:folders)if(folder.getName().equalsIgnoreCase("LUTS")||folder.getName().equalsIgnoreCase("LUT")){
+            File real=folder.getCanonicalFile();
+            if(!root.equals(real.getParentFile())||!real.isDirectory()||!seen.add(real.getPath()))continue;
+            found.addAll(scan(real));
+        }
+        Collections.sort(found,new Comparator<File>(){public int compare(File a,File b){return a.getName().compareToIgnoreCase(b.getName());}});
+        return found;
+    }
     static List<File> scan(File folder)throws IOException {
         ensureDirectory(folder);File[] files=folder.listFiles();
         // Sony FuFsys returns null for a valid, empty directory. A useful note

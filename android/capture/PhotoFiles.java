@@ -50,10 +50,13 @@ final class PhotoFiles {
         known.clear();for(File f:imageFiles())known.add(f.getPath());resetCandidate();
     }
     synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;indexedFile=null;lookupAt=-1;validationAt=-1;}
-    synchronized boolean matchesNotice(File file){return file.getPath().equals(stored);}
+    synchronized File pollNotified(long now)throws IOException{return pollComplete(pollStored(),now);}
     /** Locate only the indexed DCF identity. Never stat/open unrelated photos. */
     synchronized File pollIndexed(PhotoIndex.Entry entry,long now)throws IOException{
         if(format!=Format.JPEG)throw new IOException("indexed store requires JPEG");
+        if(stored!=null){File notice=new File(stored);
+            if(!dcfMatch(notice.getParentFile().getName(),notice.getName(),entry))stored=null;
+        }
         if(indexedFile==null||indexedFolder!=entry.folder||indexedNumber!=entry.file){
             if(lookupAt>=0&&now-lookupAt<1000&&indexedFolder==entry.folder&&indexedNumber==entry.file)return null;
             lookupAt=now;indexedFolder=entry.folder;indexedNumber=entry.file;
@@ -61,7 +64,10 @@ final class PhotoFiles {
             indexedFile=resolveIndexed(entry);
             candidate=null;length=-1;modified=-1;validationAt=-1;
         }
-        File file=indexedFile;if(file==null||known.contains(file.getPath())||!file.isFile())return null;
+        return pollComplete(indexedFile,now);
+    }
+    private File pollComplete(File file,long now)throws IOException{
+        if(file==null||known.contains(file.getPath())||!file.isFile())return null;
         long size=file.length(),time=file.lastModified();
         boolean stable=file.getPath().equals(candidate)&&size==length&&time==modified;
         candidate=file.getPath();length=size;modified=time;

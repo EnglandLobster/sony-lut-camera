@@ -8,6 +8,7 @@ public final class IndexedStoreTest {
     private static final class Index implements CaptureStoreCompletion.Registration {
         PhotoIndex.Entry entry;int queries;
         public void begin(){entry=null;}
+        public void accepted(File file){}
         public PhotoIndex.Entry saved(){queries++;return entry;}
         void set(int folder,int number)throws IOException{
             entry=new PhotoIndex.Entry("avindex://test/00000000-default/00000000-00000001",1,folder,number);
@@ -33,10 +34,9 @@ public final class IndexedStoreTest {
             // identity, not newest filesystem mtime, selects the photo.
             File target=new File(folder,"_DSC0400.JPG");CapturePipelineTest.write(target,CapturePipelineTest.jpeg(6000,4000,true));
             check(target.setLastModified(1000000000000L),"old timestamp");index.set(123,400);
-            completion.notified(token,"DCIM/123MSDCF/","DSC00001.JPG");
             check(completion.poll(token,2200)==null,"first metadata sample");
             CaptureStoreCompletion.Receipt receipt=completion.poll(token,2400);
-            check(receipt!=null&&receipt.recovered&&receipt.file.equals(target.getCanonicalFile()),"wrong notice and newest-mtime decoys cannot replace indexed photo");
+            check(receipt!=null&&receipt.recovered&&receipt.file.equals(target.getCanonicalFile()),"newest-mtime decoys cannot replace indexed photo when callback is absent");
             files.accepted(receipt.file);
             check(completion.poll(token,2600)==null,"one completion");
 
@@ -66,7 +66,7 @@ public final class IndexedStoreTest {
             index.set(123,403);rejected=false;
             try{files.pollIndexed(index.entry,12200);}catch(IOException expected){rejected=true;}
             check(rejected&&files.pollIndexed(index.entry,12400)==null,"failed identity change cannot reuse previously cached photo");
-            System.out.println("PASS indexed store: no DCIM IO before index/RPC, 300 decoys, wrong notice, timestamps, partial/in-place/delayed files, ambiguous identity");
+            System.out.println("PASS indexed store: no DCIM IO before index/RPC, 300 decoys, lost callback, timestamps, partial/in-place/delayed files, ambiguous identity");
         }finally{CapturePipelineTest.remove(sd);}
     }
 }
