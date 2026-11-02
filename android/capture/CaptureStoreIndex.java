@@ -26,7 +26,8 @@ final class CaptureStoreIndex implements CaptureStoreCompletion.Registration {
         },new File(sd,"DCIM").getCanonicalFile());
     }
     public void begin()throws IOException{before=index.latestOrder();}
-    public boolean registered(File file)throws IOException{
-        return index.registeredAfter(before,file);
+    public PhotoIndex.Entry saved()throws IOException{
+        try{return index.savedAfter(before,"");}
+        catch(PhotoIndex.NotReady pending){return null;}
     }
 }

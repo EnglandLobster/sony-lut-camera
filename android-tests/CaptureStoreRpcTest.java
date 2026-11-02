@@ -3,8 +3,8 @@ package org.hongen.sonylutprobe;
 import java.io.*;
 import java.util.concurrent.*;
 
-/** A native-call worker is held while an independent observer confirms disk.
- * Neither confirmation nor a timeout may transfer that worker's ownership. */
+/** A native-call worker is held while an independent observer waits without SD IO.
+ * Neither a callback nor a timeout may transfer that worker's ownership. */
 public final class CaptureStoreRpcTest {
     private static void check(boolean value,String message){if(!value)throw new AssertionError(message);}
     private static void write(File file,byte[] bytes)throws IOException{FileOutputStream o=new FileOutputStream(file);try{o.write(bytes);}finally{o.close();}}
@@ -30,9 +30,11 @@ public final class CaptureStoreRpcTest {
             for(boolean modern:new boolean[]{false,true})for(boolean stopping:new boolean[]{false,true}){
                 File sd=new File(base,"case-"+modern+stopping),dcim=new File(sd,"DCIM/100MSDCF");check(dcim.mkdirs(),"dcim");
                 final PhotoFiles files=new PhotoFiles(sd);files.expect(new CaptureGeometry(6000,4000));
-                final boolean[] indexed={false};
+                final boolean[] indexed={false};final int[] queries={0};
                 final CaptureStoreCompletion completion=new CaptureStoreCompletion(files,new CaptureStoreCompletion.Registration(){
-                    public void begin(){}public boolean registered(File f){return indexed[0];}
+                    public void begin(){}public PhotoIndex.Entry saved()throws IOException{
+                        queries[0]++;return indexed[0]?new PhotoIndex.Entry("avindex://test/00000000-default/00000000-00000001",1,100,1):null;
+                    }
                 },modern);
                 final long token=completion.begin(0);final CountDownLatch entered=new CountDownLatch(1),release=new CountDownLatch(1);
                 Thread worker=new Thread(new Runnable(){public void run(){completion.rpcStarted(token);entered.countDown();try{release.await();}catch(InterruptedException e){throw new AssertionError(e);}finally{completion.rpcReturned(token);}}},"blocked-store");
@@ -44,10 +46,11 @@ public final class CaptureStoreRpcTest {
                     File file=new File(dcim,"DSC00001.JPG");write(file,jpeg());indexed[0]=true;
                     if(modern)completion.notified(token,"DCIM/100MSDCF/","DSC00001.JPG");
                     completion.poll(token,31000);check(completion.poll(token,32000)==null,"file alone cannot advance JNI call");
-                    check(completion.confirmed()&&completion.pending()&&worker.isAlive(),"independent disk confirmation while call blocked");
+                    check(!completion.confirmed()&&completion.pending()&&worker.isAlive()&&queries[0]==0,"blocked RPC performs no index or target-file reads");
                     boolean refused=false;try{completion.begin(33000);}catch(IllegalStateException e){refused=true;}check(refused,"no concurrent resubmission");
                 }finally{release.countDown();worker.join(2000);}
                 check(!worker.isAlive(),"late RPC return drains worker");
+                check(completion.poll(token,39800)==null,"late RPC return still requires stable indexed file");
                 CaptureStoreCompletion.Receipt result=completion.poll(token,40000);
                 check(result!=null&&result.stopRequested==stopping&&!completion.pending(),"late return completes exactly once respecting stop");
                 files.accepted(result.file);completion.notified(token,"DCIM/100MSDCF/","DSC00001.JPG");

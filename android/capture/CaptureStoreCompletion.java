@@ -8,7 +8,7 @@ import java.io.IOException;
 final class CaptureStoreCompletion {
     interface Registration {
         void begin()throws Exception;
-        boolean registered(File file)throws Exception;
+        PhotoIndex.Entry saved()throws Exception;
     }
     static final long RECOVERY_DELAY_MS=1000,NOTICE_MS=30000;
     static final class ConfirmedInvalid extends IOException {
@@ -20,8 +20,14 @@ final class CaptureStoreCompletion {
         Receipt(File file,boolean recovered,boolean stopRequested){this.file=file;this.recovered=recovered;this.stopRequested=stopRequested;}
     }
     private final PhotoFiles files;private final Registration registration;private final boolean namedProtocol;
-    private long generation,started;private boolean pending,notified,stopRequested,rpcActive,confirmed;
+    private long generation,started;private boolean pending,notified,stopRequested,rpcActive,rpcComplete,confirmed;
     private File confirmedFile;private boolean confirmedRecovered,confirmedValid;
+    private volatile String stage="idle";
+    private volatile long indexNanos,fileNanos;
+    private volatile int indexQueries,fileChecks;
+    String stage(){return stage;}
+    String diagnostics(){return "confirmation_stage="+stage+" index_queries="+indexQueries+" index_ms="+(indexNanos/1000000)
+        +" file_checks="+fileChecks+" file_ms="+(fileNanos/1000000);}
     CaptureStoreCompletion(PhotoFiles files,Registration registration,boolean namedProtocol){
         this.files=files;this.registration=registration;this.namedProtocol=namedProtocol;
     }
@@ -30,13 +36,13 @@ final class CaptureStoreCompletion {
         synchronized(this){
             if(pending)throw new IllegalStateException("previous store still pending");
             if(stopRequested)throw new IllegalStateException("capture stop requested; no further store allowed");
-            token=++generation;pending=true;started=now;notified=false;rpcActive=false;confirmed=false;confirmedFile=null;
+            token=++generation;pending=true;started=now;notified=false;rpcActive=false;rpcComplete=false;confirmed=false;confirmedFile=null;
         }
-        try{files.resetCandidate();registration.begin();return token;}
+        try{stage="index_snapshot";indexNanos=0;fileNanos=0;indexQueries=0;fileChecks=0;files.resetCandidate();registration.begin();stage="await_store";return token;}
         catch(Exception error){cancel();throw error;}
     }
-    synchronized void rpcStarted(long token){if(!active(token))throw new IllegalStateException("inactive store");rpcActive=true;}
-    synchronized void rpcReturned(long token){if(token==generation)rpcActive=false;}
+    synchronized void rpcStarted(long token){if(!active(token))throw new IllegalStateException("inactive store");rpcActive=true;stage="native_store";}
+    synchronized void rpcReturned(long token){if(token==generation&&rpcActive){rpcActive=false;rpcComplete=true;}}
     synchronized boolean rpcActive(){return rpcActive;}
     synchronized boolean confirmed(){return confirmed;}
     synchronized long token(){return generation;}
@@ -52,26 +58,28 @@ final class CaptureStoreCompletion {
     }
     Receipt poll(long token,long now)throws Exception{
         boolean hasNotice;long age;
-        synchronized(this){if(!active(token))return null;if(confirmed)return finishConfirmed();hasNotice=notified;age=now-started;}
-        File ready=null;boolean recovered=false;
-        if(hasNotice){
-            ready=files.pollReady(true);
-            // The original must enter the index before the graded store takes
-            // its watermark. Otherwise a late original entry appears as a
-            // second "new" record during recovery of the graded photograph.
-            if(ready!=null&&(!files.completeStructure(ready)||!registration.registered(ready)))ready=null;
+        synchronized(this){
+            if(!active(token))return null;if(confirmed)return finishConfirmed();
+            // Sony's filesystem refuses reads of an open writer. Do not
+            // compete with storeImage for its file while that RPC is active.
+            if(!rpcComplete){if(rpcActive)stage="native_store";return null;}
+            hasNotice=notified;age=now-started;
         }
-        if(ready==null&&(!namedProtocol||age>=RECOVERY_DELAY_MS)){
-            // Even a partial named receipt must not bypass full structure and
-            // new-index confirmation on the recovery path.
-            ready=files.pollRecovery();
-            if(ready!=null&&!registration.registered(ready))ready=null;
-            recovered=ready!=null;
-        }
+        if(!hasNotice&&namedProtocol&&age<RECOVERY_DELAY_MS)return null;
+        stage="index_query";
+        PhotoIndex.Entry entry;long begin=System.nanoTime();indexQueries++;
+        try{entry=registration.saved();}finally{indexNanos+=System.nanoTime()-begin;}
+        if(entry==null){stage="await_index";return null;}
+        stage="target_file";
+        File ready;begin=System.nanoTime();fileChecks++;
+        try{ready=files.pollIndexed(entry,now);}finally{fileNanos+=System.nanoTime()-begin;}
+        if(ready==null){stage="await_file";return null;}
+        boolean recovered=!hasNotice||!files.matchesNotice(ready);
         boolean valid=ready==null||files.expectedHeader(ready);
         synchronized(this){
             if(!active(token)||ready==null)return null;
             confirmed=true;confirmedFile=ready;confirmedRecovered=recovered;confirmedValid=valid;
+            stage="confirmed";
             return finishConfirmed();
         }
     }

@@ -35,6 +35,7 @@ final class SupportDiagnostics {
         final Thread.UncaughtExceptionHandler previous=Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler(){public void uncaughtException(Thread thread,Throwable error){
             try{failure("uncaught "+thread.getName(),error);}catch(Throwable ignored){}
+            close();
             if(previous!=null)previous.uncaughtException(thread,error);
             else{android.os.Process.killProcess(android.os.Process.myPid());System.exit(10);}
         }});
@@ -64,6 +65,11 @@ final class SupportDiagnostics {
         }event("failed",out.toString());
     }
     private static String memory(){Runtime r=Runtime.getRuntime();return "heap_used="+(r.totalMemory()-r.freeMemory())+" heap_max="+r.maxMemory()+" native_heap="+Debug.getNativeHeapAllocatedSize();}
+    /** Close SD writers before intentional process exit, including fatal Java errors. */
+    static synchronized void close(){
+        if(internal!=null)try{internal.close();}catch(Exception e){internalError=e.toString();}finally{internal=null;}
+        if(sd!=null)try{sd.close();}catch(Exception e){sdError=e.toString();}finally{sd=null;}
+    }
     private static String free(File dir){try{StatFs stat=new StatFs(dir.getPath());return Long.toString((long)stat.getAvailableBlocks()*stat.getBlockSize());}catch(Exception e){return "unavailable";}}
     static synchronized File exportReport()throws IOException {
         if(internalDir==null)throw new IOException("diagnostic recorder unavailable");

@@ -1,35 +1,32 @@
-# v0.9.0-beta.7-rc.4 测试包
+# v0.9.0-beta.7-rc.5 测试包
 
-[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.4/SonyLutCamera-v0.9.0-beta.7-rc.4.apk) · [发行页与源码/校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.4) · [安装教程](USER_GUIDE.md)
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.5/SonyLutCamera-v0.9.0-beta.7-rc.5.apk) · [发行页与源码/校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.5) · [安装教程](USER_GUIDE.md)
 
-code110，GitHub 公开预发行版。沿用现有签名，可覆盖安装；不需要卸载或清空 LUT 库。保留已验证的 rc.4 APK 字节，SHA-256：`8359965d9c3e6af3328fe3106895ca9063edac35e45f8e0170142bc83b7de2dd`。先前的 [beta.6](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.6) 继续保留。
+code111，GitHub 公开预发行测试包。沿用现有签名，可覆盖安装；无需卸载或清空 LUT 库。旧版本继续保留。
 
 ## 本版更新
 
-感谢 **[@latteye（Sky Yuan）](https://github.com/latteye)** 提供 A5100 真机排查与 [PR #2](https://github.com/EnglandLobster/sony-lut-camera/pull/2)。原始三个提交保留在合并历史，合并提交附共同作者归属。
+- 保存调用返回后才查询索尼新增照片索引、读取目标 JPEG，避免原生保存仍执行时抢读。
+- 用新增记录的 DCF 目录号/文件号定位照片，删除产品拍摄中的全卡基线扫描和反复遍历兜底；索引没出现时只等待索引。
+- 对目标文件进行稳定性和完整性检查；未写完且大小/时间未变化时限制重复读回频率，并保留后续重试。
+- 超时期间继续持有资源，禁止重复保存、危险释放和重入；保存迟到完成后正常收尾。
+- 拍摄进程退出前显式关闭诊断日志；等待快照记录原生调用、索引、文件阶段及耗时。
 
-- 修复 API10 上照片已保存、显影动画清理却因 `Canvas.setBitmap(null)` 崩溃退出的问题；停止动画和资源释放改为可重复执行。
-- 保留 rc.3 的原生比例 12–42MP 全尺寸、完整 LUT、独立原片/成片和保存恢复。
-- 增加 96 轮实际 Bitmap/Canvas 回归：3:2、4:3、竖图以及重复、过期回调和部分构造清理。
-- 纳入 Windows 固定 NDK host 选择及 Java apksigner 适配，保留原签名和资源检查。
+保留 [@latteye / Sky Yuan 的 PR #2](https://github.com/EnglandLobster/sony-lut-camera/pull/2) 作者贡献、API10 动画清理修复、完整 LUT、12–42MP 全尺寸和独立原片/成片。十个预装 LUT 与签名不变。
 
-## 测试范围与已知问题
+## 验证与当前判断
 
-这是面向多机型反馈的实验测试包。已在 API10 / 24 MiB 实际复现旧异常，修复后 96 轮图形和整包状态/恢复套件通过。本版已完成 20 份官方固件路径审计、60 项原始 ARM IPC 场景，以及主机/API10 的尺寸、阻塞线程、迟到回调和跨进程持有记录测试。完整像素算法沿用 rc.2 已通过的主机/API10 ARM 九组全尺寸校验。APK API10、DEX035、ARMv5/v7、v1 签名和资源边界检查通过。
+主机与 API10 / 24 MiB 验证覆盖 16 组多尺寸保存链路、4 组阻塞调用/停止恢复、跨进程持有记录、300 张干扰文件、错误通知、索引迟到、部分 JPEG、原地补写及 DCF 歧义。原有 96 轮 Bitmap/Canvas 清理与整包兼容测试通过。发行包通过 API10、DEX035、ARMv5/v7、v1 签名及资源检查。
 
-**合并后的 rc.4 尚未完成真机拍摄/退出回归。** 作者报告其 rc.1 修复已由 A5100 用户确认，本包的实拍状态不与作者候选混用。 A6300 / 2.01 的历史实拍证据保留原版本归属。额外模拟器界面注入验收未完成，不计为通过。逐机型固件覆盖见 [兼容表](compatibility/README.md)，保存机制与详细验证见 [保存恢复](compatibility/STORE_RPC_RECOVERY.md)。
+A7 用户报告来自 beta.6/code106，仅有 UI/导出记录，缺少拍摄阶段日志。本版修复已定位的多余读卡和读写时序问题；**A7 原生“未正确完成写入存储卡”提示的具体触发点尚未确定，本版尚无真机拍摄验收。** 不把本地通过写成 A7 写卡问题已彻底解决。详见 [修复与证据](compatibility/INDEXED_STORE.md)。
 
-相机保存服务永久不返回时，本版保留后台会话并阻止再次拍摄/返回原生相机，不强制释放可能仍在使用的图像。用户可返回 LUT 库；持续未恢复时，待存储灯熄灭后正常关机再开机。RX1R II、RX10 III、HX90/WX500 等缺少准确固件证据的机型仍有适配缺口。
+如果 Sony 原生保存服务永久不返回，本版保持后台会话和重入保护。30 秒后 MENU 可回 LUT 库；待存储灯熄灭后正常关机再开机可恢复该状态。不会通过强制释放图像或重复保存尝试取消原生调用。
 
-## 反馈
-
-请附上机型、固件版本、应用版本、出错前操作、停留阶段，以及 **更多 → 导出诊断日志** 得到的 `SONYLUT/DIAG/REPORT.ZIP`。日志不含照片或 LUT 内容，不自动上传。
+正常使用后若仍出现异常，可从 **更多 → 导出诊断日志** 取得 `SONYLUT/DIAG/REPORT.ZIP`。日志不含照片或 LUT 内容，不自动上传。
 
 ## 资源与发布
 
-发行 APK 关闭调试和备份，仅保留 LUT 库、拍摄、相册三个 Activity。十个既有内置 LUT、签名身份和用户导入保持不变。六份外部内存配置的固定来源和许可状态见 [资源许可](../ASSET_LICENSES.md)；本项目源码许可不扩展至这些外部二进制。固件专用表只在机身读取，固件本体不随包发布。
-
-发布附件含 APK、提交对应的源码包（附固定 libjpeg 源码）、BUILDINFO、SHA256SUMS 和安装/许可文件。用户明确要求发布即授权完成这些公开交付；按既有流程提交源码、建立 tag、上传公开预发行版并验证匿名下载，不额外设置确认步骤。
+发行 APK 关闭调试和备份，只暴露 LUT 库、拍摄、相册三个产品 Activity。附件包含 APK、对应提交源码包（附固定 libjpeg 源码）、BUILDINFO、SHA256SUMS 和安装/许可文件。外部内存配置的来源与许可见 [资源许可](../ASSET_LICENSES.md)，固件本体不随包发布。
 
 ## 验收记录
 
@@ -49,3 +46,7 @@ code110，GitHub 公开预发行版。沿用现有签名，可覆盖安装；不
 2026-11-01 beta.7-rc.3/code109：按测试包发布多机型内存/尺寸链路及保存恢复。沿用本地已测 APK 的完整字节；本轮未连接、安装或触发真实相机快门。本版物理验收待完成，不沿用 beta.6 的已安装状态。
 
 2026-11-02 rc.4/code110：合并 PR #2，保留作者原始提交与贡献标记。已测 rc.4 APK 字节及现有发行签名保持不变；96 轮 API10 图形、30 组初始化、16 组保存协议、4 组阻塞恢复和实际跨进程保护通过。未连接或安装真实相机。
+
+2026-11-02 rc.5/code111：修正保存确认顺序及 DCF 定位，补充等待指标和退出日志关闭。通过本地与 API10 套件；未连接、安装或触发真实相机快门。
+
+rc.5 最终 APK SHA-256：`1a1f239bb37fd02ba6fabf3018500fcf72f057005227427a3f707a7b61cd770b`；签名与 rc.4 一致，30 个原生库/资源/资产条目字节一致，API10 最终整包套件通过。

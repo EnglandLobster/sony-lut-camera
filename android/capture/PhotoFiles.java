@@ -2,9 +2,12 @@ package org.hongen.sonylutprobe;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /** Discover only new files of the expected camera format; never mutate DCIM. */
 final class PhotoFiles {
+    private static final Pattern DCF_DIRECTORY=Pattern.compile("[0-9]{3}[A-Z0-9_]{5}");
+    private static final Pattern DCF_JPEG=Pattern.compile("[A-Z0-9_]{4}[0-9]{4}\\.JPG");
     enum Format { JPEG(".JPG"), ARW(".ARW");
         final String suffix;Format(String suffix){this.suffix=suffix;}
     }
@@ -13,16 +16,22 @@ final class PhotoFiles {
     private final Set<String> known=new HashSet<String>();
     private String candidate,stored;
     private long length=-1,modified=-1;
+    private File indexedFile;
+    private int indexedFolder,indexedNumber;
+    private long lookupAt=-1,validationAt=-1;
     private CaptureGeometry geometry;
     synchronized void expect(CaptureGeometry value){geometry=value;}
     PhotoFiles(File sd) throws IOException {
         this(sd,Format.JPEG);
     }
     PhotoFiles(File sd,Format format) throws IOException {
+        this(sd,format,true);
+    }
+    PhotoFiles(File sd,Format format,boolean snapshot) throws IOException {
         this.format=format;
         dcim=new File(sd,"DCIM").getCanonicalFile();
         if(!dcim.isDirectory())throw new IOException("DCIM directory unavailable");
-        refresh();
+        if(snapshot)refresh();
     }
     private List<File> imageFiles() throws IOException {
         List<File> found=new ArrayList<File>();File[] dirs=dcim.listFiles();
@@ -40,7 +49,56 @@ final class PhotoFiles {
     synchronized void refresh() throws IOException {
         known.clear();for(File f:imageFiles())known.add(f.getPath());resetCandidate();
     }
-    synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;}
+    synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;indexedFile=null;lookupAt=-1;validationAt=-1;}
+    synchronized boolean matchesNotice(File file){return file.getPath().equals(stored);}
+    /** Locate only the indexed DCF identity. Never stat/open unrelated photos. */
+    synchronized File pollIndexed(PhotoIndex.Entry entry,long now)throws IOException{
+        if(format!=Format.JPEG)throw new IOException("indexed store requires JPEG");
+        if(indexedFile==null||indexedFolder!=entry.folder||indexedNumber!=entry.file){
+            if(lookupAt>=0&&now-lookupAt<1000&&indexedFolder==entry.folder&&indexedNumber==entry.file)return null;
+            lookupAt=now;indexedFolder=entry.folder;indexedNumber=entry.file;
+            indexedFile=null;
+            indexedFile=resolveIndexed(entry);
+            candidate=null;length=-1;modified=-1;validationAt=-1;
+        }
+        File file=indexedFile;if(file==null||known.contains(file.getPath())||!file.isFile())return null;
+        long size=file.length(),time=file.lastModified();
+        boolean stable=file.getPath().equals(candidate)&&size==length&&time==modified;
+        candidate=file.getPath();length=size;modified=time;
+        if(!stable||size<4){validationAt=-1;return null;}
+        // Incomplete files with unchanged metadata must not be reread every
+        // 200 ms. Retry eventually: an in-place write can preserve FAT mtime.
+        if(validationAt>=0&&now-validationAt<1000)return null;
+        validationAt=now;
+        return completeStructure(file)?file:null;
+    }
+    private File resolveIndexed(PhotoIndex.Entry entry)throws IOException{
+        // A matching named callback gives an exact path without directory IO.
+        if(stored!=null){File file=new File(stored);
+            if(dcfMatch(file.getParentFile().getName(),file.getName(),entry))return file;
+        }
+        String[] dirs=dcim.list();if(dirs==null)throw new IOException("cannot read DCIM");
+        File folder=null;
+        for(String name:dirs)if(DCF_DIRECTORY.matcher(name).matches()&&Integer.parseInt(name.substring(0,3))==entry.folder){
+            if(folder!=null)throw new IOException("ambiguous indexed DCF folder");folder=new File(dcim,name);
+        }
+        if(folder==null)return null;
+        folder=folder.getCanonicalFile();
+        if(!dcim.equals(folder.getParentFile()))throw new IOException("indexed folder outside DCIM");
+        String[] names=folder.list();if(names==null)throw new IOException("cannot read indexed DCF folder");
+        File result=null;
+        for(String name:names)if(dcfMatch(folder.getName(),name,entry)){
+            if(result!=null)throw new IOException("ambiguous indexed DCF file");result=new File(folder,name);
+        }
+        if(result==null)return null;
+        result=result.getCanonicalFile();
+        if(!folder.equals(result.getParentFile()))throw new IOException("indexed photo outside DCF folder");
+        return result;
+    }
+    private static boolean dcfMatch(String directory,String name,PhotoIndex.Entry entry){
+        return DCF_DIRECTORY.matcher(directory).matches()&&DCF_JPEG.matcher(name).matches()
+            &&Integer.parseInt(directory.substring(0,3))==entry.folder&&Integer.parseInt(name.substring(4,8))==entry.file;
+    }
     synchronized File pollReady() throws IOException {
         return pollReady(false);
     }

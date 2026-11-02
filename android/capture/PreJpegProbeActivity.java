@@ -351,7 +351,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(recoveryFence.blocked())throw new IOException("上一张照片仍在保存核验，请先返回 LUT 库");
         }
         sd=Environment.getExternalStorageDirectory();run=productUi()?null:RunFiles.create(sd);event("prepare","phase="+phase+" init_only="+initOnly+" init_stage="+initStage+" run="+run+" pid="+android.os.Process.myPid()+" fresh_session="+getIntent().getBooleanExtra("fresh_session",false)+" continuous="+continuous+" verify_payloads="+verifyPayloads+" overlap_original="+overlapOriginal+" source_reference="+sourceReferenceEnabled+" probe_token="+getIntent().getStringExtra("probe_token"));
-        if(!initOnly)photoFiles=new PhotoFiles(sd,"handoff".equals(phase)?PhotoFiles.Format.ARW:PhotoFiles.Format.JPEG);
+        if(!initOnly)photoFiles=new PhotoFiles(sd,"handoff".equals(phase)?PhotoFiles.Format.ARW:PhotoFiles.Format.JPEG,!develops());
         Class<?> props=Class.forName("com.sony.scalar.sysutil.ScalarProperties");Method get=props.getMethod("getString",String.class);
         String memory=(String)get.invoke(null,"device.memory"),pixels=(String)get.invoke(null,"mem.rawimage.size.in.mega.pixel");
         event("platform","memory="+memory+" pixels="+pixels);
@@ -810,7 +810,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     if(closed||shot!=gate.shot())return;
                     if(receipt.stopRequested)stopAfterStore=true;
                     File file=receipt.file;
-                    event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered);
+                    event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" confirmation=index_first_after_rpc "+storeCompletion.diagnostics());
                     verifyStored("DCIM/"+file.getParentFile().getName()+"/",file.getName(),SystemClock.elapsedRealtime());
                 }});return;
             }
@@ -843,6 +843,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         StringBuilder detail=new StringBuilder("reason=").append(reason).append(" uptime_ms=").append(SystemClock.elapsedRealtime())
             .append(" stage=").append(storeCallStage).append(" shot=").append(gate.shot()).append(" state=").append(gate.state()).append(" rpc_active=").append(storeRpcActive)
             .append(" disk_confirmed=").append(storeCompletion!=null&&storeCompletion.confirmed())
+            .append(' ').append(storeCompletion==null?"confirmation=none":storeCompletion.diagnostics())
             .append(" observer_last_ms=").append(storeObserverAt).append(" detached=").append(recoveryDetached).append('\n');
         detail.append("worker_tid=").append(captureWorkerTid).append(" wchan=").append(procWait("wchan",false)).append(" syscall=").append(procWait("syscall",true)).append('\n');
         if(thread!=null){detail.append("worker_state=").append(thread.getState()).append('\n');
@@ -856,7 +857,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(destroyed||!active||closed||storeCompletion==null||!storeCompletion.pending())return;
             endProcessing();
             if(productHud!=null){productHud.mode="error";productHud.detail=stopAfterStore?"正在结束此次拍摄":"正在核验照片保存";
-                productHud.progress=storeRpcActive?(storeCompletion.confirmed()?"照片已写入，正在等待相机完成保存。":"相机仍在保存，正在核验照片。")
+                productHud.progress=storeRpcActive?"正在等待相机完成保存。"
                     :"正在等待照片与索引确认。\n确认后会自动继续。";
                 productHud.footer=storeCompletion.overdue(storeCompletion.token(),SystemClock.elapsedRealtime())?"MENU 返回 LUT 库，后台继续核验":"MENU 停止后续调色，保存确认后返回";productHud.update();}
         }});
@@ -1225,6 +1226,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // Finishing it makes the next entry satisfy the established fresh-JNI guard.
         if(productUi()&&destroyed&&closed&&!cleanupFailed&&pendingReceipts==0){
             if(thread!=null)thread.quit();
+            SupportDiagnostics.close();
             android.os.Process.killProcess(android.os.Process.myPid());
         }
     }

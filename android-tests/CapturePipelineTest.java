@@ -15,7 +15,12 @@ public final class CapturePipelineTest {
     static class Index implements CaptureStoreCompletion.Registration {
         File visible;int before;int order;
         public void begin(){before=order;}
-        public boolean registered(File file)throws Exception{return order>before&&visible!=null&&visible.getCanonicalFile().equals(file);}
+        public PhotoIndex.Entry saved()throws Exception{
+            if(order-before>1)throw new IOException("ambiguous new index entries");
+            if(order<=before||visible==null)return null;
+            return new PhotoIndex.Entry("avindex://test/00000000-default/00000000-00000001",order,
+                Integer.parseInt(visible.getParentFile().getName().substring(0,3)),Integer.parseInt(visible.getName().substring(4,8)));
+        }
         void saved(File file){visible=file;order++;}
     }
     static byte[] jpeg(int width,int height,boolean complete)throws Exception{
@@ -34,6 +39,9 @@ public final class CapturePipelineTest {
         PreJpegGate gate=new PreJpegGate();gate.preview();gate.registering();gate.defaultRegistered();gate.defaultUnlocked();
         gate.configuring();gate.registered(false);gate.arm();gate.raw();gate.savingOriginal();return gate;
     }
+    static long returnedStore(CaptureStoreCompletion completion,long now)throws Exception{
+        long token=completion.begin(now);completion.rpcStarted(token);completion.rpcReturned(token);return token;
+    }
     static void run(String memory,int mp,int width,int height,boolean modern)throws Exception{
         CaptureGeometry geometry=CaptureGeometry.select(width+"x"+height+",1920x1080","1920x1080",memory,mp);
         geometry.verify(width,height);
@@ -49,9 +57,9 @@ public final class CapturePipelineTest {
         try{
             File dir=new File(sd,"DCIM/100MSDCF");check(dir.mkdirs(),"DCF");
             File old=new File(dir,"DSC00001.JPG");write(old,jpeg(width,height,true));
-            PhotoFiles files=new PhotoFiles(sd);files.expect(geometry);Index index=new Index();index.saved(old);
+            PhotoFiles files=new PhotoFiles(sd,PhotoFiles.Format.JPEG,false);files.expect(geometry);Index index=new Index();index.saved(old);
             CaptureStoreCompletion completion=new CaptureStoreCompletion(files,index,modern);PreJpegGate gate=armed();
-            long a=completion.begin(0);File source=new File(dir,"DSC00002.JPG");
+            long a=returnedStore(completion,0);File source=new File(dir,"DSC00002.JPG");
             write(source,jpeg(width,height,false));index.saved(source);
             if(modern)completion.notified(a,"DCIM/100MSDCF/",source.getName());
             check(completion.poll(a,1000)==null&&completion.poll(a,1200)==null,"early callback/index cannot accept partial JPEG");
@@ -62,13 +70,13 @@ public final class CapturePipelineTest {
             check(invalid&&!completion.pending(),"fully saved wrong size terminates safely instead of waiting forever");
             // Drop the callback entirely, with the index appearing after the file.
             source=new File(dir,"DSC00008.JPG");
-            a=completion.begin(1800);index.saved(old);index.visible=null;
+            a=returnedStore(completion,1800);index.visible=null;
             write(source,jpeg(width,height,true));
             check(completion.poll(a,3000)==null&&completion.poll(a,3200)==null,"file waits for matching new index");
-            index.saved(source);CaptureStoreCompletion.Receipt first=completion.poll(a,3400);
+            index.saved(source);completion.poll(a,3300);CaptureStoreCompletion.Receipt first=completion.poll(a,3400);
             check(first!=null&&first.recovered&&first.file.equals(source.getCanonicalFile()),"original callback loss recovered");
             files.accepted(first.file);gate.originalSaved();gate.savingGraded();
-            long b=completion.begin(3500);File graded=new File(dir,"DSC00003.JPG");
+            long b=returnedStore(completion,3500);File graded=new File(dir,"DSC00003.JPG");
             completion.notified(a,"DCIM/100MSDCF/",source.getName());
             completion.notified(b,"DCIM/100MSDCF/",source.getName());
             check(completion.poll(a,3700)==null&&completion.poll(b,3700)==null,"late/duplicate original cannot finish graded store");
@@ -79,12 +87,12 @@ public final class CapturePipelineTest {
             check(second!=null&&second.recovered&&!second.file.equals(first.file),"graded callback loss recovers even after deadline");
             files.accepted(second.file);gate.saved();check(completion.poll(b,40600)==null,"exactly once");
             check(gate.beginRearm(gate.shot())&&gate.rearmed(gate.shot()),"safe next shot");
-            long c=completion.begin(41000);File third=new File(dir,"DSC00004.JPG");write(third,jpeg(width,height,true));
+            long c=returnedStore(completion,41000);File third=new File(dir,"DSC00004.JPG");write(third,jpeg(width,height,true));
             completion.notified(c,"DCIM/100MSDCF/",third.getName());
             check(completion.poll(c,41200)==null,"named file also waits for index before the next watermark");
-            index.saved(third);CaptureStoreCompletion.Receipt named=completion.poll(c,41400);
+            index.saved(third);completion.poll(c,41300);CaptureStoreCompletion.Receipt named=completion.poll(c,41400);
             check(named!=null&&!named.recovered,"named receipt and matching index confirmed");files.accepted(named.file);
-            long stopping=completion.begin(41500);completion.requestStop();
+            long stopping=returnedStore(completion,41500);completion.requestStop();
             check(completion.pending()&&completion.poll(stopping,41600)==null,"stop request retains pending ownership");
             File stoppingFile=new File(dir,"DSC00007.JPG");write(stoppingFile,jpeg(width,height,true));index.saved(stoppingFile);
             completion.poll(stopping,42600);CaptureStoreCompletion.Receipt stopped=completion.poll(stopping,42800);
@@ -92,8 +100,9 @@ public final class CapturePipelineTest {
             boolean furtherBlocked=false;try{completion.begin(42900);}catch(IllegalStateException e){furtherBlocked=true;}
             check(furtherBlocked,"stop cannot accidentally submit graded/next photo");
             completion=new CaptureStoreCompletion(files,index,modern);
-            long uncertain=completion.begin(42000);File extra=new File(dir,"DSC00005.JPG"),extra2=new File(dir,"DSC00006.JPG");
+            long uncertain=returnedStore(completion,42000);File extra=new File(dir,"DSC00005.JPG"),extra2=new File(dir,"DSC00006.JPG");
             write(extra,jpeg(width,height,true));write(extra2,jpeg(width,height,true));
+            index.saved(extra);index.saved(extra2);
             boolean rejected=false;try{completion.poll(uncertain,44000);}catch(IOException e){rejected=true;}
             check(rejected&&completion.pending(),"ambiguous completion cannot release ownership");
             completion.cancel();check(completion.poll(uncertain,45000)==null,"canceled polls ignored");
