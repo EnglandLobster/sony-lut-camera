@@ -1,0 +1,264 @@
+{
+  "schema": 1,
+  "recipe_source": "https://github.com/voxivoid/recipe-lab-sony-pmca/blob/c5a345d80177b45f3ee6fc93a5841ad771ea60bb/README.md",
+  "sony_pmca_source": "https://www.sony-asia.com/electronics/support/digital-cameras-interchangeable-lens-cameras/articles/00288923",
+  "scope": "All 27 Recipe table rows, three V aliases, and two separately uncertain models. This inventory is not a shooting whitelist.",
+  "models": [
+    {
+      "model": "ILCE-6000",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-6500",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-5100",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-7M2",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-7",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "NEX-5T",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-6300",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-7R",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-7RM2",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-RX100M5",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-HX60",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-HX60V",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-7SM2",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-RX100M3",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-RX1RM2",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-5000",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-HX90",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-HX90V",
+      "recipe_reported": true,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCE-7S",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "NEX-5R",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "NEX-6",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCA-68",
+      "recipe_reported": false,
+      "pmca_installation": "unverified",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCA-77M2",
+      "recipe_reported": false,
+      "pmca_installation": "unverified",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "ILCA-99M2",
+      "recipe_reported": false,
+      "pmca_installation": "unverified",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-RX100M4",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-RX10M2",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-RX10M3",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-HX400",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-HX400V",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": true,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-WX500",
+      "recipe_reported": false,
+      "pmca_installation": "listed_by_sony",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-RX100M2",
+      "recipe_reported": false,
+      "pmca_installation": "unverified",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    },
+    {
+      "model": "DSC-RX10",
+      "recipe_reported": false,
+      "pmca_installation": "unverified",
+      "local_firmware_audit": false,
+      "capture_path": "runtime_capabilities",
+      "physical_acceptance_rc6": false
+    }
+  ]
+}

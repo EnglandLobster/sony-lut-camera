@@ -113,8 +113,8 @@ public final class CapturePipelineTest {
     }
     public static void main(String[] args)throws Exception{
         scratchParent=args.length==0?null:new File(args[0]);
-        String[] memory={"ILDCSC_MUSASHI8Gb","unknown","ILDCSC_MUSASHI4Gb","DSCSC_KOJIRO4Gb","DSCSC_MUSASHI8Gb","ILDCSC_MUSASHI8Gb","ILDCSC_MUSASHI8Gb","ILDCSC_MUSASHI8Gb"};
-        int[][] geometry={{12,4240,2832},{16,4912,3264},{20,5456,3632},{20,5184,3888},{20,5472,3648},{24,6000,4000},{36,7360,4912},{42,7952,5304}};
+        String[] memory={"ILDCSC_MUSASHI8Gb","unknown","unknown","ILDCSC_MUSASHI4Gb","DSCSC_KOJIRO4Gb","DSCSC_MUSASHI8Gb","ILDCSC_MUSASHI8Gb","ILDCSC_MUSASHI8Gb","ILDCSC_MUSASHI8Gb"};
+        int[][] geometry={{12,4240,2832},{16,4912,3264},{18,4896,3672},{20,5456,3632},{20,5184,3888},{20,5472,3648},{24,6000,4000},{36,7360,4912},{42,7952,5304}};
         for(int i=0;i<memory.length;i++)for(boolean modern:new boolean[]{false,true})run(memory[i],geometry[i][0],geometry[i][1],geometry[i][2],modern);
         for(String invalid:new String[]{"6000x3376","3000x2000","7952x5304"}){
             boolean failed=false;try{CaptureGeometry.select(invalid,invalid,"ILDCSC_MUSASHI8Gb",24);}catch(IOException e){failed=true;}

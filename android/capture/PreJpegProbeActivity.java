@@ -372,7 +372,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }finally{catalog.close();}
             map=captureMap.file;mapRevision="selected_"+captureMap.entry.revision;
             event("memory_map_selected","memory="+memory+" pixels="+pixels+" revision="+captureMap.entry.revision
-                +" source="+(captureMap.firmware?"firmware":"bundled")+" sha256="+captureMap.entry.sha256);
+                +" source="+(captureMap.firmware?"firmware":"bundled")+" reviewed_fingerprint="+captureMap.reviewed+" sha256="+captureMap.entry.sha256);
         }else if("reference01".equals(mapRevision)){
             if(!"ILDCSC_MUSASHI8Gb".equals(memory)||!"24".equals(pixels))throw new IOException("当前内存布局尚未适配：diagnostic "+memory+"/"+pixels);
             // These bytes are the original exact-platform reference asset.

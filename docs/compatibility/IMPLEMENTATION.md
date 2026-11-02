@@ -4,6 +4,8 @@
 
 后续 rc.3 已实现独立核验、超时回库与跨进程持有保护，见 [保存 RPC 恢复](STORE_RPC_RECOVERY.md)。
 
+rc.6 已用 Sony 原生机内选表替换下文历史摘要白名单；尺寸比例从全尺寸能力选择，另覆盖 18MP。当前范围见 [Recipe 机型清单](RECIPE_TARGETS.md) 和 [运行时选表修复](RUNTIME_MAP_SELECTION.md)。
+
 ## 内存表和全尺寸链路
 
 `config/capture-maps.json` 是唯一配置来源：包含六份固定提交的 PictureEffectPlus 内存表，以及八条官方固件内存表指纹。构建时生成 `CAPMAP.TXT`，运行时按 Sony 内存类型、像素类别、修订号、文件大小和 SHA-256 选表。固件表只读取 `/system/etc/memmap`，不打入 APK；配置缺失或摘要不匹配时，在拍摄前明确报错。

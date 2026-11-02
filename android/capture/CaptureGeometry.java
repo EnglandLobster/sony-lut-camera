@@ -16,21 +16,23 @@ final class CaptureGeometry {
         catch(IllegalArgumentException e){throw new IOException("invalid picture-size: "+value,e);}
     }
     static CaptureGeometry select(String values,String current,String memory,int pixels)throws IOException{
-        // Sony compact KOJIRO/MUSASHI4 uses a 4:3 sensor; ILC/NEX and RX use 3:2.
-        boolean fourThree=memory.equals("DSCSC_KOJIRO4Gb")||memory.equals("DSCSC_MUSASHI4Gb");
-        int numerator=fourThree?4:3,denominator=fourThree?3:2;
+        // The advertised largest full-size geometry determines native aspect,
+        // not an incomplete list of platform labels (notably HX/WX 18MP).
         CaptureGeometry best=null;
         String candidates=values==null||values.trim().length()==0?current:values;
         if(candidates==null)throw new IOException("picture-size capabilities unavailable");
         for(String value:candidates.split(",")){
             CaptureGeometry candidate=parse(value.trim());long area=(long)candidate.width*candidate.height;
             // Full-size only. Do not silently use a cropped ratio or a small JPEG.
-            long aspectError=Math.abs((long)candidate.width*denominator-(long)candidate.height*numerator);
-            if(aspectError*100>(long)candidate.height*numerator*2||area<pixels*900000L||area>pixels*1100000L)continue;
+            boolean nativeRatio=nearRatio(candidate,3,2)||nearRatio(candidate,4,3);
+            if(!nativeRatio||area<pixels*900000L||area>pixels*1100000L)continue;
             if(best==null||area>(long)best.width*best.height)best=candidate;
         }
         if(best==null)throw new IOException("picture-size: full sensor geometry unavailable for "+pixels+"MP");
         return best;
+    }
+    private static boolean nearRatio(CaptureGeometry value,int numerator,int denominator){
+        return Math.abs((long)value.width*denominator-(long)value.height*numerator)*100<=(long)value.height*numerator*2;
     }
     void verify(int width,int height)throws IOException{
         if(this.width!=width||this.height!=height)throw new IOException("capture geometry changed: expected="+this+" actual="+width+"x"+height);

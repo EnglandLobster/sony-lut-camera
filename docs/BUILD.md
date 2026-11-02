@@ -17,7 +17,7 @@ export ANDROID_NDK=/absolute/path/to/android-ndk-r16b
 python3 scripts/bootstrap_dependencies.py
 ```
 
-`dependencies.lock.json` pins libjpeg-turbo and six exact Sony memory-map assets. `config/capture-maps.json` owns platform/pixel/revision identities and camera-resident map fingerprints. Staging verifies the pinned bytes and generates `CAPMAP.TXT`; firmware-only maps are not copied into the APK. The bootstrap verifies existing inputs, refuses different/modified copies, and downloads only missing inputs. `--check` performs no downloads. These files live under ignored `vendor/` and retain their upstream provenance.
+`dependencies.lock.json` pins libjpeg-turbo and six exact Sony memory-map assets. `config/capture-maps.json` owns bundled platform/pixel/revision identities and reviewed camera-resident fingerprints. Camera-resident files are selected at runtime by exact platform/pixel/name and newest revision; an uncollected fingerprint does not block capture. Staging verifies the pinned bytes and generates `CAPMAP.TXT`; firmware-only maps are not copied into the APK. The bootstrap verifies existing inputs, refuses different/modified copies, and downloads only missing inputs. `--check` performs no downloads. These files live under ignored `vendor/` and retain their upstream provenance.
 
 ## Main APK
 

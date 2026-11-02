@@ -24,7 +24,7 @@ import json,subprocess
 from pathlib import Path
 out=Path('out/compatibility-tests')
 # Synthetic geometry cases, not claims about camera parameter availability.
-cases=[(4240,2832,32,4),(4912,3264,8,1),(5184,3888,8,2),
+cases=[(4240,2832,32,4),(4912,3264,8,1),(4896,3672,8,1),(5184,3888,8,2),
        (5456,3632,8,2),(5472,3648,32,4),(6000,4000,32,4),
        (7360,4912,16,4),(7952,5304,16,4),(6000,4000,1,4)]
 results=[]

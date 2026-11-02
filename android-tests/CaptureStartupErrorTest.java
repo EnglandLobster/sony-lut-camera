@@ -6,6 +6,8 @@ public final class CaptureStartupErrorTest {
     public static void main(String[] args){
         CaptureStartupError map=CaptureStartupError.from(new IOException("当前内存布局尚未适配：unknown/24"));
         check(map.title.equals("当前机型尚未适配"));
+        check(CaptureStartupError.from(new IOException("camera memory map missing: example/42")).title.equals("未找到机内拍摄配置"));
+        check(CaptureStartupError.from(new IOException("invalid camera memory map header")).title.equals("机内拍摄配置异常"));
         check(CaptureStartupError.from(new InvocationTargetException(new NoSuchMethodException("vendor.open"))).title.equals("相机接口不兼容"));
         check(CaptureStartupError.from(new IllegalStateException("device memory API missing: mapSharedMemory")).title.equals("相机接口不兼容"));
         check(CaptureStartupError.from(new IOException("matrix/gamma not advertised by this camera")).action.contains("原色取景"));

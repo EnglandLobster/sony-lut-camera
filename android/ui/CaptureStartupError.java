@@ -32,6 +32,10 @@ final class CaptureStartupError {
             return new CaptureStartupError("无法切换单张拍摄","应用自动设置单张拍摄未成功。","请退出应用，将拍摄模式设为单张，\n关闭连拍／包围曝光后重新进入。");
         if(text.contains("automatic exposure")||text.contains("exposure parameter")||text.contains("exposure compensation"))
             return new CaptureStartupError("无法设置自动曝光","应用未能启用 P 模式和自动 ISO。","请退出应用，将模式转盘设为 P、ISO 自动，\n关闭 HDR 后重新进入 LUT Camera。");
+        if(text.contains("camera memory map missing"))
+            return new CaptureStartupError("未找到机内拍摄配置","机内没有与平台和像素规格匹配的拍摄配置文件。","请返回 LUT 库并导出诊断日志。\n日志会记录缺少的配置名称。");
+        if(text.contains("camera memory map")||text.contains("invalid camera memory properties"))
+            return new CaptureStartupError("机内拍摄配置异常","机身配置文件无法读取或格式异常。","请返回 LUT 库并导出诊断日志。\n日志会记录具体失败位置。");
         if(text.contains("内存布局尚未适配")||text.contains("unvalidated platform"))
             return new CaptureStartupError("当前机型尚未适配","当前版本无法使用这台相机的内存配置。","请返回 LUT 库，并把诊断文件发给开发者。\n这不是 LUT 文件损坏。");
         if(text.contains("device memory API missing")||text.contains("libcameraseq unavailable")||cause instanceof NoSuchMethodException||cause instanceof NoSuchFieldException||cause instanceof ClassNotFoundException||cause instanceof LinkageError)

@@ -1,32 +1,28 @@
-# v0.9.0-beta.7-rc.5 测试包
+# v0.9.0-beta.7-rc.6 测试包
 
-[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.5/SonyLutCamera-v0.9.0-beta.7-rc.5.apk) · [发行页与源码/校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.5) · [安装教程](USER_GUIDE.md)
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.6/SonyLutCamera-v0.9.0-beta.7-rc.6.apk) · [发行页与源码/校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.6) · [安装教程](USER_GUIDE.md)
 
-code111，GitHub 公开预发行测试包。沿用现有签名，可覆盖安装；无需卸载或清空 LUT 库。旧版本继续保留。
+code112，公开预发行测试包。沿用原签名，可直接覆盖安装，无需清空 LUT 库。旧版保留。
 
-## 本版更新
+## 本版修复
 
-- 保存调用返回后才查询索尼新增照片索引、读取目标 JPEG，避免原生保存仍执行时抢读。
-- 用新增记录的 DCF 目录号/文件号定位照片，删除产品拍摄中的全卡基线扫描和反复遍历兜底；索引没出现时只等待索引。
-- 对目标文件进行稳定性和完整性检查；未写完且大小/时间未变化时限制重复读回频率，并保留后续重试。
-- 超时期间继续持有资源，禁止重复保存、危险释放和重入；保存迟到完成后正常收尾。
-- 拍摄进程退出前显式关闭诊断日志；等待快照记录原生调用、索引、文件阶段及耗时。
+修正 RX1R II 等机型可能被“当前内存布局尚未适配”挡住的问题：旧版要求机内配置必须命中预收录摘要，把固件收集范围误当成运行范围。
 
-保留 [@latteye / Sky Yuan 的 PR #2](https://github.com/EnglandLobster/sony-lut-camera/pull/2) 作者贡献、API10 动画清理修复、完整 LUT、12–42MP 全尺寸和独立原片/成片。十个预装 LUT 与签名不变。
+现在按照 Sony 原版选表规则，使用机身上报的平台/像素规格，选择机内精确匹配的最新配置。未知摘要只记录，不拦截。平台、像素、路径与基本格式检查仍在，APK 自带表仍固定摘要；不会把其他机型的表改名硬套。A6300 的原 MAP24R1 保持不变。
 
-## 验证与当前判断
+同时从相机广告的最大全尺寸选择比例，补充 18MP / 4:3 链路；未知内存平台采用保守缓存/线程预算，保留完整 LUT 与全尺寸。rc.5 的索引优先保存和超时保护，以及 @latteye / Sky Yuan 的 PR #2 动画清理修复均保留。
 
-主机与 API10 / 24 MiB 验证覆盖 16 组多尺寸保存链路、4 组阻塞调用/停止恢复、跨进程持有记录、300 张干扰文件、错误通知、索引迟到、部分 JPEG、原地补写及 DCF 歧义。原有 96 轮 Bitmap/Canvas 清理与整包兼容测试通过。发行包通过 API10、DEX035、ARMv5/v7、v1 签名及资源检查。
+## 验证与范围
 
-A7 用户报告来自 beta.6/code106，仅有 UI/导出记录，缺少拍摄阶段日志。本版修复已定位的多余读卡和读写时序问题；**A7 原生“未正确完成写入存储卡”提示的具体触发点尚未确定，本版尚无真机拍摄验收。** 不把本地通过写成 A7 写卡问题已彻底解决。详见 [修复与证据](compatibility/INDEXED_STORE.md)。
+20 份官方固件选表回归、18 组多尺寸保存流程、10 组完整 33³ 原生像素比较通过。API10 / 24 MiB 运行新选表测试、全部保存/索引故障、4 组阻塞恢复、跨进程保护、30 组初始化与 96 轮动画清理通过。
 
-如果 Sony 原生保存服务永久不返回，本版保持后台会话和重入保护。30 秒后 MENU 可回 LUT 库；待存储灯熄灭后正常关机再开机可恢复该状态。不会通过强制释放图像或重复保存尝试取消原生调用。
+[Recipe 全部目标清单](compatibility/RECIPE_TARGETS.md) 共 32 个型号：27 个 Sony 官方 PMCA 型号、5 个安装能力未确认的型号。20 个有本地固件验证，其余 7 个官方 PMCA 型号使用运行时原生选表，真实配置尚待核验。**RX1R II 和本版其他机型尚未完成真机拍摄验收。** [实现与证据](compatibility/RUNTIME_MAP_SELECTION.md)。
 
-正常使用后若仍出现异常，可从 **更多 → 导出诊断日志** 取得 `SONYLUT/DIAG/REPORT.ZIP`。日志不含照片或 LUT 内容，不自动上传。
+正常使用后如仍失败，可从更多菜单导出 `SONYLUT/DIAG/REPORT.ZIP`。日志记录实际平台、像素、选中配置和保存等待阶段，不含照片或 LUT 内容。
 
 ## 资源与发布
 
-发行 APK 关闭调试和备份，只暴露 LUT 库、拍摄、相册三个产品 Activity。附件包含 APK、对应提交源码包（附固定 libjpeg 源码）、BUILDINFO、SHA256SUMS 和安装/许可文件。外部内存配置的来源与许可见 [资源许可](../ASSET_LICENSES.md)，固件本体不随包发布。
+完整 LUT、十个预装 LUT、原生像素处理库和签名保持不变。APK 关闭调试，附件包含对应源码包、BUILDINFO、SHA256SUMS 与安装/许可文件。固件不随包发布；资源归属见 [许可说明](../ASSET_LICENSES.md)。
 
 ## 验收记录
 
@@ -50,3 +46,5 @@ A7 用户报告来自 beta.6/code106，仅有 UI/导出记录，缺少拍摄阶�
 2026-11-02 rc.5/code111：修正保存确认顺序及 DCF 定位，补充等待指标和退出日志关闭。通过本地与 API10 套件；未连接、安装或触发真实相机快门。
 
 rc.5 最终 APK SHA-256：`1a1f239bb37fd02ba6fabf3018500fcf72f057005227427a3f707a7b61cd770b`；签名与 rc.4 一致，30 个原生库/资源/资产条目字节一致，API10 最终整包套件通过。
+
+2026-11-02 rc.6/code112：取消机内配置摘要白名单，新增运行时配置/18MP 验证和 Recipe 全型号清单。本轮未接触真实相机。最终 APK SHA-256：`70e71b67c9d0428cfbd0b8b7a4f19609c4e9d9725fe45feada2fe74c9701e68e`。

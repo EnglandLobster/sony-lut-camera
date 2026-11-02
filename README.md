@@ -2,17 +2,17 @@
 
 **让 A6300 在机内完成真正的 3D LUT 调色，拍完直接得到原片和调色 JPEG。** 无需手机、联网或电脑参与出片。支持导入自己的 `.cube`，预装 10 个指定 LUT。
 
-> 当前版本：**v0.9.0-beta.7-rc.5**（公开测试包，code111）。本版面向 PMCA 多机型兼容性测试；已完成固件、主机和 API10 模拟验证，尚未完成本版真机回归。历史实拍基线为 **Sony A6300 / 固件 2.01**，其他机型按实验适配反馈。
+> 当前版本：**v0.9.0-beta.7-rc.6**（公开测试包，code112）。本版面向 PMCA 多机型兼容性测试；已完成固件、主机和 API10 模拟验证，尚未完成本版真机回归。历史实拍基线为 **Sony A6300 / 固件 2.01**，其他机型按实验适配反馈。
 
-本版修正保存确认顺序：等待 Sony 保存调用返回后，按新增索引定位并核验目标 JPEG，避免保存中抢读和反复全卡扫描。保留 [@latteye 的 A5100/API10 拍后退出修复（PR #2）](https://github.com/EnglandLobster/sony-lut-camera/pull/2)、完整 LUT 和 12–42MP 全尺寸。[发行说明](docs/RELEASE.md) · [机型与验证范围](docs/compatibility/README.md)。
+本版修正 RX1R II 等机型可能遇到的内存表白名单拦截：按机身原生配置选择，不再要求固件摘要预先收录；增加 18MP / 4:3 尺寸链路。保留 rc.5 保存恢复及 [@latteye 的 API10 拍后退出修复（PR #2）](https://github.com/EnglandLobster/sony-lut-camera/pull/2)。[发行说明](docs/RELEASE.md) · [Recipe 全部目标机型与缺口](docs/compatibility/RECIPE_TARGETS.md)。
 
 ## 上手使用
 
 **第一次安装？先看 [新手安装与使用教程](docs/USER_GUIDE.md)**：Windows/macOS 工具下载、相机 MTP 设置、选择本地 APK、首次拍摄及常见问题。
 
-**[下载 beta.7-rc.5 测试包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.5/SonyLutCamera-v0.9.0-beta.7-rc.5.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.5) · 多机型实验适配，欢迎提交诊断日志。
+**[下载 beta.7-rc.6 测试包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.6/SonyLutCamera-v0.9.0-beta.7-rc.6.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.6) · 多机型实验适配，欢迎提交诊断日志。
 
-1. 从 [beta.7-rc.5 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.5) 下载 `SonyLutCamera-v0.9.0-beta.7-rc.5.apk`。自行编译见 [构建说明](docs/BUILD.md)。
+1. 从 [beta.7-rc.6 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.6) 下载 `SonyLutCamera-v0.9.0-beta.7-rc.6.apk`。自行编译见 [构建说明](docs/BUILD.md)。
 2. 用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装 APK。相机使用 MTP USB 模式；详细步骤见 [安装与使用](docs/USER_GUIDE.md)。
 3. 打开相机应用列表中的 **LUT Camera**，选一个 LUT，按中央键进入拍摄。首次打开会把预装 LUT 加入 SD 卡。
 4. 正常半按对焦、全按拍照。相机保留原片 JPEG，并另外保存应用完整 LUT 的 JPEG；成片后半按回到取景。
