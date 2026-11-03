@@ -740,18 +740,17 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             cameraType.getMethod("set"+kind,Class.forName(name)).invoke(cameraEx,value);
         }
         storeEvents=new CaptureStoreEvents(owner,new CaptureStoreEvents.Sink(){
-            public void named(final Object value,final String directory,final String file){
+            public void named(final int receiptId,final String directory,final String file){
                 if(closed||cameraEx!=owner)return;
                 final long shot=gate.shot(),at=SystemClock.elapsedRealtime();
-                final boolean success=value instanceof Number&&((Number)value).intValue()==0;
                 final long token=storeCompletion==null?0:storeCompletion.token();
                 storeObserver.post(new Runnable(){public void run(){
                     if(closed||shot!=gate.shot()){event("stale_store_ignored","event_shot="+shot+" file="+file);return;}
-                    event("stored_notification","status="+value+" success="+success+" dir="+directory+" file="+file+" token="+token+" state="+gate.state());
+                    event("stored_notification","receipt_id="+receiptId+" dir="+directory+" file="+file+" token="+token+" state="+gate.state());
                     try{if(photoFiles.knownStore(directory,file)){event("duplicate_store_ignored","file="+file);return;}}
                     catch(IOException e){failure("store_path",e);return;}
                     if(storeCompletion!=null){
-                        try{if(success)storeCompletion.notified(token,directory,file);pollStore(token,shot);}
+                        try{storeCompletion.notified(token,directory,file);pollStore(token,shot);}
                         catch(Exception error){event("store_receipt_rejected",cause(error).toString());showStoreRecovery();}
                     }else work.post(new Runnable(){public void run(){verifyStored(directory,file,at);}});
                 }});

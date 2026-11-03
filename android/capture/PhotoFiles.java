@@ -29,8 +29,12 @@ final class PhotoFiles {
     }
     PhotoFiles(File sd,Format format,boolean snapshot) throws IOException {
         this.format=format;
+        if(!sd.isDirectory())throw new IOException("SD folder unavailable");
         dcim=new File(sd,"DCIM").getCanonicalFile();
-        if(!dcim.isDirectory())throw new IOException("DCIM directory unavailable");
+        // Product capture discovers Sony-created files by receipt/index. A new
+        // card need not contain DCIM yet; Sony owns creation of its photo tree.
+        // Snapshot-based diagnostic paths still require an existing directory.
+        if((snapshot||dcim.exists())&&!dcim.isDirectory())throw new IOException("DCIM directory unavailable");
         if(snapshot)refresh();
     }
     private List<File> imageFiles() throws IOException {

@@ -26,6 +26,7 @@ bash scripts/build_host.sh
 python3 scripts/test_offline.py
 bash scripts/test_product_ui.sh
 bash scripts/test_capture_pipeline.sh  # portable flow/fault tests, 24 MiB host heap
+python3 scripts/test_store_receipt_dispatch.py --baseline-ref v0.9.0-beta.7-rc.7  # actual callback: old failure/new pass
 bash scripts/test_capture_compatibility.sh  # full-resolution native pixel/budget checks
 bash scripts/test_lut_cache.sh
 bash scripts/test_preview_fit.sh

@@ -1,5 +1,12 @@
 # Current status
 
+Current release: **v0.9.0-beta.7-rc.8 / code115**, experimental prerelease. Fixes the nonzero store-receipt filter and premature DCIM requirement. See [release details](RELEASE.md). Same implementation as the API10-tested and A6300-installed fix1 candidate; physical repeated capture and preview-mode acceptance remain pending.
+
+## Earlier validation records
+# Current status
+
+2026-11-03 correction: rc.7 still discards valid nonzero native store receipt identifiers. The actual released Activity callback reproduces a second-capture stall with receipt 1 and an unpublished pair index. Local **0.9.0-beta.7-rc.7-fix1 / code114** removes that gate and permits Sony to create an initially absent DCIM. This candidate is not published and physical capture acceptance is pending. See [incident findings](compatibility/RC7_RECEIPT_REGRESSION.md); the previous rc.7 validation below missed the Activity callback filter.
+
 Current release: **v0.9.0-beta.7-rc.7 / code113**, experimental prerelease, 2026-11-03. Fixes an application regression introduced in rc.3: the original photo's native success callback was incorrectly gated on index publication before submitting the second declared record. The PR #2 renderer fix is retained. [Evidence, reproduction and fix](compatibility/PAIR_STORE_REGRESSION.md).
 
 Named success now confirms the exact stable/complete JPEG after RPC return. Missing callbacks use a separate single-flight index worker with confirmed-DCF exclusions; stop requests drain the already-declared pair before teardown. Native status codes, query-worker waits and errors are retained. Imports accept root LUTS/LUT folder aliases. The rc.6 runtime memory-map selection and all full-resolution LUT processing remain.

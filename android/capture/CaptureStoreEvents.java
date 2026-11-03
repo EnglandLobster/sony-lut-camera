@@ -5,7 +5,8 @@ import java.lang.reflect.*;
 /** Resolve the storage callback by capability, not Android or camera model. */
 final class CaptureStoreEvents {
     interface Sink {
-        void named(Object status,String directory,String name);
+        // Sony's integer is a receipt identifier, not a zero-success status.
+        void named(int receiptId,String directory,String name);
         void failed(Throwable error);
     }
     private final Object owner;
@@ -36,7 +37,7 @@ final class CaptureStoreEvents {
                 if(closed)return null;
                 try{
                     Object info=args[1];
-                    sink.named(args[0],(String)info.getClass().getField("DirectoryName").get(info),
+                    sink.named(((Integer)args[0]).intValue(),(String)info.getClass().getField("DirectoryName").get(info),
                         (String)info.getClass().getField("FileName").get(info));
                 }catch(Throwable error){sink.failed(error);}
                 return null;

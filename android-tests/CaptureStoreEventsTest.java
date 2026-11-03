@@ -7,7 +7,7 @@ public final class CaptureStoreEventsTest {
         public void setJpegListener(JpegListener value){listener=value;registrations++;}
     }
     public static class ModernCamera {
-        public interface StoreImageCompleteListener {void onStore(int status,Info info,ModernCamera owner);}
+        public interface StoreImageCompleteListener {void onStore(int receiptId,Info info,ModernCamera owner);}
         public interface JpegListener {void onPictureTaken(byte[] jpeg,ModernCamera owner);}
         public static class Info {public String DirectoryName="DCIM/100MSDCF/",FileName="DSC00001";}
         StoreImageCompleteListener listener;boolean fail;int legacyCalls;
@@ -15,11 +15,11 @@ public final class CaptureStoreEventsTest {
         public void setJpegListener(JpegListener value){legacyCalls++;}
     }
     public static class MissingSetterCamera {
-        public interface StoreImageCompleteListener {void onStore(int status,Object info);}
+        public interface StoreImageCompleteListener {void onStore(int receiptId,Object info);}
     }
     static class Sink implements CaptureStoreEvents.Sink {
-        int named,errors;String path;
-        public void named(Object status,String directory,String name){named++;path=directory+name;}
+        int named,errors,receiptId;String path;
+        public void named(int id,String directory,String name){named++;receiptId=id;path=directory+name;}
         public void failed(Throwable error){errors++;}
     }
     static void check(boolean value,String detail){if(!value)throw new AssertionError(detail);}
@@ -37,9 +37,13 @@ public final class CaptureStoreEventsTest {
         check(events.hasNamedReceipt()&&modern.legacyCalls==0,"modern protocol preserved");
         modern.listener.onStore(0,new ModernCamera.Info(),modern);
         check(sink.named==1&&"DCIM/100MSDCF/DSC00001".equals(sink.path),"exact store identity retained");
+        for(int id:new int[]{1,2,41,32767}){
+            modern.listener.onStore(id,new ModernCamera.Info(),modern);
+            check(sink.receiptId==id,"nonzero receipt identifier retained");
+        }
         modern.listener.onStore(0,null,modern);check(sink.errors==1,"malformed callback surfaced");
         ModernCamera.StoreImageCompleteListener stale=modern.listener;events.close();stale.onStore(0,new ModernCamera.Info(),modern);
-        check(modern.listener==null&&sink.named==1,"detached late callback ignored");
+        check(modern.listener==null&&sink.named==5,"detached late callback ignored");
         modern.fail=true;boolean failed=false;try{new CaptureStoreEvents(modern,sink);}catch(Exception expected){failed=true;}
         check(failed&&modern.legacyCalls==0,"runtime error not hidden by fallback");
         System.out.println("PASS store API: old startup failure reproduced, legacy index/modern callbacks, detach, malformed data and setter failure");

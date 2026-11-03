@@ -8,11 +8,14 @@ python3 scripts/stage_capture_maps.py out/capture-pipeline/assets
     android/capture/CaptureGeometry.java android/capture/CaptureMemoryMap.java \
     android/capture/CaptureSetup.java android/capture/SimpleExposure.java android/capture/PreJpegGate.java \
     android/capture/PhotoFiles.java android/capture/PhotoIndex.java android/capture/ArwFile.java android/capture/CaptureStoreCompletion.java android/capture/CaptureIndexQueries.java android/capture/CaptureRecoveryFence.java \
+    android/capture/CaptureStoreEvents.java android-tests/CaptureReceiptPipelineTest.java \
     android-tests/CapturePipelineTest.java android-tests/CaptureMemoryMapTest.java android-tests/CaptureStoreRpcTest.java android-tests/IndexedStoreTest.java android-tests/CapturePairCompletionTest.java
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CapturePipelineTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureStoreRpcTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.IndexedStoreTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CapturePairCompletionTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureReceiptPipelineTest
+python3 scripts/test_store_receipt_dispatch.py
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureStoreRpcTest --write-fence out/capture-pipeline/process-fence
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureStoreRpcTest --read-fence out/capture-pipeline/process-fence
 python3 - <<'PY'

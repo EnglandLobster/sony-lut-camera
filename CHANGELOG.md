@@ -1,3 +1,10 @@
+# v0.9.0-beta.7-rc.8
+
+- Accept nonzero native store receipt identifiers; prevent subsequent paired-save stalls.
+- Allow Sony to create DCIM on first save; clarify directory errors.
+- Cover the actual Activity callback, nonzero identifiers and repeated pairs in regressions.
+- Physical continuous capture acceptance remains pending.
+
 # 更新记录
 
 ## 0.9.0-beta.7-rc.4 · 2026-11-02 公开测试包

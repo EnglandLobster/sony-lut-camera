@@ -21,6 +21,7 @@ public final class CaptureStartupErrorTest {
         check(CaptureStartupError.from(new IOException("preview surface callbacks unavailable")).title.equals("取景界面尚未就绪"));
         check(CaptureStartupError.from(new IOException("JPEG quality changed: expected=50 actual=25")).title.equals("无法设置 JPEG 画质"));
         check(CaptureStartupError.from(new OutOfMemoryError()).title.equals("相机可用内存不足"));
+        check(CaptureStartupError.from(new IOException("DCIM directory unavailable")).title.equals("无法访问照片目录"));
         CaptureStartupError unknown=CaptureStartupError.from(new IOException("unknown vendor failure"));
         check(unknown.title.equals("未能开始拍摄")&&!unknown.message().contains("unknown vendor"));
         check(unknown.action.contains("MENU"));

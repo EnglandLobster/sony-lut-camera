@@ -46,6 +46,8 @@ final class CaptureStartupError {
             return new CaptureStartupError("拍摄参数设置失败","相机未接受应用所需的拍摄设置。","请退出应用，设为单张、JPEG、原生比例和 L 尺寸。\n若仍失败，请提供诊断文件。");
         if(cause instanceof OutOfMemoryError||text.contains("cannot reserve"))
             return new CaptureStartupError("相机可用内存不足","没有足够内存完成拍摄初始化。","请退出应用后重新打开。\n若再次失败，请把诊断文件发给开发者。");
+        if(text.contains("DCIM directory unavailable"))
+            return new CaptureStartupError("无法访问照片目录","相机照片目录 DCIM 当前不可用。","请退出应用，在原生相机中检查存储卡状态。\n已有照片请先备份；无需删除 LUT 或照片。");
         if(text.contains("ENOSPC")||text.contains("Permission denied")||text.contains("SD folder"))
             return new CaptureStartupError("无法读写 SD 卡","拍摄准备所需的文件无法写入 SD 卡。","请检查存储卡写保护和剩余空间，\n确认存储卡可用后重试。");
         return new CaptureStartupError("未能开始拍摄","相机在初始化拍摄时返回了错误。","请按 MENU 返回 LUT 库。\n若再次失败，请把诊断文件发给开发者。");

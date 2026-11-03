@@ -1,3 +1,30 @@
+# v0.9.0-beta.7-rc.8 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.8/SonyLutCamera-v0.9.0-beta.7-rc.8.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.8) · [安装教程](USER_GUIDE.md)
+
+code115，公开预发行测试包。沿用原签名，可覆盖安装，保留 LUT 与照片。
+
+## 修复
+
+- 修正 RC3–RC7 把保存完成回调整数误当成“0 才成功”的错误。有效的非零回调不再被丢弃，避免后续拍摄退回索引等待、卡住双保存。
+- 允许首次拍摄前尚未建立 DCIM，由 Sony 保存流程创建；SD 根目录不可用或 DCIM 为普通文件仍报错。
+- 日志明确记录 receipt_id；补充照片目录不可访问的提示。
+- 保留全尺寸完整 LUT、原片/调色片双文件、保存所有权保护与已有动画修复。
+
+## 验证
+
+直接运行 RC7 实际 Activity 回调体，复现编号 1 时第二次拍摄等待；修复体在无索引发布条件下连续完成四组双保存。反射回调五组、产品/保存主机测试及 API10/24 MiB 全套通过。
+
+同实现的 rc.7-fix1/code114 已安装到用户 A6300，确认 LUT 库启动、17 项 LUT 保留和启动标识未变。RC8 仅升级版本字段；发行包运行代码与该候选逐项核对。**连续实拍、两种取景模式交叉测试及退出/重启验收尚未确认**，不将旧版本实拍结果记作 RC8 实拍。
+
+取景方式可在“LUT 库选中对应 LUT → MENU → 当前 LUT 的取景”修改，每个 LUT 单独记忆。
+
+[根因与验证遗漏分析](compatibility/RC7_RECEIPT_REGRESSION.md)。若仍异常，可通过 MENU → 导出诊断日志提供 REPORT.ZIP。
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.9.0-beta.7-rc.7 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.7/SonyLutCamera-v0.9.0-beta.7-rc.7.apk) · [发行页与源码/校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.7) · [安装教程](USER_GUIDE.md)
