@@ -1,6 +1,6 @@
 # Current status
 
-Current release: **v0.9.0-beta.7-rc.8 / code115**, experimental prerelease. Fixes the nonzero store-receipt filter and premature DCIM requirement. See [release details](RELEASE.md). Same implementation as the API10-tested and A6300-installed fix1 candidate; physical repeated capture and preview-mode acceptance remain pending.
+Current release: **v0.9.0-beta.7-rc.9 / code116**, experimental prerelease. On A6300 firmware 2.01, a verified native completion receipt and RPC return allow confirmation by JPEG path and dimensions. Two physical captures on the matching fast-save candidate displayed in 5.26 s and 4.78 s, saved both JPEGs, and rearmed. See [release details](RELEASE.md).
 
 ## Earlier validation records
 # Current status

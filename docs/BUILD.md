@@ -45,7 +45,7 @@ The offline suite generates synthetic LUTs and JPEGs in `out/tests/`, including 
 
 `out/test.keystore` is ignored. A first build creates a local development key; existing installations require their original signing key to accept an update. Do not regenerate or overwrite that key, commit it, or clear app data merely to bypass a signature mismatch. Main and helper APKs must use the same signing identity.
 
-For an authorized device update, safely leave capture and open the helper before running `adb -s <serial> install -r dist/SonyLutTest.apk`. Read device version, startup logs and boot identity afterward. Camera captures require physical shutter operation.
+For an authorized device update, safely leave capture and open the helper before running `adb -s <serial> install -r dist/SonyLutTest.apk`. Read device version, startup logs and boot identity afterward. Device capture tests can use the shutter button or automated half-press and full-press through a control path verified for the connected camera. Verify capture readiness before triggering and confirm both JPEGs and rearm before the next shot.
 
 ## Optional development connector
 

@@ -151,7 +151,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     if(closed||shot!=gate.shot())return;
                     event("first_frame","shutter_to_displayed_ms="+(shownAt-pressAt)+" journal_write_ms="+journalWriteMs()+" journal_shot_ms="+(journalWriteMs()-journalAtPress)+" original="+originalFile+" graded="+gradedFile);
                     if(verifyPayloads)verifyPairPayloads();
-                    else event("payload_verification_skipped","mode=normal saved_notification_and_header_checked=true");
+                    else event("payload_verification_skipped","mode=normal post_display=true");
                     if(continuous&&gate.state()==PreJpegGate.State.SAVED)ui.post(new Runnable(){public void run(){rearm(shot);}});
                 }});
             }
@@ -759,7 +759,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         });
         if(!initOnly&&develops()){
             storeIndex=new CaptureStoreIndex(this,sd);
-            storeCompletion=new CaptureStoreCompletion(photoFiles,storeIndex,storeEvents.hasNamedReceipt());
+            boolean verified=productUi()&&paired()&&storeEvents.hasNamedReceipt()
+                &&CapturePlatform.namedStoreCompletionVerified(captureModel,captureFirmware);
+            storeCompletion=new CaptureStoreCompletion(photoFiles,storeIndex,storeEvents.hasNamedReceipt(),verified);
+            event("named_store_validation",verified?"jpeg_header":"jpeg_structure");
         }
         event("store_protocol",storeEvents.hasNamedReceipt()?"named_store_complete_with_index_recovery":"index_and_complete_file; overlap_original=false");
     }
@@ -816,7 +819,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     if(receipt.stopRequested)stopAfterStore=true;
                     File file=receipt.file;
                     event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" confirmation="+(receipt.recovered?"index_recovery":"named_receipt")+" "+storeCompletion.diagnostics());
-                    verifyStored("DCIM/"+file.getParentFile().getName()+"/",file.getName(),SystemClock.elapsedRealtime());
+                    long confirmedAt=SystemClock.elapsedRealtime();
+                    if(paired())verifyPairStore(file,confirmedAt);
+                    else verifyStored("DCIM/"+file.getParentFile().getName()+"/",file.getName(),confirmedAt);
                 }});return;
             }
             if(storeCompletion.overdue(token,SystemClock.elapsedRealtime()))showStoreRecovery();
@@ -985,7 +990,6 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }
     }
     private void verifyStored(String directory,String name,long notifiedAt){
-        if(paired()){verifyPairStore(directory,name,notifiedAt);return;}
         try{
         if(gate.state()!=PreJpegGate.State.SAVING)throw new IOException("unexpected store event in "+gate.state());
         photoFiles.confirmStored(directory,name);File file=photoFiles.pollReady(true);
@@ -1001,17 +1005,11 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // Keep the one-shot release lock until this probe exits; no second shot.
         if(!active)ui.post(new Runnable(){public void run(){close();}});
     }catch(Throwable e){failure("verify",e);}}
-    private void verifyPairStore(String directory,String name,long notifiedAt){workerActive=true;try{
+    private void verifyPairStore(File file,long confirmedAt){workerActive=true;try{
         boolean original=gate.state()==PreJpegGate.State.ORIGINAL_SAVING;
         if(!original&&gate.state()!=PreJpegGate.State.SAVING)throw new IOException("unexpected pair store in "+gate.state());
-        long checkBegin=SystemClock.elapsedRealtime();
-        photoFiles.confirmStored(directory,name);File file=photoFiles.pollReady(true);
-        long headerBegin=SystemClock.elapsedRealtime();
-        if(file==null||!PhotoFiles.jpegHeader(file,captureGeometry.width,captureGeometry.height))throw new IOException("completed pair JPEG header missing or invalid: "+directory+name);
-        long checkedAt=SystemClock.elapsedRealtime();
         photoFiles.accepted(file);
-        event(original?"original_saved":"graded_saved","file="+file+" bytes="+file.length()+" from_press_ms="+(notifiedAt-pressAt)+" store_ms="+(notifiedAt-storeAt)
-                +" notification_to_check_ms="+(checkBegin-notifiedAt)+" file_lookup_ms="+(headerBegin-checkBegin)+" header_ms="+(checkedAt-headerBegin));
+        event(original?"original_saved":"graded_saved","file="+file+" bytes="+file.length()+" from_press_ms="+(confirmedAt-pressAt)+" store_ms="+(confirmedAt-storeAt));
         if(original){
             originalFile=file;gate.originalSaved();
             // RECORD_COUNT=2 was declared before exposure. Even a MENU/stop
@@ -1025,7 +1023,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             event("store_accepted","role=graded call_ms="+(SystemClock.elapsedRealtime()-storeAt));
         }else{
             if(originalFile==null||originalFile.equals(file))throw new IOException("graded save did not preserve distinct original");
-            gradedFile=file;gate.saved();event("pair_saved","shutter_to_saved_ms="+(notifiedAt-pressAt));
+            gradedFile=file;gate.saved();event("pair_saved","shutter_to_saved_ms="+(confirmedAt-pressAt));
             ui.post(new Runnable(){public void run(){
                 if(stopAfterStore){recordPair();setResult(RESULT_OK);finish();return;}
                 if(!active||destroyed){close();return;}

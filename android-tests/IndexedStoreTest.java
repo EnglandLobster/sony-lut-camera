@@ -23,7 +23,7 @@ public final class IndexedStoreTest {
             // become candidates or make recovery ambiguous.
             for(int i=1;i<=300;i++)CapturePipelineTest.write(new File(folder,String.format(java.util.Locale.US,"DSC0%04d.JPG",i)),new byte[]{1,2});
             PhotoFiles files=new PhotoFiles(sd,PhotoFiles.Format.JPEG,false);files.expect(new CaptureGeometry(6000,4000));
-            Index index=new Index();CaptureStoreCompletion completion=new CaptureStoreCompletion(files,index,true);
+            Index index=new Index();CaptureStoreCompletion completion=new CaptureStoreCompletion(files,index,true,true);
             long token=completion.begin(0);
             check(completion.poll(token,2000)==null&&index.queries==0,"callback cannot confirm before RPC submission");
             completion.rpcStarted(token);completion.rpcReturned(token);

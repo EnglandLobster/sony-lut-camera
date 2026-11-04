@@ -8,4 +8,8 @@ final class CapturePlatform {
         // the encoder's read of the source buffer. Other bodies wait for receipt.
         return "ILCE-6300".equals(model)&&"2.01".equals(firmware);
     }
+    static boolean namedStoreCompletionVerified(String model,String firmware){
+        // This firmware's completed-file callback was verified with paired saves.
+        return "ILCE-6300".equals(model)&&"2.01".equals(firmware);
+    }
 }

@@ -1,3 +1,8 @@
+# v0.9.0-beta.7-rc.9
+
+- A6300 / 2.01 收到保存完成回调后，核对 JPEG 路径和尺寸即可推进。缺回调时继续使用索引恢复与完整 JPEG 校验。
+- 同实现候选包在 A6300 连续单拍两次，分别在 5.26 秒和 4.78 秒显示成片。非零回调 1 和 2 均完成双保存并恢复待拍。
+
 # v0.9.0-beta.7-rc.8
 
 - Accept nonzero native store receipt identifiers; prevent subsequent paired-save stalls.

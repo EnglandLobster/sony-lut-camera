@@ -54,7 +54,10 @@ final class PhotoFiles {
         known.clear();for(File f:imageFiles())known.add(f.getPath());resetCandidate();
     }
     synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;indexedFile=null;lookupAt=-1;validationAt=-1;}
-    synchronized File pollNotified(long now)throws IOException{return pollComplete(pollStored(),now);}
+    synchronized File pollNotified(long now,boolean requireComplete)throws IOException{
+        File file=pollStored();
+        return requireComplete?pollComplete(file,now):file;
+    }
     /** Locate only the indexed DCF identity. Never stat/open unrelated photos. */
     synchronized File pollIndexed(PhotoIndex.Entry entry,long now)throws IOException{
         if(format!=Format.JPEG)throw new IOException("indexed store requires JPEG");

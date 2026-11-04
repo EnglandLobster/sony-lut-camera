@@ -1,3 +1,18 @@
+# v0.9.0-beta.7-rc.9 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.9/SonyLutCamera-v0.9.0-beta.7-rc.9.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.9) · [安装教程](USER_GUIDE.md)
+
+code116，公开预发行测试包。沿用原签名，可覆盖安装，保留 LUT 和照片。
+
+- A6300 / 固件 2.01 在 Sony 返回保存完成回调后，核对目标文件与 JPEG 尺寸即可继续。原片、调色片各少一次完整 JPEG 回读。
+- 缺回调时仍用索引恢复并检查完整 JPEG。其他机型及固件继续使用完整文件检查。
+
+A6300 / 固件 2.01 使用同实现的 `0.9.0-beta.7-rc.8-fast-save`（code116）连续实拍两次，分别在 **5.26 秒**和 **4.78 秒**显示成片。两次均收到非零回调、保存两张 6000 × 4000 EXTRA FINE JPEG，并恢复待拍。优化前，同机首张实测为 **8.42 秒**。 发行 APK 的 32 项运行内容与实拍候选包逐字节相同，签名证书一致。
+
+主机产品与拍摄回归覆盖非零回调、丢回调、截断 JPEG 和原生保存调用阻塞。发行包包含签名 APK、对应源码、BUILDINFO、SHA256SUMS 与安装和许可文件。
+
+## 历史记录
+
 # v0.9.0-beta.7-rc.8 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.8/SonyLutCamera-v0.9.0-beta.7-rc.8.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.8) · [安装教程](USER_GUIDE.md)

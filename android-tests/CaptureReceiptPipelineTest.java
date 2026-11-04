@@ -40,7 +40,7 @@ public final class CaptureReceiptPipelineTest {
             public PhotoIndex.Entry saved(){return null;}
             public void accepted(File file){}
         };
-        CaptureStoreCompletion completion=new CaptureStoreCompletion(files,index,true);
+        CaptureStoreCompletion completion=new CaptureStoreCompletion(files,index,true,true);
         ReceiptSink sink=new ReceiptSink(completion);Camera camera=new Camera();
         CaptureStoreEvents events=new CaptureStoreEvents(camera,sink);
         try{
@@ -63,16 +63,28 @@ public final class CaptureReceiptPipelineTest {
                     camera.saved(id,file);
                     if(number!=1)check(completion.poll(sink.token,0)==null,"receipt cannot release active RPC");
                     completion.rpcReturned(sink.token);
-                    CaptureStoreCompletion.Receipt receipt=null;
-                    for(int now=41000;now<=43000&&receipt==null;now+=200)receipt=completion.poll(sink.token,now);
+                    CaptureStoreCompletion.Receipt receipt=completion.poll(sink.token,41000);
                     check(sink.error==null,"reflection callback accepted");
-                    check(receipt!=null&&!receipt.recovered&&receipt.file.equals(file.getCanonicalFile()),"named receipt confirms without any index publication: "+id);
+                    check(receipt!=null&&!receipt.recovered&&receipt.file.equals(file.getCanonicalFile()),
+                        "verified named receipt completes on the first check without index publication: "+id);
                     files.accepted(receipt.file);
                     camera.saved(id,file); // A repeated callback cannot select this photo again.
                 }
             }
             check(number==10&&!completion.pending(),"five consecutive original/graded pairs complete");
-            System.out.println("PASS native callback adapter -> completion: 5 pairs, nonzero first ID, repeated IDs, duplicates, delayed DCIM creation");
+            System.out.println("PASS verified native receipts: 5 pairs, first-check completion, nonzero and repeated IDs, duplicates, delayed DCIM creation");
+
+            sink.token=completion.begin(0);
+            completion.rpcStarted(sink.token);
+            File wrongSize=new File(dcim,"100MSDCF/DSC00011.JPG");
+            camera.saved(41,wrongSize);
+            completion.rpcReturned(sink.token);
+            check(completion.poll(sink.token,1000)==null,"named file must be visible");
+            CapturePipelineTest.write(wrongSize,CapturePipelineTest.jpeg(5998,4000,true));
+            boolean invalid=false;
+            try{completion.poll(sink.token,1200);}
+            catch(CaptureStoreCompletion.ConfirmedInvalid error){invalid=error.file.equals(wrongSize.getCanonicalFile());}
+            check(invalid&&!completion.pending(),"verified named file still requires expected geometry");
         }finally{events.close();}
         File bad=new File(root,"bad");check(bad.mkdir(),"bad card");
         CapturePipelineTest.write(new File(bad,"DCIM"),new byte[]{1});

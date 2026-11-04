@@ -20,7 +20,8 @@ final class CaptureStoreCompletion {
         final File file;final boolean recovered,stopRequested;
         Receipt(File file,boolean recovered,boolean stopRequested){this.file=file;this.recovered=recovered;this.stopRequested=stopRequested;}
     }
-    private final PhotoFiles files;private final Registration registration;private final boolean namedProtocol;
+    private final PhotoFiles files;private final Registration registration;
+    private final boolean namedProtocol,namedCompletionVerified;
     private long generation,started;private boolean pending,notified,stopRequested,rpcActive,rpcComplete,confirmed;
     private File confirmedFile;private boolean confirmedRecovered,confirmedValid;
     private boolean recoveryAvailable,continuationAllowed,continuation;
@@ -42,7 +43,11 @@ final class CaptureStoreCompletion {
         stage=stage.contains("index")?"index_error":"file_error";
     }
     CaptureStoreCompletion(PhotoFiles files,Registration registration,boolean namedProtocol){
+        this(files,registration,namedProtocol,false);
+    }
+    CaptureStoreCompletion(PhotoFiles files,Registration registration,boolean namedProtocol,boolean namedCompletionVerified){
         this.files=files;this.registration=registration;this.namedProtocol=namedProtocol;
+        this.namedCompletionVerified=namedCompletionVerified;
     }
     long begin(long now)throws Exception{return begin(now,false);}
     long beginFinalStore(long now)throws Exception{return begin(now,true);}
@@ -96,7 +101,7 @@ final class CaptureStoreCompletion {
             // RECORD_COUNT=2 can publish the database only after BOTH files.
             // Never require original-index visibility before submitting graded.
             stage="notified_file";begin=System.nanoTime();fileChecks++;
-            try{ready=files.pollNotified(now);}finally{fileNanos+=System.nanoTime()-begin;}
+            try{ready=files.pollNotified(now,!namedCompletionVerified);}finally{fileNanos+=System.nanoTime()-begin;}
         }else{
             if(namedProtocol&&(age<RECOVERY_DELAY_MS||!recoveryAvailable)){stage="await_notification";return null;}
             stage="index_query";PhotoIndex.Entry entry;begin=System.nanoTime();indexQueries++;
@@ -107,7 +112,9 @@ final class CaptureStoreCompletion {
             recovered=true;
         }
         if(ready==null){stage="await_file";return null;}
-        boolean valid=files.expectedHeader(ready);
+        begin=System.nanoTime();
+        boolean valid;
+        try{valid=files.expectedHeader(ready);}finally{fileNanos+=System.nanoTime()-begin;}
         synchronized(this){
             if(!active(token)||ready==null)return null;
             try{registration.accepted(ready);}catch(Exception error){recoveryAvailable=false;readFailed(error);}
