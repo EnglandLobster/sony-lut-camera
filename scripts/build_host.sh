@@ -9,11 +9,17 @@ flags=(-O3 -std=c++11 -pthread -fno-vectorize -fno-slp-vectorize -Inative -Ivend
 clang++ "${flags[@]}" native/core.cpp native/jpeg_io.cpp native/cli.cpp out/jpeg-host/libjpeg.a -o out/sony-lut-host
 clang++ "${flags[@]}" native/core.cpp native/tests.cpp -o out/core-tests
 clang++ "${flags[@]}" native/core.cpp native/jpeg_io.cpp native/preview_tests.cpp out/jpeg-host/libjpeg.a -o out/preview-tests
-# Apple clang 16's ASan cannot initialize on this host; the installed LLVM runtime works.
-sanitizer="${SANITIZER_CXX:-/opt/homebrew/opt/llvm/bin/clang++}"
-"$sanitizer" -isysroot "$(xcrun --show-sdk-path)" -O1 -g -std=c++11 -pthread -fsanitize=address,undefined -fno-omit-frame-pointer \
+sanitize=(-O1 -g -std=c++11 -pthread -fsanitize=address,undefined -fno-omit-frame-pointer)
+if [[ "$(uname -s)" == Darwin ]]; then
+  # Apple clang 16's ASan cannot initialize on macOS; the Homebrew LLVM runtime works.
+  sanitizer="${SANITIZER_CXX:-/opt/homebrew/opt/llvm/bin/clang++}"
+  sanitize=(-isysroot "$(xcrun --show-sdk-path)" "${sanitize[@]}")
+else
+  sanitizer="${SANITIZER_CXX:-clang++}"
+fi
+"$sanitizer" "${sanitize[@]}" \
   -Inative native/core.cpp native/tests.cpp -o out/core-tests-sanitize
-"$sanitizer" -isysroot "$(xcrun --show-sdk-path)" -O1 -g -std=c++11 -pthread -fsanitize=address,undefined -fno-omit-frame-pointer \
+"$sanitizer" "${sanitize[@]}" \
   -Inative -Ivendor/libjpeg-turbo -Iout/jpeg-host native/core.cpp native/jpeg_io.cpp native/preview_tests.cpp out/jpeg-host/libjpeg.a -o out/preview-tests-sanitize
-"$sanitizer" -isysroot "$(xcrun --show-sdk-path)" -O1 -g -std=c++11 -pthread -fsanitize=address,undefined -fno-omit-frame-pointer \
+"$sanitizer" "${sanitize[@]}" \
   -Inative -Ivendor/libjpeg-turbo -Iout/jpeg-host native/core.cpp native/jpeg_io.cpp native/cli.cpp out/jpeg-host/libjpeg.a -o out/sony-lut-host-sanitize

@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 sdk="${ANDROID_SDK:-/opt/homebrew/share/android-commandlinetools}"
 bt="$sdk/build-tools/36.0.0"
 jar="$sdk/platforms/android-36/android.jar"
-java_home="$(/usr/libexec/java_home -v 17)"
+java_home="${JAVA_HOME:-$(/usr/libexec/java_home -v 17)}"
 export JAVA_HOME="$java_home" PATH="$java_home/bin:$PATH"
 mkdir -p out/dev-connect/classes out/dev-connect/dex out/dev-connect/tests out/dev-connect/res/drawable dist
 python3 - <<'PY'

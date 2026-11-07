@@ -18,9 +18,14 @@ PY
 flags=(-std=c++11 -O2 -pthread)
 compiler="${CXX:-clang++}"
 if [[ "${SANITIZE:-0}" == 1 ]]; then
-  # Match build_host.sh: Apple clang's ASan cannot initialize on this macOS.
-  compiler="${SANITIZER_CXX:-/opt/homebrew/opt/llvm/bin/clang++}"
-  flags+=(-isysroot "$(xcrun --show-sdk-path)" -fsanitize=address,undefined -fno-omit-frame-pointer)
+  flags+=(-fsanitize=address,undefined -fno-omit-frame-pointer)
+  if [[ "$(uname -s)" == Darwin ]]; then
+    # Match build_host.sh: Apple clang's ASan cannot initialize on macOS.
+    compiler="${SANITIZER_CXX:-/opt/homebrew/opt/llvm/bin/clang++}"
+    flags+=(-isysroot "$(xcrun --show-sdk-path)")
+  else
+    compiler="${SANITIZER_CXX:-clang++}"
+  fi
 fi
 "$compiler" "${flags[@]}" native/core.cpp native/lut_cache.cpp native/lut_cache_tests.cpp -o out/lut-cache-tests/run
 out/lut-cache-tests/run out/lut-cache-tests out/tests/ID33.CUB out/tests/DOMAIN.CUB out/tests/COLOR17.CUB out/lut-cache-tests/GRID65.CUB out/lut-cache-tests/COLOR33.CUB

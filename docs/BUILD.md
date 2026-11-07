@@ -1,6 +1,6 @@
 # Build and development setup
 
-The locally verified build host is macOS; PR #2 also provides Windows Git Bash host adaptations. The APK targets old Sony Android firmware; replacing the NDK or Java compatibility level requires separate validation.
+Verified build hosts are macOS and Linux x86_64 (Ubuntu 24.04); PR #2 also provides Windows Git Bash host adaptations. The APK targets old Sony Android firmware; replacing the NDK or Java compatibility level requires separate validation.
 
 ## Toolchain
 
@@ -16,6 +16,8 @@ export ANDROID_NDK=/absolute/path/to/android-ndk-r16b
 # If Homebrew LLVM is elsewhere, set SANITIZER_CXX to its clang++.
 python3 scripts/bootstrap_dependencies.py
 ```
+
+On Linux, set `JAVA_HOME` to a JDK 17 and `ANDROID_SDK` to the SDK directory; install `clang` and `libclang-rt-18-dev` for the sanitizer builds (`SANITIZER_CXX` defaults to `clang++`). The NDK r16b Linux clang also needs `libncurses.so.5`/`libtinfo.so.5`, which Ubuntu 24.04 no longer ships.
 
 `dependencies.lock.json` pins libjpeg-turbo and six exact Sony memory-map assets. `config/capture-maps.json` owns bundled platform/pixel/revision identities and reviewed camera-resident fingerprints. Camera-resident files are selected at runtime by exact platform/pixel/name and newest revision; an uncollected fingerprint does not block capture. Staging verifies the pinned bytes and generates `CAPMAP.TXT`; firmware-only maps are not copied into the APK. The bootstrap verifies existing inputs, refuses different/modified copies, and downloads only missing inputs. `--check` performs no downloads. These files live under ignored `vendor/` and retain their upstream provenance.
 
