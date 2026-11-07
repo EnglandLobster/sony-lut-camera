@@ -7,7 +7,7 @@ import java.io.*;
 import java.util.*;
 
 /** Uses the same bounded DCF queries as HardwareJpeg, without decoding a photo. */
-final class CaptureStoreIndex implements CaptureStoreCompletion.Registration,Closeable {
+final class CaptureStoreIndex implements CaptureStoreCompletion.Registration,CaptureStoreCompletion.DcfBase,Closeable {
     private final CaptureIndexQueries queries;
     CaptureStoreIndex(final Context context,File sd)throws Exception{
         Class<?> media=Class.forName("com.sony.scalar.provider.AvindexStore$Images$Media");
@@ -28,6 +28,7 @@ final class CaptureStoreIndex implements CaptureStoreCompletion.Registration,Clo
     public void begin()throws Exception{queries.begin();}
     public PhotoIndex.Entry saved()throws Exception{return queries.saved();}
     public void accepted(File file)throws Exception{queries.accepted(file);}
+    public int[] dcfBase(){return queries.dcfBase();}
     public void close(){queries.close();}
     String diagnostics(){return queries.diagnostics();}
 }

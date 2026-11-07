@@ -818,7 +818,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     if(closed||shot!=gate.shot())return;
                     if(receipt.stopRequested)stopAfterStore=true;
                     File file=receipt.file;
-                    event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" confirmation="+(receipt.recovered?"index_recovery":"named_receipt")+" "+storeCompletion.diagnostics());
+                    event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" confirmation="+(receipt.predicted?"dcf_prediction":receipt.recovered?"index_recovery":"named_receipt")+" "+storeCompletion.diagnostics());
                     long confirmedAt=SystemClock.elapsedRealtime();
                     if(paired())verifyPairStore(file,confirmedAt);
                     else verifyStored("DCIM/"+file.getParentFile().getName()+"/",file.getName(),confirmedAt);
@@ -858,10 +858,18 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             .append(' ').append(storeIndex==null?"index_worker=none":storeIndex.diagnostics())
             .append(" observer_last_ms=").append(storeObserverAt).append(" detached=").append(recoveryDetached).append('\n');
         detail.append("worker_tid=").append(captureWorkerTid).append(" wchan=").append(procWait("wchan",false)).append(" syscall=").append(procWait("syscall",true)).append('\n');
+        // Durable journal copy on the confirmation thread: a hung capture must still
+        // leave its wait state on SD, but the UI watchdog never waits on SD itself.
+        final String waitState=detail.toString().replace('\n',' ').trim();
+        if(storeObserver!=null)storeObserver.post(new Runnable(){public void run(){event("store_wait",waitState);}});
         if(thread!=null){detail.append("worker_state=").append(thread.getState()).append('\n');
             StackTraceElement[] frames=thread.getStackTrace();
             for(int i=0;i<Math.min(12,frames.length);i++)detail.append(frames[i].getClassName()).append('.').append(frames[i].getMethodName()).append(" native=").append(frames[i].isNativeMethod()).append('\n');}
-        try{recoveryFence.snapshot(detail.toString());}catch(IOException error){android.util.Log.w("SonyPreJpeg","recovery_snapshot_failed",error);}
+        try{recoveryFence.snapshot(detail.toString());}catch(IOException error){
+            android.util.Log.w("SonyPreJpeg","recovery_snapshot_failed",error);
+            final String reasonText=cause(error).toString();
+            if(storeObserver!=null)storeObserver.post(new Runnable(){public void run(){event("recovery_snapshot_failed",reasonText);}});
+        }
     }
     private void showStoreRecovery(){
         recoveryNoticeShown=true;

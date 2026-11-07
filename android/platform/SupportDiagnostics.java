@@ -48,7 +48,7 @@ final class SupportDiagnostics {
     }
     private static void writeEvent(String event,String detail){
         if(session==null)return;String line=line(event,detail);
-        boolean durable=event.equals("failed")||event.equals("uncaught")||event.equals("closed")||event.equals("process_start")||event.equals("camera_open_begin")||event.equals("sequence_open_begin")||event.equals("native_exit_requested")||event.equals("capture_interrupted");
+        boolean durable=event.equals("failed")||event.equals("uncaught")||event.equals("closed")||event.equals("process_start")||event.equals("camera_open_begin")||event.equals("sequence_open_begin")||event.equals("native_exit_requested")||event.equals("capture_interrupted")||event.equals("store_wait")||event.equals("recovery_snapshot_failed");
         if(internal!=null)try{internal.append(line,durable);}catch(Exception e){internalError=e.toString();try{internal.close();}catch(Exception ignored){}internal=null;}
         if(sd!=null)try{sd.append(line,durable);}catch(Exception e){sdError=e.toString();try{sd.close();}catch(Exception ignored){}sd=null;}
     }

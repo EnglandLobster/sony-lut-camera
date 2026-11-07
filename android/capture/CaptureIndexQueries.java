@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /** One read-only index worker; slow Binder queries never occupy receipt delivery. */
-final class CaptureIndexQueries implements CaptureStoreCompletion.Registration,Closeable {
+final class CaptureIndexQueries implements CaptureStoreCompletion.Registration,CaptureStoreCompletion.DcfBase,Closeable {
     private final PhotoIndex index;
     private final ExecutorService worker=Executors.newSingleThreadExecutor(new ThreadFactory(){
         public Thread newThread(Runnable task){Thread t=new Thread(task,"sony-index-query");t.setDaemon(true);return t;}
@@ -15,6 +15,7 @@ final class CaptureIndexQueries implements CaptureStoreCompletion.Registration,C
     private volatile Future<?> outstanding;
     private Future<PhotoIndex.Entry> reading;
     private long before=Long.MIN_VALUE;
+    private PhotoIndex.Entry latest;
     private volatile long queryStarted;
     private volatile String queryKind="none";
     private volatile int submittedQueries;
@@ -27,10 +28,10 @@ final class CaptureIndexQueries implements CaptureStoreCompletion.Registration,C
             throw new IOException("previous Sony index query still running");
         }
         queryStarted=System.nanoTime();queryKind="snapshot";
-        Future<Long> snapshot=worker.submit(new Callable<Long>(){public Long call()throws Exception{return index.latestOrder();}});
+        Future<PhotoIndex.Entry> snapshot=worker.submit(new Callable<PhotoIndex.Entry>(){public PhotoIndex.Entry call()throws Exception{return index.latest();}});
         submittedQueries++;
         outstanding=snapshot;
-        try{before=snapshot.get(snapshotWaitMs,TimeUnit.MILLISECONDS);}
+        try{PhotoIndex.Entry newest=snapshot.get(snapshotWaitMs,TimeUnit.MILLISECONDS);before=newest==null?-1:newest.order;latest=newest;}
         catch(TimeoutException e){if(before==Long.MIN_VALUE)throw new IOException("Sony index snapshot timed out; waiting for save notification",e);}
         catch(ExecutionException e){if(before==Long.MIN_VALUE)throw failure(e);}
     }
@@ -51,6 +52,12 @@ final class CaptureIndexQueries implements CaptureStoreCompletion.Registration,C
     public synchronized void accepted(File file)throws IOException{
         accepted.add(index.key(file));
         while(accepted.size()>64){Iterator<String> first=accepted.iterator();first.next();first.remove();}
+    }
+    /** Most recent DCF identity: this session's last confirmed file, else the pre-store index head. */
+    public synchronized int[] dcfBase(){
+        String last=null;for(String key:accepted)last=key;
+        if(last!=null){String[] part=last.split("/");return new int[]{Integer.parseInt(part[0]),Integer.parseInt(part[1])};}
+        return latest==null?null:new int[]{latest.folder,latest.file};
     }
     public synchronized void close(){worker.shutdown();}
     String diagnostics(){Future<?> current=outstanding;boolean busy=current!=null&&!current.isDone();

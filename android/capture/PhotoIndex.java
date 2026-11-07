@@ -43,8 +43,13 @@ final class PhotoIndex {
         return entry;
     }
     long latestOrder() throws IOException {
+        Entry latest=latest();
+        return latest==null?-1:latest.order;
+    }
+    /** Newest record by rec_order, or null for an empty index. */
+    Entry latest() throws IOException {
         List<Entry> rows=query.read(null,"rec_order DESC",1);
-        return rows.isEmpty()?-1:rows.get(0).order;
+        return rows.isEmpty()?null:rows.get(0);
     }
     Entry savedAfter(long before,String sourceUri) throws IOException {
         return savedAfter(before,sourceUri,Collections.<String>emptySet());

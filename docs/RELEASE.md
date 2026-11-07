@@ -1,3 +1,26 @@
+# v0.9.0-beta.7-rc.10 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.10/SonyLutCamera-v0.9.0-beta.7-rc.10.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.10) · [安装教程](USER_GUIDE.md)
+
+code117，公开预发行测试包。沿用原签名，可覆盖安装，保留 LUT 和照片。
+
+## 修复
+
+- A6000、A7、A7R、A5000、NEX-5R/5T/6、HX60V/HX400V 没有 Sony 保存完成回调。旧版要等原片进入 Sony 照片索引才保存调色片，而索引可能要等两张都保存后才发布，于是停在“正在核验照片保存”，调色片始终不生成（[#4](https://github.com/EnglandLobster/sony-lut-camera/issues/4)）。
+- 本版在保存前推算新照片的确切 DCF 编号，只保留当时还不存在的位置；原生保存返回后检查这个文件，确认它稳定、JPEG 完整且尺寸正确，然后才调色并保存成片。索引出现时仍按原规则核对，结果不一致时报错并保留文件。
+- 卡住超过 30 秒时，诊断日志每 5 秒同步写入一次等待状态，便于从 REPORT.ZIP 定位。
+- A6300 / 2.01 的回调确认路径与 rc.9 相同。
+
+## 验证与当前缺口
+
+用 rc.9 的原始代码在“成对保存完成前索引不发布”的模型中复现了永久等待。修复版通过 9 组旧协议场景：索引从不发布或成对后才发布（各连拍两组）、保存前已存在的文件、未写完和尺寸错误的 JPEG、换文件夹、歧义文件，以及具名回调机型与空索引不启用推算。主机产品与拍摄链路、API10 ARM 模拟器 24 MiB 整套和动画清理回归通过；发行 APK 签名证书与 rc.9 相同，DEX035、API10、ARMv5/v7 检查通过。
+
+**本版没有在 A6000 或其他旧协议机型上实拍。** 升级后请拍摄一张。如果仍停在核验界面，等待 1 分钟后按 MENU 返回，再通过 MENU → 导出诊断日志提交 `SONYLUT/DIAG/REPORT.ZIP`。卡上第一张照片（索引为空）等少数编号情况仍按原方式等待，见[原因与修复](compatibility/LEGACY_STORE_PREDICTION.md)。
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.9.0-beta.7-rc.9 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.9/SonyLutCamera-v0.9.0-beta.7-rc.9.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.9) · [安装教程](USER_GUIDE.md)

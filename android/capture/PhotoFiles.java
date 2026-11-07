@@ -19,6 +19,12 @@ final class PhotoFiles {
     private File indexedFile;
     private int indexedFolder,indexedNumber;
     private long lookupAt=-1,validationAt=-1;
+    // Legacy stores without a named receipt: exact DCF identities Sony can
+    // assign next, each verified absent before the store was submitted.
+    private int[][] predicted;
+    private File predictedFile;
+    private long predictedLookupAt=-1;
+    private String predictionNote="none";
     private CaptureGeometry geometry;
     synchronized void expect(CaptureGeometry value){geometry=value;}
     PhotoFiles(File sd) throws IOException {
@@ -53,7 +59,48 @@ final class PhotoFiles {
     synchronized void refresh() throws IOException {
         known.clear();for(File f:imageFiles())known.add(f.getPath());resetCandidate();
     }
-    synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;indexedFile=null;lookupAt=-1;validationAt=-1;}
+    synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;indexedFile=null;lookupAt=-1;validationAt=-1;
+        predicted=null;predictedFile=null;predictedLookupAt=-1;predictionNote="none";}
+    /** Sony numbers the next photo after the newest one: same folder, a new folder
+     * (date form or full folder) with the series number, or a new folder at 0001.
+     * Keep only identities absent now; a pre-existing file can never confirm a store. */
+    synchronized void predictAfter(int folder,int file){
+        predicted=null;predictedFile=null;predictedLookupAt=-1;
+        if(format!=Format.JPEG||folder<100||folder>999||file<1||file>9999){predictionNote="unsupported_base";return;}
+        List<int[]> next=new ArrayList<int[]>();
+        if(file<9999)next.add(new int[]{folder,file+1});
+        if(folder<999){if(file<9999)next.add(new int[]{folder+1,file+1});next.add(new int[]{folder+1,1});}
+        List<int[]> absent=new ArrayList<int[]>();StringBuilder note=new StringBuilder("after=").append(folder).append('/').append(file).append(" candidates=");
+        long begin=System.nanoTime();
+        try{
+            for(int[] identity:next){
+                boolean exists=dcim.isDirectory()&&resolveNumbers(identity[0],identity[1])!=null;
+                if(!exists)absent.add(identity);
+                note.append(identity[0]).append('/').append(identity[1]).append(exists?":exists,":",");
+            }
+        }catch(IOException error){predictionNote="unavailable: "+error.getMessage();return;}
+        predicted=absent.toArray(new int[absent.size()][]);
+        predictionNote=note.append(" check_ms=").append((System.nanoTime()-begin)/1000000).toString();
+    }
+    synchronized boolean predicting(){return predicted!=null&&predicted.length>0;}
+    synchronized boolean predictedFound(){return predictedFile!=null;}
+    synchronized String prediction(){return predictionNote+(predictedFile==null?"":" found="+predictedFile.getName());}
+    /** Poll only the predicted DCF identities; exactly one may appear. */
+    synchronized File pollPredicted(long now)throws IOException{
+        if(!predicting())return null;
+        if(predictedFile==null){
+            if(predictedLookupAt>=0&&now-predictedLookupAt<1000)return null;
+            predictedLookupAt=now;File found=null;
+            for(int[] identity:predicted){
+                File file=resolveNumbers(identity[0],identity[1]);if(file==null)continue;
+                if(found!=null)throw new IOException("ambiguous predicted DCF photo: "+found.getName()+", "+file.getName());
+                found=file;
+            }
+            if(found==null)return null;
+            predictedFile=found;candidate=null;length=-1;modified=-1;validationAt=-1;
+        }
+        return pollComplete(predictedFile,now);
+    }
     synchronized File pollNotified(long now,boolean requireComplete)throws IOException{
         File file=pollStored();
         return requireComplete?pollComplete(file,now):file;
@@ -90,9 +137,12 @@ final class PhotoFiles {
         if(stored!=null){File file=new File(stored);
             if(dcfMatch(file.getParentFile().getName(),file.getName(),entry))return file;
         }
+        return resolveNumbers(entry.folder,entry.file);
+    }
+    private File resolveNumbers(int folderNumber,int fileNumber)throws IOException{
         String[] dirs=dcim.list();if(dirs==null)throw new IOException("cannot read DCIM");
         File folder=null;
-        for(String name:dirs)if(DCF_DIRECTORY.matcher(name).matches()&&Integer.parseInt(name.substring(0,3))==entry.folder){
+        for(String name:dirs)if(DCF_DIRECTORY.matcher(name).matches()&&Integer.parseInt(name.substring(0,3))==folderNumber){
             if(folder!=null)throw new IOException("ambiguous indexed DCF folder");folder=new File(dcim,name);
         }
         if(folder==null)return null;
@@ -100,7 +150,7 @@ final class PhotoFiles {
         if(!dcim.equals(folder.getParentFile()))throw new IOException("indexed folder outside DCIM");
         String[] names=folder.list();if(names==null)throw new IOException("cannot read indexed DCF folder");
         File result=null;
-        for(String name:names)if(dcfMatch(folder.getName(),name,entry)){
+        for(String name:names)if(dcfMatch(folder.getName(),name,folderNumber,fileNumber)){
             if(result!=null)throw new IOException("ambiguous indexed DCF file");result=new File(folder,name);
         }
         if(result==null)return null;
@@ -109,8 +159,11 @@ final class PhotoFiles {
         return result;
     }
     private static boolean dcfMatch(String directory,String name,PhotoIndex.Entry entry){
+        return dcfMatch(directory,name,entry.folder,entry.file);
+    }
+    private static boolean dcfMatch(String directory,String name,int folder,int file){
         return DCF_DIRECTORY.matcher(directory).matches()&&DCF_JPEG.matcher(name).matches()
-            &&Integer.parseInt(directory.substring(0,3))==entry.folder&&Integer.parseInt(name.substring(4,8))==entry.file;
+            &&Integer.parseInt(directory.substring(0,3))==folder&&Integer.parseInt(name.substring(4,8))==file;
     }
     synchronized File pollReady() throws IOException {
         return pollReady(false);

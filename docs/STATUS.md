@@ -1,8 +1,10 @@
 # Current status
 
-Current release: **v0.9.0-beta.7-rc.9 / code116**, experimental prerelease. On A6300 firmware 2.01, a verified native completion receipt and RPC return allow confirmation by JPEG path and dimensions. Two physical captures on the matching fast-save candidate displayed in 5.26 s and 4.78 s, saved both JPEGs, and rearmed. See [release details](RELEASE.md).
+Current release: **v0.9.0-beta.7-rc.10 / code117**, experimental prerelease. Bodies without a named store receipt (A6000, A7, A7R, A5000, NEX-5R/5T/6, HX60V/HX400V) no longer wait for the original's index record before the graded store: the exact predicted DCF JPEG, absent before the store and complete with the expected geometry after RPC return, confirms it. Not yet device-tested on those bodies; the A6300 named-receipt path is unchanged from rc.9. See [release details](RELEASE.md) and [findings](compatibility/LEGACY_STORE_PREDICTION.md).
 
 ## Earlier validation records
+
+rc.9: **v0.9.0-beta.7-rc.9 / code116**, experimental prerelease. On A6300 firmware 2.01, a verified native completion receipt and RPC return allow confirmation by JPEG path and dimensions. Two physical captures on the matching fast-save candidate displayed in 5.26 s and 4.78 s, saved both JPEGs, and rearmed. See [release details](RELEASE.md).
 # Current status
 
 2026-11-03 correction: rc.7 still discards valid nonzero native store receipt identifiers. The actual released Activity callback reproduces a second-capture stall with receipt 1 and an unpublished pair index. Local **0.9.0-beta.7-rc.7-fix1 / code114** removes that gate and permits Sony to create an initially absent DCIM. This candidate is not published and physical capture acceptance is pending. See [incident findings](compatibility/RC7_RECEIPT_REGRESSION.md); the previous rc.7 validation below missed the Activity callback filter.

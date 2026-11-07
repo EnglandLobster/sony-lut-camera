@@ -3,7 +3,8 @@ package org.hongen.sonylutprobe;
 import java.io.File;
 import java.io.IOException;
 
-/** One store transaction, completed once by a named receipt or new indexed JPEG.
+/** One store transaction, completed once by a named receipt, a new indexed JPEG,
+ * or (legacy bodies only) the exact predicted DCF JPEG that was absent before the store.
  * A deadline changes the UI, never transfers an unconfirmed buffer's ownership. */
 final class CaptureStoreCompletion {
     interface Registration {
@@ -11,19 +12,25 @@ final class CaptureStoreCompletion {
         PhotoIndex.Entry saved()throws Exception;
         void accepted(File file)throws Exception;
     }
+    /** Optional: newest DCF identity {folder,file} known before this store, or null. */
+    interface DcfBase {
+        int[] dcfBase();
+    }
     static final long RECOVERY_DELAY_MS=1000,NOTICE_MS=30000;
     static final class ConfirmedInvalid extends IOException {
         final File file;
         ConfirmedInvalid(File file){super("saved picture-size differs from capture geometry: "+file.getName());this.file=file;}
     }
     static final class Receipt {
-        final File file;final boolean recovered,stopRequested;
-        Receipt(File file,boolean recovered,boolean stopRequested){this.file=file;this.recovered=recovered;this.stopRequested=stopRequested;}
+        final File file;final boolean recovered,predicted,stopRequested;
+        Receipt(File file,boolean recovered,boolean predicted,boolean stopRequested){
+            this.file=file;this.recovered=recovered;this.predicted=predicted;this.stopRequested=stopRequested;
+        }
     }
     private final PhotoFiles files;private final Registration registration;
     private final boolean namedProtocol,namedCompletionVerified;
     private long generation,started;private boolean pending,notified,stopRequested,rpcActive,rpcComplete,confirmed;
-    private File confirmedFile;private boolean confirmedRecovered,confirmedValid;
+    private File confirmedFile;private boolean confirmedRecovered,confirmedPredicted,confirmedValid;
     private boolean recoveryAvailable,continuationAllowed,continuation;
     private volatile String stage="idle";
     private volatile String lastError="";
@@ -31,7 +38,7 @@ final class CaptureStoreCompletion {
     private volatile int indexQueries,fileChecks;
     String stage(){return stage;}
     String diagnostics(){return "confirmation_stage="+stage+" index_polls="+indexQueries+" index_poll_ms="+(indexNanos/1000000)
-        +" file_checks="+fileChecks+" file_ms="+(fileNanos/1000000)+" last_error="+lastError;}
+        +" file_checks="+fileChecks+" file_ms="+(fileNanos/1000000)+" prediction="+files.prediction()+" last_error="+lastError;}
     void readFailed(Throwable error){
         StringBuilder causes=new StringBuilder();Throwable item=error;
         for(int n=0;item!=null&&n<5;n++){
@@ -68,6 +75,12 @@ final class CaptureStoreCompletion {
                 // completion protocol. Recovery lacks a safe watermark.
                 recoveryAvailable=false;readFailed(error);
             }
+            // Without a named receipt, RECORD_COUNT=2 can withhold the original's
+            // index record until the second store: confirm its exact new file.
+            if(!namedProtocol&&registration instanceof DcfBase){
+                int[] base=((DcfBase)registration).dcfBase();
+                if(base!=null)files.predictAfter(base[0],base[1]);
+            }
             stage="await_store";return token;
         }
         catch(Exception error){cancel();throw error;}
@@ -96,7 +109,7 @@ final class CaptureStoreCompletion {
             if(!rpcComplete){if(rpcActive)stage="native_store";return null;}
             hasNotice=notified;age=now-started;
         }
-        File ready=null;long begin;boolean recovered=false;
+        File ready=null;long begin;boolean recovered=false,predicted=false;
         if(hasNotice){
             // RECORD_COUNT=2 can publish the database only after BOTH files.
             // Never require original-index visibility before submitting graded.
@@ -106,9 +119,15 @@ final class CaptureStoreCompletion {
             if(namedProtocol&&(age<RECOVERY_DELAY_MS||!recoveryAvailable)){stage="await_notification";return null;}
             stage="index_query";PhotoIndex.Entry entry;begin=System.nanoTime();indexQueries++;
             try{entry=registration.saved();}finally{indexNanos+=System.nanoTime()-begin;}
-            if(entry==null){stage="await_index";return null;}
-            stage="target_file";begin=System.nanoTime();fileChecks++;
-            try{ready=files.pollIndexed(entry,now);}finally{fileNanos+=System.nanoTime()-begin;}
+            if(entry!=null){
+                stage="target_file";begin=System.nanoTime();fileChecks++;
+                try{ready=files.pollIndexed(entry,now);}finally{fileNanos+=System.nanoTime()-begin;}
+            }else if(!namedProtocol&&files.predicting()){
+                stage="predicted_file";begin=System.nanoTime();fileChecks++;
+                try{ready=files.pollPredicted(now);}finally{fileNanos+=System.nanoTime()-begin;}
+                if(ready==null){stage=files.predictedFound()?"await_file":"await_index";return null;}
+                predicted=true;
+            }else{stage="await_index";return null;}
             recovered=true;
         }
         if(ready==null){stage="await_file";return null;}
@@ -118,7 +137,7 @@ final class CaptureStoreCompletion {
         synchronized(this){
             if(!active(token)||ready==null)return null;
             try{registration.accepted(ready);}catch(Exception error){recoveryAvailable=false;readFailed(error);}
-            confirmed=true;confirmedFile=ready;confirmedRecovered=recovered;confirmedValid=valid;
+            confirmed=true;confirmedFile=ready;confirmedRecovered=recovered;confirmedPredicted=predicted;confirmedValid=valid;
             stage="confirmed";
             return finishConfirmed();
         }
@@ -129,6 +148,6 @@ final class CaptureStoreCompletion {
         pending=false;
         if(!confirmedValid)throw new ConfirmedInvalid(confirmedFile);
         continuationAllowed=!continuation;
-        return new Receipt(confirmedFile,confirmedRecovered,stopRequested);
+        return new Receipt(confirmedFile,confirmedRecovered,confirmedPredicted,stopRequested);
     }
 }
