@@ -94,20 +94,96 @@ public final class LegacyDcfPredictionTest {
             System.out.println("PASS legacy pair by predicted DCF publish_after_pair="+publishAfterPair+" shots=2");
         }finally{s.close();}
     }
-    /** An unindexed file already at the predicted number can never confirm the store. */
+    /** An unindexed file already at the predicted number can never confirm the store;
+     * the camera numbers after it, which the folder's newest file predicts. */
     private static void preexisting(File root)throws Exception{
         final Session s=new Session(root,false);
         try{
             s.photo("100MSDCF","DSC09696.JPG");s.db.publish(10,100,9696);File stale=s.photo("100MSDCF","DSC09697.JPG");
             long token=s.completion.begin(0);
-            check(s.files.prediction().contains("100/9697:exists"),"pre-existing candidate excluded: "+s.files.prediction());
+            check(s.files.prediction().contains("100/9697:exists")&&s.files.prediction().contains("folder_max=100/9697"),"pre-existing candidate excluded: "+s.files.prediction());
             s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC09698.JPG");}}));
-            s.stays(token,200);
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("DSC09698.JPG"),"the new file after the pre-existing one is confirmed: "+r.file);
             check(stale.isFile(),"pre-existing photo untouched");
-            s.db.publish(11,100,9698);
+            System.out.println("PASS legacy prediction never confirms a pre-existing file and predicts after it");
+        }finally{s.close();}
+    }
+    /** A file outside every prediction is never guessed at; index recovery confirms it. */
+    private static void unpredicted(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC09696.JPG");s.db.publish(10,100,9696);
+            long token=s.completion.begin(0);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC09699.JPG");}}));
+            s.stays(token,200);
+            s.db.publish(11,100,9699);
             CaptureStoreCompletion.Receipt r=s.await(token,20000);
-            check(r.recovered&&!r.predicted&&r.file.getName().equals("DSC09698.JPG"),"index recovery still confirms the real new record");
-            System.out.println("PASS legacy prediction ignores a pre-existing file and falls back to the index");
+            check(r.recovered&&!r.predicted&&r.file.getName().equals("DSC09699.JPG"),"index recovery still confirms the real new record");
+            System.out.println("PASS legacy prediction miss falls back to the index");
+        }finally{s.close();}
+    }
+    /** Confirm one original written by the camera, then its graded file after it. */
+    private static void confirmPair(final Session s,final String original,final String graded)throws Exception{
+        long token=s.completion.begin(0);
+        s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF",original);}}));
+        CaptureStoreCompletion.Receipt r=s.await(token,200);
+        check(r.recovered&&r.predicted&&r.file.getName().equals(original),"original confirmed by prediction: "+r.file+" "+s.files.prediction());
+        s.files.accepted(r.file);
+        token=s.completion.beginFinalStore(10000);
+        s.store(token,10100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF",graded);}}));
+        r=s.await(token,10200);
+        check(r.predicted&&r.file.getName().equals(graded),"graded confirmed after the original: "+r.file);
+    }
+    /** The A6000 field report (ILCE-6000 3.21, rc.10): the index head names a photo
+     * that is not on the card, and the camera numbers after the files present. */
+    private static void phantomAnchor(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00690.JPG");s.db.publish(10,100,690);
+            s.photo("100MSDCF","DSC00691.JPG");s.db.publish(11,100,691);
+            s.db.publish(12,100,693); // indexed newest, but no such file on the card
+            confirmPair(s,"DSC00692.JPG","DSC00693.JPG");
+            System.out.println("PASS legacy prediction confirms below a phantom index head");
+        }finally{s.close();}
+    }
+    /** After an off-camera delete, Sony's series counter may still continue after the phantom. */
+    private static void seriesCounter(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00690.JPG");s.db.publish(10,100,690);
+            s.photo("100MSDCF","DSC00691.JPG");s.db.publish(11,100,691);
+            s.db.publish(12,100,693);
+            long token=s.completion.begin(0);
+            String note=s.files.prediction();
+            check(note.contains("after=100/693 folder_max=100/691 candidates=100/694,101/694,101/1,100/692,101/692,"),"both numberings predicted: "+note);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00694.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("DSC00694.JPG"),"counter numbering after the phantom confirmed: "+r.file);
+            System.out.println("PASS legacy prediction keeps the index head's own numbering");
+        }finally{s.close();}
+    }
+    /** Files present above an absent index head, alone or with older files below it. */
+    private static void filesAbove(File root,boolean below)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            if(below){s.photo("100MSDCF","DSC00690.JPG");s.db.publish(10,100,690);}
+            s.photo("100MSDCF","DSC00695.JPG"); // present but never indexed
+            s.db.publish(11,100,693); // index head, absent
+            confirmPair(s,"DSC00696.JPG","DSC00697.JPG");
+            System.out.println("PASS legacy prediction follows the newest file above an absent index head below="+below);
+        }finally{s.close();}
+    }
+    /** The index can lag files written earlier in the same boot (it may publish only
+     * when the app exits); a new capture session starts from the stale head. */
+    private static void staleIndex(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00690.JPG");s.db.publish(10,100,690);
+            s.photo("100MSDCF","DSC00691.JPG");s.db.publish(11,100,691);
+            s.photo("100MSDCF","DSC00692.JPG");s.photo("100MSDCF","DSC00693.JPG"); // previous session, unpublished
+            confirmPair(s,"DSC00694.JPG","DSC00695.JPG");
+            System.out.println("PASS legacy prediction follows files newer than a stale index head");
         }finally{s.close();}
     }
     /** A partially written prediction waits; wrong geometry is a confirmed terminal failure. */
@@ -175,6 +251,12 @@ public final class LegacyDcfPredictionTest {
             pairs(new File(root,"never"),false);
             pairs(new File(root,"after-pair"),true);
             preexisting(new File(root,"preexisting"));
+            unpredicted(new File(root,"unpredicted"));
+            phantomAnchor(new File(root,"phantom"));
+            seriesCounter(new File(root,"series"));
+            filesAbove(new File(root,"above"),false);
+            filesAbove(new File(root,"above-below"),true);
+            staleIndex(new File(root,"stale"));
             validation(new File(root,"validation"));
             folders(new File(root,"full"),"100MSDCF/DSC09999.JPG","101MSDCF","DSC00001.JPG",100,9999);
             folders(new File(root,"date"),"10061105/DSC00042.JPG","10161106","DSC00043.JPG",100,42);
