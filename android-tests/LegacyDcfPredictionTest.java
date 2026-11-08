@@ -163,6 +163,24 @@ public final class LegacyDcfPredictionTest {
             System.out.println("PASS legacy prediction keeps the index head's own numbering");
         }finally{s.close();}
     }
+    /** The A6000 field report (ILCE-6000 3.21, beta.8): the newest photos were
+     * deleted in camera playback, so the folder's newest file falls far behind
+     * the still-advanced index head; the camera writes just before the head. */
+    private static void deletedInPlayback(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00711.JPG");s.db.publish(10,100,711);
+            s.photo("100MSDCF","DSC00712.JPG");s.db.publish(11,100,712);
+            s.db.publish(12,100,724); // head kept advancing; 713..724 never landed or were deleted
+            long token=s.completion.begin(0);
+            String note=s.files.prediction();
+            check(note.contains("before_head=100/723")&&note.contains("100/723,"),"identity before the phantom head predicted: "+note);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00723.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("DSC00723.JPG"),"write just below the phantom head confirmed: "+r.file);
+            System.out.println("PASS legacy prediction includes the identity before a phantom index head");
+        }finally{s.close();}
+    }
     /** Files present above an absent index head, alone or with older files below it. */
     private static void filesAbove(File root,boolean below)throws Exception{
         final Session s=new Session(root,false);
@@ -254,6 +272,7 @@ public final class LegacyDcfPredictionTest {
             unpredicted(new File(root,"unpredicted"));
             phantomAnchor(new File(root,"phantom"));
             seriesCounter(new File(root,"series"));
+            deletedInPlayback(new File(root,"deleted"));
             filesAbove(new File(root,"above"),false);
             filesAbove(new File(root,"above-below"),true);
             staleIndex(new File(root,"stale"));
