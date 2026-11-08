@@ -1,6 +1,8 @@
 # Current status
 
-Current release: **v0.9.0-beta.7-rc.10 / code117**, experimental prerelease. Bodies without a named store receipt (A6000, A7, A7R, A5000, NEX-5R/5T/6, HX60V/HX400V) no longer wait for the original's index record before the graded store: the exact predicted DCF JPEG, absent before the store and complete with the expected geometry after RPC return, confirms it. Not yet device-tested on those bodies; the A6300 named-receipt path is unchanged from rc.9. See [release details](RELEASE.md) and [findings](compatibility/LEGACY_STORE_PREDICTION.md).
+Current release: **v0.9.0-beta.8 / code118**, experimental prerelease. Legacy DCF prediction also predicts after the highest DCF number present in the base's folder, so a phantom or stale index head no longer stalls confirmation (PR #6, located on an ILCE-6000 3.21 by luwei15). Diagnostic export retries a journal still held by the capture process within a 2 s budget, then omits it and names it in `SUMMARY.TXT` (#3, PR #5); other open failures still abort. The release package is not yet device-tested on legacy bodies. See [release details](RELEASE.md).
+
+rc.10: **v0.9.0-beta.7-rc.10 / code117**, experimental prerelease. Bodies without a named store receipt (A6000, A7, A7R, A5000, NEX-5R/5T/6, HX60V/HX400V) no longer wait for the original's index record before the graded store: the exact predicted DCF JPEG, absent before the store and complete with the expected geometry after RPC return, confirms it. Not yet device-tested on those bodies; the A6300 named-receipt path is unchanged from rc.9. See [release details](RELEASE.md) and [findings](compatibility/LEGACY_STORE_PREDICTION.md).
 
 ## Earlier validation records
 

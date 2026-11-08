@@ -2,17 +2,17 @@
 
 **让 A6300 在机内完成真正的 3D LUT 调色，拍完直接得到原片和调色 JPEG。** 无需手机、联网或电脑参与出片。支持导入自己的 `.cube`，预装 10 个指定 LUT。
 
-> 当前版本：**v0.9.0-beta.7-rc.10**（公开测试包，code117）。本版修复 **A6000** 等没有保存完成回调的旧机型拍照后停在“正在核验照片保存”、调色成片不生成的问题（[#4](https://github.com/EnglandLobster/sony-lut-camera/issues/4)）。该修复尚未在这些机型上实拍，欢迎通过 MENU → 导出诊断日志反馈。A6300 / 固件 2.01 的保存路径与 rc.9 相同。
+> 当前版本：**v0.9.0-beta.8**（公开测试包，code118）。本版继续修复 **A6000** 等没有保存完成回调的旧机型停在“正在核验照片保存”的问题：rc.10 的推算在索引最新记录指向卡上不存在的文件时仍会卡住，由 luwei15 用 A6000 真机定位并修复（[PR #6](https://github.com/EnglandLobster/sony-lut-camera/pull/6)）。同时修复拍摄后第一次导出诊断日志失败（[#3](https://github.com/EnglandLobster/sony-lut-camera/issues/3)）。本版尚未在旧协议机型上用发行包实拍，欢迎通过 MENU → 导出诊断日志反馈。A6300 / 固件 2.01 的保存路径与 rc.9 相同。
 
-旧协议机型（A6000、A7、A7R、A5000、NEX-5R/5T/6、HX60V/HX400V）原先要等原片进入 Sony 照片索引才保存调色片，而索引可能要等两张都保存后才发布，于是互相等待。本版在保存前推算新照片的确切 DCF 编号，原生保存返回后只核对这个文件，完整且尺寸正确即继续。A6300 收到 Sony 保存完成回调后的快速确认保持不变。保留 [@latteye 的 API10 动画修复（PR #2）](https://github.com/EnglandLobster/sony-lut-camera/pull/2) 与 rc.6 原生内存表选择。导入兼容根目录 `LUTS` / `LUT`。[修复说明](docs/compatibility/LEGACY_STORE_PREDICTION.md) · [发行说明](docs/RELEASE.md)。
+旧协议机型（A6000、A7、A7R、A5000、NEX-5R/5T/6、HX60V/HX400V）原先要等原片进入 Sony 照片索引才保存调色片，而索引可能要等两张都保存后才发布，于是互相等待。rc.10 起在保存前推算新照片的确切 DCF 编号，原生保存返回后只核对这个文件，完整且尺寸正确即继续；beta.8 同时按所在文件夹实际最大编号推算，索引与卡上文件不一致时也能命中。A6300 收到 Sony 保存完成回调后的快速确认保持不变。保留 [@latteye 的 API10 动画修复（PR #2）](https://github.com/EnglandLobster/sony-lut-camera/pull/2) 与 rc.6 原生内存表选择。导入兼容根目录 `LUTS` / `LUT`。[修复说明](docs/compatibility/LEGACY_STORE_PREDICTION.md) · [发行说明](docs/RELEASE.md)。
 
 ## 上手使用
 
 **第一次安装？先看 [新手安装与使用教程](docs/USER_GUIDE.md)**：Windows/macOS 工具下载、相机 MTP 设置、选择本地 APK、首次拍摄及常见问题。
 
-**[下载 beta.7-rc.10 测试包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.10/SonyLutCamera-v0.9.0-beta.7-rc.10.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.10) · 多机型实验适配，欢迎提交诊断日志。
+**[下载 beta.8 测试包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.8/SonyLutCamera-v0.9.0-beta.8.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8) · 多机型实验适配，欢迎提交诊断日志。
 
-1. 从 [beta.7-rc.10 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.10) 下载 `SonyLutCamera-v0.9.0-beta.7-rc.10.apk`。自行编译见 [构建说明](docs/BUILD.md)。
+1. 从 [beta.8 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8) 下载 `SonyLutCamera-v0.9.0-beta.8.apk`。自行编译见 [构建说明](docs/BUILD.md)。
 2. 用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装 APK。相机使用 MTP USB 模式；详细步骤见 [安装与使用](docs/USER_GUIDE.md)。
 3. 打开相机应用列表中的 **LUT Camera**，选一个 LUT，按中央键进入拍摄。首次打开会把预装 LUT 加入 SD 卡。
 4. 正常半按对焦、全按拍照。相机保留原片 JPEG，并另外保存应用完整 LUT 的 JPEG；成片后半按回到取景。

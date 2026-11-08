@@ -1,3 +1,30 @@
+# v0.9.0-beta.8 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.8/SonyLutCamera-v0.9.0-beta.8.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8) · [安装教程](USER_GUIDE.md)
+
+code118，公开预发行测试包。沿用原签名，可覆盖安装，保留 LUT 和照片。
+
+## 修复
+
+- **A6000 等旧协议机型仍停在“正在核验照片保存”**（[PR #6](https://github.com/EnglandLobster/sony-lut-camera/pull/6)）：rc.10 只从保存前索引最新一条往后推算。luwei15 在 ILCE-6000 / 3.21 上定位到，这条记录可能指向卡上不存在的文件：索引是 693，卡上只到 691，相机写出 692，推算永远等不到。本版同时按基准和所在文件夹实际最大编号推算，覆盖索引指向不存在的文件、相机按连续计数器编号、索引落后于卡上文件等情况。“保存前不存在、只能恰好出现一个、JPEG 完整且尺寸正确”的规则不变。
+- **拍摄后第一次导出诊断日志失败**（[#3](https://github.com/EnglandLobster/sony-lut-camera/issues/3)、[PR #5](https://github.com/EnglandLobster/sony-lut-camera/pull/5)）：拍摄进程还占着当前日志文件，导出报“无法导出到 SD 卡”。本版对被占用的日志整次导出最多等待 2 秒，仍被占用则跳过该文件、照常导出其余日志，并在 `SUMMARY.TXT` 最后一行 `skipped_busy=` 写明跳过了哪些文件。权限等其他错误仍按失败处理，保留上一份报告。
+- **文档**：相机 SD 上的 LUT 文件名按 DOS 8.3 命名、扩展名用 `.CUB`，例如 `FUJI3513.CUB`。
+- A6300 / 2.01 的回调确认路径与 rc.9 相同。
+
+两个修复由 luwei15 用 A6000 真机定位并提交，合并时补充了推算规则、错误分类和测试。
+
+## 验证与当前缺口
+
+- 用 rc.10 的原始代码复现了 A6000 现场完全相同的推算记录（`after=100/693 candidates=100/694,101/694,101/1`）和永久等待；修复版通过 15 组旧协议推算场景。
+- 日志导出新增被占用文件测试：短暂占用后读入、持续占用时跳过并在 SUMMARY 中列出、多个文件共用 2 秒上限、非占用错误仍失败、全部被占用时明确失败。
+- 主机产品、拍摄链路、兼容性、回调派发、缓存与拟合套件、API10 ARM 模拟器 24 MiB 整套通过；发行 APK 签名证书与 rc.10 相同，DEX035、API10、ARMv5/v7 检查通过。
+
+**本版发行包没有在 A6000 或其他旧协议机型上实拍。** PR #6 作者的自建包（rc.10 加初版修复）在 A6000 上一次开机连续 6 组确认通过，本版在其基础上调整了推算规则。升级后请拍摄几张；如果仍停在核验界面，等待 1 分钟后按 MENU 返回，再通过 MENU → 导出诊断日志提交 `SONYLUT/DIAG/REPORT.ZIP`。[原因与修复](compatibility/LEGACY_STORE_PREDICTION.md)
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.9.0-beta.7-rc.10 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.7-rc.10/SonyLutCamera-v0.9.0-beta.7-rc.10.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.7-rc.10) · [安装教程](USER_GUIDE.md)
