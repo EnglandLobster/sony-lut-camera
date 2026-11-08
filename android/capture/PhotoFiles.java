@@ -67,10 +67,29 @@ final class PhotoFiles {
     synchronized void predictAfter(int folder,int file){
         predicted=null;predictedFile=null;predictedLookupAt=-1;
         if(format!=Format.JPEG||folder<100||folder>999||file<1||file>9999){predictionNote="unsupported_base";return;}
+        // The index head can name a file that is not on the card: a photo
+        // deleted outside the camera leaves its index record behind, and the
+        // camera numbers the next photo from the files actually present.
+        // Predicting from a phantom anchor can only miss, so re-anchor to the
+        // closest identity present in the same folder (largest below, else
+        // smallest above). An anchor that exists keeps the established
+        // behavior exactly; only exact identities are ever probed.
+        int anchorFile=file;
+        try{
+            Set<Integer> present=folderNumbers(folder);
+            if(present!=null&&!present.isEmpty()&&!present.contains(file)){
+                int best=-1;
+                for(Integer n:present)if(n.intValue()<file&&(best<0||n.intValue()>best))best=n.intValue();
+                if(best<0)for(Integer n:present)if(best<0||n.intValue()<best)best=n.intValue();
+                if(best>0)file=best;
+            }
+        }catch(IOException ignored){/* keep the index anchor */}
         List<int[]> next=new ArrayList<int[]>();
         if(file<9999)next.add(new int[]{folder,file+1});
         if(folder<999){if(file<9999)next.add(new int[]{folder+1,file+1});next.add(new int[]{folder+1,1});}
-        List<int[]> absent=new ArrayList<int[]>();StringBuilder note=new StringBuilder("after=").append(folder).append('/').append(file).append(" candidates=");
+        List<int[]> absent=new ArrayList<int[]>();StringBuilder note=new StringBuilder("after=").append(folder).append('/').append(file);
+        if(file!=anchorFile)note.append(" anchor_corrected_from=").append(folder).append('/').append(anchorFile);
+        note.append(" candidates=");
         long begin=System.nanoTime();
         try{
             for(int[] identity:next){
@@ -81,6 +100,21 @@ final class PhotoFiles {
         }catch(IOException error){predictionNote="unavailable: "+error.getMessage();return;}
         predicted=absent.toArray(new int[absent.size()][]);
         predictionNote=note.append(" check_ms=").append((System.nanoTime()-begin)/1000000).toString();
+    }
+    /** DCF file numbers present in the unique folder for folderNumber, from one
+     * listing of that folder only; null when the folder cannot be uniquely
+     * resolved, so the caller keeps the index anchor uncorrected. */
+    private Set<Integer> folderNumbers(int folderNumber)throws IOException{
+        String[] dirs=dcim.list();if(dirs==null)return null;
+        File folder=null;
+        for(String name:dirs)if(DCF_DIRECTORY.matcher(name).matches()&&Integer.parseInt(name.substring(0,3))==folderNumber){
+            if(folder!=null)return null;folder=new File(dcim,name);
+        }
+        if(folder==null)return null;
+        String[] names=folder.list();if(names==null)return null;
+        Set<Integer> numbers=new HashSet<Integer>();
+        for(String name:names)if(DCF_JPEG.matcher(name).matches())numbers.add(Integer.valueOf(name.substring(4,8)));
+        return numbers;
     }
     synchronized boolean predicting(){return predicted!=null&&predicted.length>0;}
     synchronized boolean predictedFound(){return predictedFile!=null;}

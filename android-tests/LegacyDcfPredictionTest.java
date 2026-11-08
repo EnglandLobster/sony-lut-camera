@@ -110,6 +110,45 @@ public final class LegacyDcfPredictionTest {
             System.out.println("PASS legacy prediction ignores a pre-existing file and falls back to the index");
         }finally{s.close();}
     }
+    /** The A6000 field report: the index head names a photo that is not on the
+     * card (deleted outside the camera, so the index kept its record). The
+     * camera numbers the next photo from the files actually present, below
+     * the phantom anchor; prediction must re-anchor instead of only missing. */
+    private static void phantomAnchor(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00690.JPG");s.db.publish(10,100,690);
+            s.photo("100MSDCF","DSC00691.JPG");s.db.publish(11,100,691);
+            s.db.publish(12,100,693); // indexed newest, but no such file on the card
+            long token=s.completion.begin(0);
+            check(s.files.prediction().contains("after=100/691"),"phantom anchor re-anchored to the newest present file: "+s.files.prediction());
+            check(s.files.prediction().contains("anchor_corrected_from=100/693"),"correction is diagnosed: "+s.files.prediction());
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00692.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("DSC00692.JPG"),"original confirmed below the phantom anchor: "+r.file);
+            s.files.accepted(r.file);
+            token=s.completion.beginFinalStore(10000);
+            s.store(token,10100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00693.JPG");}}));
+            r=s.await(token,10200);
+            check(r.predicted&&r.file.getName().equals("DSC00693.JPG"),"graded confirmed after the re-anchored original: "+r.file);
+            System.out.println("PASS legacy prediction re-anchors when the index head is not on the card");
+        }finally{s.close();}
+    }
+    /** The index can also lag a file that is present (copied to the card
+     * outside the camera): an absent anchor re-anchors upward as well. */
+    private static void unindexedAbove(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00695.JPG"); // present but never indexed
+            s.db.publish(10,100,690);s.db.publish(11,100,693); // index head claims 693, also absent
+            long token=s.completion.begin(0);
+            check(s.files.prediction().contains("after=100/695"),"absent anchor re-anchored upward to the present file: "+s.files.prediction());
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00696.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("DSC00696.JPG"),"original confirmed above the claimed anchor: "+r.file);
+            System.out.println("PASS legacy prediction re-anchors upward when the claimed anchor is absent");
+        }finally{s.close();}
+    }
     /** A partially written prediction waits; wrong geometry is a confirmed terminal failure. */
     private static void validation(File root)throws Exception{
         final Session s=new Session(root,false);
@@ -175,6 +214,8 @@ public final class LegacyDcfPredictionTest {
             pairs(new File(root,"never"),false);
             pairs(new File(root,"after-pair"),true);
             preexisting(new File(root,"preexisting"));
+            phantomAnchor(new File(root,"phantom"));
+            unindexedAbove(new File(root,"above"));
             validation(new File(root,"validation"));
             folders(new File(root,"full"),"100MSDCF/DSC09999.JPG","101MSDCF","DSC00001.JPG",100,9999);
             folders(new File(root,"date"),"10061105/DSC00042.JPG","10161106","DSC00043.JPG",100,42);
