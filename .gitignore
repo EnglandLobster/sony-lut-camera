@@ -24,3 +24,8 @@ __pycache__/
 NET.CFG
 wpa_supplicant.conf
 local.properties
+
+# Xiaohongshu promotion workspace (local only, updated frequently)
+/docs/promo/
+/output/
+/.playwright-cli/
