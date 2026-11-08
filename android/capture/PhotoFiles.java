@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 final class PhotoFiles {
     private static final Pattern DCF_DIRECTORY=Pattern.compile("[0-9]{3}[A-Z0-9_]{5}");
     private static final Pattern DCF_JPEG=Pattern.compile("[A-Z0-9_]{4}[0-9]{4}\\.JPG");
+    private static final Pattern DCF_NAME=Pattern.compile("[A-Z0-9_]{4}[0-9]{4}\\.(JPG|ARW)");
     enum Format { JPEG(".JPG"), ARW(".ARW");
         final String suffix;Format(String suffix){this.suffix=suffix;}
     }
@@ -63,35 +64,23 @@ final class PhotoFiles {
         predicted=null;predictedFile=null;predictedLookupAt=-1;predictionNote="none";}
     /** Sony numbers the next photo after the newest one: same folder, a new folder
      * (date form or full folder) with the series number, or a new folder at 0001.
-     * Keep only identities absent now; a pre-existing file can never confirm a store. */
+     * The base can disagree with the card: an index record whose file was deleted
+     * outside the camera, or files newer than the published index. Sony may number
+     * from its own counter or after the highest file present, so the identities
+     * after the highest DCF number in the base's folder are added to the base's own.
+     * Keep only identities absent now; a pre-existing file can never confirm a store,
+     * and exactly one candidate may appear. */
     synchronized void predictAfter(int folder,int file){
         predicted=null;predictedFile=null;predictedLookupAt=-1;
         if(format!=Format.JPEG||folder<100||folder>999||file<1||file>9999){predictionNote="unsupported_base";return;}
-        // The index head can name a file that is not on the card: a photo
-        // deleted outside the camera leaves its index record behind, and the
-        // camera numbers the next photo from the files actually present.
-        // Predicting from a phantom anchor can only miss, so re-anchor to the
-        // closest identity present in the same folder (largest below, else
-        // smallest above). An anchor that exists keeps the established
-        // behavior exactly; only exact identities are ever probed.
-        int anchorFile=file;
-        try{
-            Set<Integer> present=folderNumbers(folder);
-            if(present!=null&&!present.isEmpty()&&!present.contains(file)){
-                int best=-1;
-                for(Integer n:present)if(n.intValue()<file&&(best<0||n.intValue()>best))best=n.intValue();
-                if(best<0)for(Integer n:present)if(best<0||n.intValue()<best)best=n.intValue();
-                if(best>0)file=best;
-            }
-        }catch(IOException ignored){/* keep the index anchor */}
-        List<int[]> next=new ArrayList<int[]>();
-        if(file<9999)next.add(new int[]{folder,file+1});
-        if(folder<999){if(file<9999)next.add(new int[]{folder+1,file+1});next.add(new int[]{folder+1,1});}
-        List<int[]> absent=new ArrayList<int[]>();StringBuilder note=new StringBuilder("after=").append(folder).append('/').append(file);
-        if(file!=anchorFile)note.append(" anchor_corrected_from=").append(folder).append('/').append(anchorFile);
-        note.append(" candidates=");
+        StringBuilder note=new StringBuilder("after=").append(folder).append('/').append(file);
+        List<int[]> next=new ArrayList<int[]>(),absent=new ArrayList<int[]>();
         long begin=System.nanoTime();
         try{
+            addAfter(next,folder,file);
+            int newest=dcim.isDirectory()?newestNumber(folder):-1;
+            if(newest>0&&newest!=file){addAfter(next,folder,newest);note.append(" folder_max=").append(folder).append('/').append(newest);}
+            note.append(" candidates=");
             for(int[] identity:next){
                 boolean exists=dcim.isDirectory()&&resolveNumbers(identity[0],identity[1])!=null;
                 if(!exists)absent.add(identity);
@@ -101,20 +90,21 @@ final class PhotoFiles {
         predicted=absent.toArray(new int[absent.size()][]);
         predictionNote=note.append(" check_ms=").append((System.nanoTime()-begin)/1000000).toString();
     }
-    /** DCF file numbers present in the unique folder for folderNumber, from one
-     * listing of that folder only; null when the folder cannot be uniquely
-     * resolved, so the caller keeps the index anchor uncorrected. */
-    private Set<Integer> folderNumbers(int folderNumber)throws IOException{
-        String[] dirs=dcim.list();if(dirs==null)return null;
-        File folder=null;
-        for(String name:dirs)if(DCF_DIRECTORY.matcher(name).matches()&&Integer.parseInt(name.substring(0,3))==folderNumber){
-            if(folder!=null)return null;folder=new File(dcim,name);
-        }
-        if(folder==null)return null;
-        String[] names=folder.list();if(names==null)return null;
-        Set<Integer> numbers=new HashSet<Integer>();
-        for(String name:names)if(DCF_JPEG.matcher(name).matches())numbers.add(Integer.valueOf(name.substring(4,8)));
-        return numbers;
+    private static void addAfter(List<int[]> next,int folder,int file){
+        if(file<9999)addIdentity(next,folder,file+1);
+        if(folder<999){if(file<9999)addIdentity(next,folder+1,file+1);addIdentity(next,folder+1,1);}
+    }
+    private static void addIdentity(List<int[]> next,int folder,int file){
+        for(int[] identity:next)if(identity[0]==folder&&identity[1]==file)return;
+        next.add(new int[]{folder,file});
+    }
+    /** Highest DCF number (JPEG or RAW) in one folder, from a single listing; -1 when absent. */
+    private int newestNumber(int folderNumber)throws IOException{
+        File folder=dcfFolder(folderNumber);if(folder==null)return -1;
+        String[] names=folder.list();if(names==null)throw new IOException("cannot read indexed DCF folder");
+        int newest=-1;
+        for(String name:names)if(DCF_NAME.matcher(name).matches())newest=Math.max(newest,Integer.parseInt(name.substring(4,8)));
+        return newest;
     }
     synchronized boolean predicting(){return predicted!=null&&predicted.length>0;}
     synchronized boolean predictedFound(){return predictedFile!=null;}
@@ -173,7 +163,8 @@ final class PhotoFiles {
         }
         return resolveNumbers(entry.folder,entry.file);
     }
-    private File resolveNumbers(int folderNumber,int fileNumber)throws IOException{
+    /** The unique DCF folder for folderNumber inside DCIM, or null when absent. */
+    private File dcfFolder(int folderNumber)throws IOException{
         String[] dirs=dcim.list();if(dirs==null)throw new IOException("cannot read DCIM");
         File folder=null;
         for(String name:dirs)if(DCF_DIRECTORY.matcher(name).matches()&&Integer.parseInt(name.substring(0,3))==folderNumber){
@@ -182,6 +173,10 @@ final class PhotoFiles {
         if(folder==null)return null;
         folder=folder.getCanonicalFile();
         if(!dcim.equals(folder.getParentFile()))throw new IOException("indexed folder outside DCIM");
+        return folder;
+    }
+    private File resolveNumbers(int folderNumber,int fileNumber)throws IOException{
+        File folder=dcfFolder(folderNumber);if(folder==null)return null;
         String[] names=folder.list();if(names==null)throw new IOException("cannot read indexed DCF folder");
         File result=null;
         for(String name:names)if(dcfMatch(folder.getName(),name,folderNumber,fileNumber)){
