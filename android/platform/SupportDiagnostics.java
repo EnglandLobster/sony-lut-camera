@@ -91,7 +91,7 @@ final class SupportDiagnostics {
             if(internal!=null)try{internal.resume();}catch(Exception error){internalError=error.toString();internal=null;}
             if(sd!=null)try{sd.resume();}catch(Exception error){sdError=error.toString();sd=null;}
         }
-        int entries=DiagnosticStore.verify(report);event("export_complete","bytes="+report.length()+" entries="+entries);
+        int entries=DiagnosticStore.verify(report);event("export_complete","bytes="+report.length()+" entries="+entries+" skipped_busy="+DiagnosticStore.lastExportSkipped());
         android.util.Log.i("LutSupport","export_complete bytes="+report.length()+" entries="+entries+" path=SONYLUT/DIAG/REPORT.ZIP");return report;
     }
 }

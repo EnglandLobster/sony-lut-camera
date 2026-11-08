@@ -40,19 +40,43 @@ final class DiagnosticStore implements Closeable {
         length=(int)file(0).length();output=new FileOutputStream(file(0),true);
     }
     static boolean owned(String name){return name.matches("CAP[0-5]\\.TXT|UI[0-1]\\.TXT");}
-    private static void add(ZipOutputStream zip,String name,File file)throws IOException {
+    private static int lastExportSkipped;
+    static int lastExportSkipped(){return lastExportSkipped;}
+    /** Sony's SD stack refuses to open a file another process still owns
+     * (FileNotFoundException: Device or resource busy). The capture process
+     * may hold its current journal for a short window after capture, so one
+     * busy file must not abort the whole export: retry briefly, then skip
+     * that file and let the remaining logs publish. */
+    private static InputStream openLog(File file)throws IOException {
+        FileNotFoundException busy=null;
+        for(int attempt=0;attempt<8;attempt++){
+            try{return new FileInputStream(file);}
+            catch(FileNotFoundException error){
+                if(error.getMessage()==null||error.getMessage().indexOf("busy")<0)throw error;
+                busy=error;
+                try{Thread.sleep(250);}
+                catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new IOException("interrupted while waiting for diagnostic log",interrupted);}
+            }
+        }
+        throw busy;
+    }
+    private static boolean add(ZipOutputStream zip,String name,File file)throws IOException {
         if(file.length()>LIMIT)throw new IOException("oversized diagnostic log");
         // Never follow a link outside the selected diagnostics directory.
         if(!file.getCanonicalFile().getParentFile().equals(file.getParentFile().getCanonicalFile()))throw new IOException("diagnostic path outside directory");
-        zip.putNextEntry(new ZipEntry(name));InputStream in=new FileInputStream(file);
+        InputStream in;
+        try{in=openLog(file);}
+        catch(FileNotFoundException busy){return false;}
+        zip.putNextEntry(new ZipEntry(name));
         try{byte[] buffer=new byte[4096];int total=0,n;while((n=in.read(buffer))!=-1){total+=n;if(total>LIMIT)throw new IOException("growing diagnostic log");zip.write(buffer,0,n);}}
         finally{in.close();}zip.closeEntry();
+        return true;
     }
     static File export(File internal,File sd,File destination,String summary)throws IOException {
         if(!destination.isDirectory()&&!destination.mkdirs())throw new IOException("cannot create SD diagnostic export directory");
         File temp=new File(destination,"REPORT.TMP"),target=new File(destination,"REPORT.ZIP"),previous=new File(destination,"PREV.ZIP");
         if(temp.exists()&&!temp.delete())throw new IOException("cannot remove incomplete report");
-        int logs=0;
+        int logs=0;lastExportSkipped=0;
         try{
             FileOutputStream raw=new FileOutputStream(temp);ZipOutputStream zip=new ZipOutputStream(raw);
             try{
@@ -60,7 +84,7 @@ final class DiagnosticStore implements Closeable {
                 File[] roots={internal,sd};String[] prefixes={"internal/","sd/"};
                 for(int i=0;i<roots.length;i++){
                     File[] files=roots[i].listFiles();if(files==null)continue;
-                    Arrays.sort(files);for(File file:files)if(file.isFile()&&owned(file.getName())){add(zip,prefixes[i]+file.getName(),file);logs++;}
+                    Arrays.sort(files);for(File file:files)if(file.isFile()&&owned(file.getName())){if(add(zip,prefixes[i]+file.getName(),file))logs++;else lastExportSkipped++;}
                 }
                 if(logs==0)throw new IOException("no readable diagnostic logs");zip.finish();raw.getFD().sync();
             }finally{zip.close();}
