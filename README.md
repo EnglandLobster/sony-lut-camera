@@ -1,72 +1,145 @@
-# Sony LUT Camera
+<div align="center">
 
-**让 A6300 在机内完成真正的 3D LUT 调色，拍完直接得到原片和调色 JPEG。** 无需手机、联网或电脑参与出片。支持导入自己的 `.cube`，预装 10 个指定 LUT。
+# LUT Camera
 
-> 当前版本：**v0.9.0-beta.8**（公开测试包，code118）。本版继续修复 **A6000** 等没有保存完成回调的旧机型停在“正在核验照片保存”的问题：rc.10 的推算在索引最新记录指向卡上不存在的文件时仍会卡住，由 luwei15 用 A6000 真机定位并修复（[PR #6](https://github.com/EnglandLobster/sony-lut-camera/pull/6)）。同时修复拍摄后第一次导出诊断日志失败（[#3](https://github.com/EnglandLobster/sony-lut-camera/issues/3)）。本版尚未在旧协议机型上用发行包实拍，欢迎通过 MENU → 导出诊断日志反馈。A6300 / 固件 2.01 的保存路径与 rc.9 相同。
+**在 Sony 相机里直接完成 3D LUT 调色：一次拍摄，同时得到原片和调色成片。**
 
-旧协议机型（A6000、A7、A7R、A5000、NEX-5R/5T/6、HX60V/HX400V）原先要等原片进入 Sony 照片索引才保存调色片，而索引可能要等两张都保存后才发布，于是互相等待。rc.10 起在保存前推算新照片的确切 DCF 编号，原生保存返回后只核对这个文件，完整且尺寸正确即继续；beta.8 同时按所在文件夹实际最大编号推算，索引与卡上文件不一致时也能命中。A6300 收到 Sony 保存完成回调后的快速确认保持不变。保留 [@latteye 的 API10 动画修复（PR #2）](https://github.com/EnglandLobster/sony-lut-camera/pull/2) 与 rc.6 原生内存表选择。导入兼容根目录 `LUTS` / `LUT`。[修复说明](docs/compatibility/LEGACY_STORE_PREDICTION.md) · [发行说明](docs/RELEASE.md)。
+不需要手机、电脑或联网。
 
-## 上手使用
+[![最新测试版](https://img.shields.io/github/v/release/EnglandLobster/sony-lut-camera?include_prereleases&label=%E6%9C%80%E6%96%B0%E6%B5%8B%E8%AF%95%E7%89%88&color=d4a24c)](https://github.com/EnglandLobster/sony-lut-camera/releases)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![Platform: Sony PMCA](https://img.shields.io/badge/platform-Sony%20PMCA-black)](docs/compatibility/README.md)
 
-**第一次安装？先看 [新手安装与使用教程](docs/USER_GUIDE.md)**：Windows/macOS 工具下载、相机 MTP 设置、选择本地 APK、首次拍摄及常见问题。
+**[⬇ 下载 v0.9.0-beta.8 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.8/SonyLutCamera-v0.9.0-beta.8.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
-**[下载 beta.8 测试包](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.8/SonyLutCamera-v0.9.0-beta.8.apk)** · [发行说明与校验文件](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8) · 多机型实验适配，欢迎提交诊断日志。
+<img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
-1. 从 [beta.8 发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8) 下载 `SonyLutCamera-v0.9.0-beta.8.apk`。自行编译见 [构建说明](docs/BUILD.md)。
-2. 用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装 APK。相机使用 MTP USB 模式；详细步骤见 [安装与使用](docs/USER_GUIDE.md)。
-3. 打开相机应用列表中的 **LUT Camera**，选一个 LUT，按中央键进入拍摄。首次打开会把预装 LUT 加入 SD 卡。
-4. 正常半按对焦、全按拍照。相机保留原片 JPEG，并另外保存应用完整 LUT 的 JPEG；成片后半按回到取景。
+</div>
 
-普通拍摄不需要“测试连接”、ADB、Telnet 或 Wi-Fi。开发连接工具不随发行包提供。
+## 特性
 
-出问题后可用 **MENU → 导出诊断日志** 生成 SD 卡 `SONYLUT/DIAG/REPORT.ZIP`，把日志包与复现步骤交给开发者。[日志说明](docs/DIAGNOSTICS.md)。
+- **完整 3D LUT 成片**：保存的照片按完整网格逐像素调色，不是近似滤镜。
+- **原片与成片各存一份**：未套 LUT 的原片 JPEG 和调色 JPEG 分别保存到 SD 卡。
+- **全尺寸、最高画质**：使用本机原生比例的最大尺寸（A6300 为 6000×4000），自动选择机身支持的最高 JPEG 档位。
+- **导入自己的 LUT**：支持 2–65³ 的 `.cube`，单个文件最大 64 MiB，按内容去重。
+- **预装 10 个胶片风格 LUT**：Fuji、Ilford、Kodak、Ricoh，默认 Fuji C200，见[内置 LUT](docs/BUILTIN_LUTS.md)。
+- **近似实时取景**：导入时自动拟合相机原生色彩参数，取景接近成片效果；也可以改用原色取景。
+- **应用内相册**：随时切换原片和成片对比。
 
-## LUT 选择
+## 安装
 
-预装 Fuji、Ilford、Kodak 和 Ricoh 共 10 个指定 LUT（7 个 25³、3 个 33³），默认选择 Fuji C200。用户导入的 LUT 按完整网格处理，支持 **2–65³**。参考 [内置资源](docs/BUILTIN_LUTS.md)。
+1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8)下载 `SonyLutCamera-v0.9.0-beta.8.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
+2. 相机 USB 连接设为 MTP，用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装这个 APK。
+3. 在相机的应用程序列表里打开 **LUT Camera**。第一次打开时会把预装 LUT 写入 SD 卡，稍等片刻。
 
-将独立 3D CUBE 的**文件名改为 DOS 8.3**：主名 1–8 个字符，扩展名统一用 `.CUB`；推荐大写英文字母和数字，例如 `FUJI3513.CUB`。原来的 `.cube` 扩展名有 4 个字符，复制前改为 `.CUB`，文件内容和 LUT 阶数不变。将文件直接放入 SD 卡根目录的 `LUTS/`，在应用里按右键扫描、导入。每个文件最多 64 MiB；应用保存完整表并自动生成近似取景参数。首次拟合差异较大时，可以选择继续近似预览或原色取景，成片始终使用完整 LUT。
+第一次安装建议看 **[新手安装与使用教程](docs/USER_GUIDE.md)**：里面有 Windows / macOS 工具下载、相机设置、逐步截图和常见问题。新版本可以直接覆盖安装，LUT 库和照片都会保留。
 
-## 拍摄与回看
+## 支持机型
 
-- 自动曝光，左右键／拨轮调节曝光补偿，中央键归零。
-- **本机原生比例全尺寸、机型支持的最高 JPEG 档位**（A6300 为 6000×4000）（支持时使用 EXTRA FINE；仅提供 50/25 的机型使用 FINE），原片与 LUT 成片分别保存到 SD 卡；原片指未套自定义 LUT 的 JPEG，不是 RAW 文件。
-- LUT 库右侧照片随选择显示完整 LUT 效果；这张参考图不是实时取景。
-- 播放键进入应用内相册；左看较早照片，右看较新照片，中央键比较原片和成片；半按快门返回拍摄。
-- MENU 返回 LUT 库，再从「更多 → 退出应用」返回索尼原生拍摄。
+能安装 PMCA 应用的 Sony 机型基本都已适配，共 27 款：
 
-完整拍摄需要数秒，耗时受场景、曝光与 SD 卡影响。其他机型正在测试；视频 LUT 和全分辨率实时 3D LUT 取景未提供。详细验证边界见 [状态](docs/STATUS.md)。
+| 系列 | 机型 |
+| --- | --- |
+| 全画幅 α7 | A7、A7 II、A7R、A7R II、A7S、A7S II |
+| APS-C α | A5000、A5100、A6000、**A6300** ✅、A6500 |
+| NEX | NEX-5R、NEX-5T、NEX-6 |
+| RX | RX100 III、RX100 IV、RX100 V、RX10 II、RX10 III †、RX1R II † |
+| HX / WX | HX60 †、HX60V、HX90 †、HX90V †、HX400 †、HX400V、WX500 † |
 
-## 开发与仓库结构
+- ✅ 已完成实拍验证（A6300，固件 2.01）。
+- 其他机型按各自机身的传感器尺寸、内存配置和保存协议接入，全尺寸成片与双文件保存的流程相同，实拍验收还在陆续进行。
+- † 暂未取得官方固件做本地回归，运行时按机身实际配置自动选择。
+- A68、A77 II、A99 II、RX100 II、初代 RX10 尚未确认能否安装 PMCA 应用。
 
-原始代码采用 **GPL-3.0-only**。构建环境为 macOS、JDK 17、Android SDK 36 和 NDK r16b；版本固定的外部依赖由脚本获取。
+逐机型细节见[机型范围](docs/compatibility/README.md)和[逐项清单](docs/compatibility/RECIPE_TARGETS.md)。用你的机型拍过的话，无论成功还是遇到问题，都欢迎[反馈](#反馈问题)。
+
+## 使用
+
+在 LUT 库选好 LUT，按中央键进入取景。之后像平常一样半按对焦、全按拍照，处理完成后屏幕会显示成片，半按快门回到取景。
+
+| 页面 | 按键 | 作用 |
+| --- | --- | --- |
+| LUT 库 | 上 / 下、拨轮 | 选择 LUT，右侧参考图同步显示效果 |
+| | 中央键 | 进入拍摄 |
+| | 左 / 右 | 打开相册 / 导入 LUT |
+| | MENU | 更多：取景方式、导出诊断日志、退出应用 |
+| 取景 | 半按 / 全按快门 | 对焦 / 拍摄 |
+| | 左 / 右、拨轮 | 曝光补偿，中央键归零 |
+| | DISP | 切换信息显示 |
+| | 播放键 | 打开应用内相册 |
+| 相册 | 左 / 右 | 较早 / 较新的照片 |
+| | 中央键 | 切换原片和成片 |
+| | 半按快门 | 返回拍摄 |
+
+要回到 Sony 原生拍摄，按 MENU 回到 LUT 库，再选 **更多 → 退出应用**。
+
+## 导入自己的 LUT
+
+> [!IMPORTANT]
+> **复制到相机前，先把文件名改成 DOS 8.3 格式**：主名 1–8 个字符，扩展名用 `.CUB`，建议只用大写字母和数字。
+> 例如 `CV-Fuji-3513-V1.cube` → `FUJI3513.CUB`。文件名过长，或者用了 4 个字符的 `.cube` 扩展名，相机都会扫描不到。只需要改文件名，不要改文件内容。
+
+1. 把改好名的文件直接放进 SD 卡根目录的 `LUTS/` 文件夹（`LUT/` 也可以，大小写不限），不要放在子文件夹里。
+2. 在 LUT 库按右键扫描，选择全部导入或单个导入。
+3. 导入完成后选中即可拍摄。库里显示的名字来自文件内的 TITLE，可能和文件名不同。
+
+适合使用面向普通照片的风格 LUT；Log 转换类 LUT 需要匹配的 Log 输入，直接套在普通照片上颜色会不对。
+
+## 须知
+
+- **取景是近似效果，成片才是完整 LUT。** 拟合误差较大的 LUT 会提示你选择继续近似预览或改用原色取景，每个 LUT 单独记忆（LUT 库 → MENU → 当前 LUT 的取景）。
+- 拍一张需要几秒钟处理，时间取决于场景和 SD 卡速度。处理期间不能连拍。
+- “原片”是未套 LUT 的 JPEG，不是 RAW。
+- 不支持视频 LUT，也没有全分辨率的实时 LUT 取景。
+- 正常拍摄不需要“测试连接”、ADB 或 Wi-Fi，这些只用于开发。
+
+## 反馈问题
+
+出现异常时，在应用里选 **MENU → 导出诊断日志**，SD 卡上会生成 `SONYLUT/DIAG/REPORT.ZIP`。请把它和下面这些信息一起发到 [Issues](https://github.com/EnglandLobster/sony-lut-camera/issues)：
+
+- 机型、固件版本、应用版本
+- 出问题前做了什么、停在哪个画面
+
+日志不包含照片和 LUT 内容，也不会自动上传。详见[诊断日志说明](docs/DIAGNOSTICS.md)。
+
+## 版本动态
+
+**v0.9.0-beta.8**（预发行测试版）
+
+- 修复 A6000 等旧机型在照片索引与卡上文件不一致时，仍停在“正在核验照片保存”的问题（[#6](https://github.com/EnglandLobster/sony-lut-camera/pull/6)）。
+- 修复拍完立刻导出诊断日志时，第一次总是失败的问题（[#3](https://github.com/EnglandLobster/sony-lut-camera/issues/3)）。
+- 补充 LUT 文件名必须符合 DOS 8.3 的说明。
+
+A6000 等旧机型的修复还没有用发行包实拍确认。历史版本见 [CHANGELOG](CHANGELOG.md) 和[发行记录](docs/RELEASE.md)。
+
+## 开发
+
+原始代码采用 GPL-3.0-only。已验证的构建主机为 macOS 和 Linux x86_64，需要 JDK 17、Android SDK 36 和 NDK r16b；外部依赖由脚本按固定版本获取。
 
 ```sh
 python3 scripts/bootstrap_dependencies.py
 bash scripts/build_host.sh
 python3 scripts/test_offline.py
 bash scripts/test_product_ui.sh
-bash scripts/test_lut_cache.sh
-bash scripts/test_preview_fit.sh
 bash scripts/build_android.sh --release
 ```
 
-[完整构建说明](docs/BUILD.md) · [贡献规范](AGENTS.md) · [页面操作规则](PRODUCT_UI.md)
+[构建说明](docs/BUILD.md) · [架构](docs/ARCHITECTURE.md) · [页面与操作规则](PRODUCT_UI.md) · [当前状态](docs/STATUS.md) · [贡献规范](AGENTS.md)
 
-| 目录 | 职责 |
+| 目录 | 内容 |
 | --- | --- |
-| `android/{app,capture,preview,storage,ui,platform}/` | 产品页面、拍摄、预览、存储和索尼接口 |
+| `android/` | 产品页面、拍摄、预览、存储与 Sony 接口（`app`、`capture`、`preview`、`storage`、`ui`、`platform`） |
 | `native/` | C++ 完整 LUT、UYVY、JPEG、缓存与预览拟合 |
-| `android-assets/` | 预装 LUT、参考缩略图、字体及归属说明 |
-| `android-tests/`、`scripts/` | 验证、构建与维护入口 |
-| `android/diagnostics/`、`native/probes/` | 开发诊断，发行 APK 不暴露诊断 Activity |
-| `dev-connect/` | 可选开发连接工具，不是用户拍摄依赖 |
-| `docs/` | 用户指南、构建、架构和发行记录 |
-
-`out/`、`dist/`、`results/`、`vendor/` 保留在本地，不提交密钥、APK、设备照片、固件或私人 LUT 收藏。`PreJpegProbeActivity` 虽保留历史名称，仍是生产拍摄基类，不能删除。
+| `android-assets/` | 预装 LUT、参考缩略图、字体及来源说明 |
+| `android-tests/`、`scripts/` | 测试、构建与维护脚本 |
+| `android/diagnostics/`、`native/probes/` | 开发诊断，发行 APK 不包含 |
+| `dev-connect/` | 可选的开发连接工具，拍摄不依赖它 |
+| `docs/` | 用户指南、构建、架构、机型适配与发行记录 |
 
 ## 许可与致谢
 
-[GPL-3.0](LICENSE) 适用于本项目原始代码；预装 LUT、字体、照片及外部配置分别遵循 [资源许可说明](ASSET_LICENSES.md) 和 [第三方清单](THIRD_PARTY_NOTICES.md)。感谢 OpenMemories、Sony-PMCA-RE 和 libjpeg-turbo。项目为第三方应用，不隶属于 Sony。
+本项目原始代码以 [GPL-3.0](LICENSE) 发布；预装 LUT、字体、照片和外部配置分别遵循[资源许可说明](ASSET_LICENSES.md)与[第三方清单](THIRD_PARTY_NOTICES.md)。
 
-rc.7 也接受根目录 `LUT` 文件夹及目录名大小写变体；文件需直接放入目录。相机端文件按 DOS 8.3 命名，统一使用 `.CUB` 扩展名。
+感谢 [OpenMemories](https://github.com/ma1co/OpenMemories-Framework)、[Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 和 [libjpeg-turbo](https://libjpeg-turbo.org/)。感谢 latteye 修复 API10 显影动画崩溃（[#2](https://github.com/EnglandLobster/sony-lut-camera/pull/2)），以及 luwei15 用 A6000 真机定位并修复保存确认与日志导出问题（[#5](https://github.com/EnglandLobster/sony-lut-camera/pull/5)、[#6](https://github.com/EnglandLobster/sony-lut-camera/pull/6)）。
+
+本项目是第三方应用，与 Sony 无关。
