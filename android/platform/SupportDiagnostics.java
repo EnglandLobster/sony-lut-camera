@@ -3,6 +3,8 @@ package org.hongen.sonylutprobe;
 import android.content.Context;
 import android.os.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /** Per-process capture/UI recorder. No camera ownership, root, logcat or network. */
@@ -83,15 +85,16 @@ final class SupportDiagnostics {
             +"Please describe the visible symptom and the action immediately before it.\n";
         // Sony SD forbids a reader while a writer owns the same file (EBUSY).
         // This process lock also pauses event appends until both writers resume.
-        File report;
+        File report;List<String> skipped=new ArrayList<String>();
         try{
             if(internal!=null)internal.close();if(sd!=null)sd.close();
-            report=DiagnosticStore.export(internalDir,sdDir,new File(Environment.getExternalStorageDirectory(),"SONYLUT/DIAG"),summary);
+            report=DiagnosticStore.export(internalDir,sdDir,new File(Environment.getExternalStorageDirectory(),"SONYLUT/DIAG"),summary,skipped);
         }finally{
             if(internal!=null)try{internal.resume();}catch(Exception error){internalError=error.toString();internal=null;}
             if(sd!=null)try{sd.resume();}catch(Exception error){sdError=error.toString();sd=null;}
         }
-        int entries=DiagnosticStore.verify(report);event("export_complete","bytes="+report.length()+" entries="+entries);
-        android.util.Log.i("LutSupport","export_complete bytes="+report.length()+" entries="+entries+" path=SONYLUT/DIAG/REPORT.ZIP");return report;
+        int entries=DiagnosticStore.verify(report);String busy=skipped.isEmpty()?"none":DiagnosticStore.join(skipped);
+        event("export_complete","bytes="+report.length()+" entries="+entries+" skipped_busy="+busy);
+        android.util.Log.i("LutSupport","export_complete bytes="+report.length()+" entries="+entries+" skipped_busy="+busy+" path=SONYLUT/DIAG/REPORT.ZIP");return report;
     }
 }

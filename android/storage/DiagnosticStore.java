@@ -40,29 +40,71 @@ final class DiagnosticStore implements Closeable {
         length=(int)file(0).length();output=new FileOutputStream(file(0),true);
     }
     static boolean owned(String name){return name.matches("CAP[0-5]\\.TXT|UI[0-1]\\.TXT");}
-    private static void add(ZipOutputStream zip,String name,File file)throws IOException {
+    /** Opens one journal for export; tests substitute Sony's EBUSY refusal. */
+    interface LogOpener {InputStream open(File file)throws IOException;}
+    private static final LogOpener FILES=new LogOpener(){public InputStream open(File file)throws IOException{return new FileInputStream(file);}};
+    static final long BUSY_BUDGET_MS=2000,BUSY_RETRY_MS=250;
+    /** Sony's SD stack refuses to open a file another process still writes:
+     * FileNotFoundException "(Device or resource busy)" on API10, "EBUSY" later. */
+    static boolean busy(FileNotFoundException error){
+        String message=error.getMessage();
+        return message!=null&&(message.indexOf("EBUSY")>=0||message.indexOf("Device or resource busy")>=0);
+    }
+    /** Null only when the file stayed busy until the export-wide deadline;
+     * every other open failure propagates and aborts the export as before. */
+    private static InputStream openLog(File file,LogOpener opener,long deadline,long retryMs)throws IOException {
+        while(true){
+            try{return opener.open(file);}
+            catch(FileNotFoundException error){
+                if(!busy(error))throw error;
+                long remaining=(deadline-System.nanoTime())/1000000;
+                if(remaining<=0)return null;
+                try{Thread.sleep(Math.min(retryMs,remaining));}
+                catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new IOException("interrupted while waiting for diagnostic log",interrupted);}
+            }
+        }
+    }
+    private static boolean add(ZipOutputStream zip,String name,File file,LogOpener opener,long deadline,long retryMs)throws IOException {
         if(file.length()>LIMIT)throw new IOException("oversized diagnostic log");
         // Never follow a link outside the selected diagnostics directory.
         if(!file.getCanonicalFile().getParentFile().equals(file.getParentFile().getCanonicalFile()))throw new IOException("diagnostic path outside directory");
-        zip.putNextEntry(new ZipEntry(name));InputStream in=new FileInputStream(file);
-        try{byte[] buffer=new byte[4096];int total=0,n;while((n=in.read(buffer))!=-1){total+=n;if(total>LIMIT)throw new IOException("growing diagnostic log");zip.write(buffer,0,n);}}
-        finally{in.close();}zip.closeEntry();
+        InputStream in=openLog(file,opener,deadline,retryMs);if(in==null)return false;
+        try{
+            zip.putNextEntry(new ZipEntry(name));
+            byte[] buffer=new byte[4096];int total=0,n;while((n=in.read(buffer))!=-1){total+=n;if(total>LIMIT)throw new IOException("growing diagnostic log");zip.write(buffer,0,n);}
+        }finally{in.close();}
+        zip.closeEntry();return true;
     }
-    static File export(File internal,File sd,File destination,String summary)throws IOException {
+    static File export(File internal,File sd,File destination,String summary,List<String> skipped)throws IOException {
+        return export(internal,sd,destination,summary,skipped,FILES,BUSY_BUDGET_MS,BUSY_RETRY_MS);
+    }
+    /** A journal another process (the capture process) still holds is retried
+     * within one export-wide budget, then omitted and named in SUMMARY.TXT and
+     * in skipped. The export lock pauses this process's event appends, so the
+     * budget is shared rather than per file. */
+    static File export(File internal,File sd,File destination,String summary,List<String> skipped,LogOpener opener,long busyBudgetMs,long retryMs)throws IOException {
         if(!destination.isDirectory()&&!destination.mkdirs())throw new IOException("cannot create SD diagnostic export directory");
         File temp=new File(destination,"REPORT.TMP"),target=new File(destination,"REPORT.ZIP"),previous=new File(destination,"PREV.ZIP");
         if(temp.exists()&&!temp.delete())throw new IOException("cannot remove incomplete report");
-        int logs=0;
+        List<String> busy=new ArrayList<String>();int logs=0;
+        long deadline=System.nanoTime()+busyBudgetMs*1000000L;
         try{
             FileOutputStream raw=new FileOutputStream(temp);ZipOutputStream zip=new ZipOutputStream(raw);
             try{
-                zip.putNextEntry(new ZipEntry("SUMMARY.TXT"));zip.write(summary.getBytes("UTF-8"));zip.closeEntry();
                 File[] roots={internal,sd};String[] prefixes={"internal/","sd/"};
                 for(int i=0;i<roots.length;i++){
                     File[] files=roots[i].listFiles();if(files==null)continue;
-                    Arrays.sort(files);for(File file:files)if(file.isFile()&&owned(file.getName())){add(zip,prefixes[i]+file.getName(),file);logs++;}
+                    Arrays.sort(files);for(File file:files)if(file.isFile()&&owned(file.getName())){
+                        String name=prefixes[i]+file.getName();
+                        if(add(zip,name,file,opener,deadline,retryMs))logs++;else busy.add(name);
+                    }
                 }
-                if(logs==0)throw new IOException("no readable diagnostic logs");zip.finish();raw.getFD().sync();
+                if(logs==0)throw new IOException("no readable diagnostic logs");
+                // Written last so it can name the journals left out.
+                StringBuilder text=new StringBuilder(summary);if(text.length()>0&&text.charAt(text.length()-1)!='\n')text.append('\n');
+                text.append("skipped_busy=").append(busy.isEmpty()?"none":join(busy)).append('\n');
+                zip.putNextEntry(new ZipEntry("SUMMARY.TXT"));zip.write(text.toString().getBytes("UTF-8"));zip.closeEntry();
+                zip.finish();raw.getFD().sync();
             }finally{zip.close();}
             // Read every member before publishing the archive, including its CRC.
             verify(temp);
@@ -72,8 +114,12 @@ final class DiagnosticStore implements Closeable {
                 if(previous.exists()&&!previous.renameTo(target))throw new IOException("report publish failed; previous report retained as PREV.ZIP");
                 throw new IOException("cannot publish diagnostic report");
             }
+            if(skipped!=null)skipped.addAll(busy);
             return target;
         }finally{if(temp.exists())temp.delete();}
+    }
+    static String join(List<String> names){
+        StringBuilder out=new StringBuilder();for(String name:names){if(out.length()>0)out.append(',');out.append(name);}return out.toString();
     }
     static int verify(File file)throws IOException {
         ZipFile catalog=new ZipFile(file);try{if(catalog.size()<2)throw new IOException("report contains no events");}finally{catalog.close();}
