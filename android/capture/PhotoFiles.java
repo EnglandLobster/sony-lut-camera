@@ -68,10 +68,10 @@ final class PhotoFiles {
      * outside the camera, or files newer than the published index. Sony may number
      * from its own counter or after the highest file present, so the identities
      * after the highest DCF number in the base's folder are added to the base's own.
-     * The head can also sit one past the camera's series counter: after the newest
-     * photos are deleted in camera playback, the folder falls far behind the
-     * still-advanced head and the next photo is written just before the missing
-     * head, so that predecessor is predicted as well.
+     * When the base names no file on the card, its predecessor is added too: after
+     * the newest photos were deleted in camera playback, ILCE-6000 3.21 field logs
+     * (PR #7) show the camera writing just before the still-advanced, now missing
+     * index head, far above the folder's newest file.
      * Keep only identities absent now; a pre-existing file can never confirm a store,
      * and exactly one candidate may appear. */
     synchronized void predictAfter(int folder,int file){
@@ -85,14 +85,13 @@ final class PhotoFiles {
             int newest=dcim.isDirectory()?newestNumber(folder):-1;
             if(newest>0&&newest!=file){addAfter(next,folder,newest);note.append(" folder_max=").append(folder).append('/').append(newest);}
             boolean headMissing=file>1&&dcim.isDirectory()&&resolveNumbers(folder,file)==null;
-            if(headMissing)addBefore(next,folder,file);
+            if(headMissing){addBefore(next,folder,file);note.append(" before_head=").append(folder).append('/').append(file-1);}
             note.append(" candidates=");
             for(int[] identity:next){
                 boolean exists=dcim.isDirectory()&&resolveNumbers(identity[0],identity[1])!=null;
                 if(!exists)absent.add(identity);
                 note.append(identity[0]).append('/').append(identity[1]).append(exists?":exists,":",");
             }
-            if(headMissing)note.append(" before_head=").append(folder).append('/').append(file-1);
         }catch(IOException error){predictionNote="unavailable: "+error.getMessage();return;}
         predicted=absent.toArray(new int[absent.size()][]);
         predictionNote=note.append(" check_ms=").append((System.nanoTime()-begin)/1000000).toString();
