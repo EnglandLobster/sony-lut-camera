@@ -10,7 +10,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform: Sony PMCA](https://img.shields.io/badge/platform-Sony%20PMCA-black)](docs/compatibility/README.md)
 
-**[⬇ 下载 v0.9.0-beta.8 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.8/SonyLutCamera-v0.9.0-beta.8.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
+**[⬇ 下载 v0.9.0-beta.9 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.9/SonyLutCamera-v0.9.0-beta.9.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.9) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
@@ -28,7 +28,7 @@
 
 ## 安装
 
-1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8)下载 `SonyLutCamera-v0.9.0-beta.8.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
+1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.9)下载 `SonyLutCamera-v0.9.0-beta.9.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
 2. 相机 USB 连接设为 MTP，用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装这个 APK。
 3. 在相机的应用程序列表里打开 **LUT Camera**。第一次打开时会把预装 LUT 写入 SD 卡，稍等片刻。
 
@@ -104,7 +104,11 @@
 
 ## 版本动态
 
-**v0.9.0-beta.8**（预发行测试版）
+**v0.9.0-beta.9**（预发行测试版）
+
+- 修复 A6000 等旧机型在相机回放里删掉最新照片后，回到应用拍第一张仍停在“正在核验照片保存”的问题（[#7](https://github.com/EnglandLobster/sony-lut-camera/pull/7)）。
+
+**v0.9.0-beta.8**
 
 - 修复 A6000 等旧机型在照片索引与卡上文件不一致时，仍停在“正在核验照片保存”的问题（[#6](https://github.com/EnglandLobster/sony-lut-camera/pull/6)）。
 - 修复拍完立刻导出诊断日志时，第一次总是失败的问题（[#3](https://github.com/EnglandLobster/sony-lut-camera/issues/3)）。

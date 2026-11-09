@@ -1,3 +1,27 @@
+# v0.9.0-beta.9 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.9/SonyLutCamera-v0.9.0-beta.9.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.9) · [安装教程](USER_GUIDE.md)
+
+code119，公开预发行测试包。沿用原签名，可覆盖安装，保留 LUT 和照片。
+
+## 修复
+
+- **A6000 在机内删除最新照片后，回到应用拍第一张仍停在“正在核验照片保存”**（[PR #7](https://github.com/EnglandLobster/sony-lut-camera/pull/7)）：照片其实已经写到卡上。luwei15 在 ILCE-6000 / 3.21 上定位到，回放里删掉最新的一批照片后，索引最新一条仍指向已删除的编号（例如 724），卡上只到 712，相机写出的是 723。beta.8 只推算 724 和 712 的后一号，等不到这张。本版在索引最新一条找不到文件时，把它的前一号也加入候选。“保存前不存在、只能恰好出现一个、JPEG 完整且尺寸正确”的规则不变。
+- A6300 / 2.01 的回调确认路径与 rc.9 相同。
+
+修复由 luwei15 用 A6000 真机定位并提交，合并时补充了诊断格式、成对保存与前一号已存在的测试。
+
+## 验证与当前缺口
+
+- 新增 3 组旧协议推算场景：回放删除后的原片（写在幽灵编号的前一号）、完整成对保存（成片写在幽灵编号本身）、前一号仍在卡上时不作为候选；原有 15 组断言不变。
+- 主机产品、拍摄链路、兼容性、回调派发、缓存与拟合套件、API10 ARM 模拟器 24 MiB 整套通过；发行 APK 签名证书与 beta.8 相同，DEX035、API10、ARMv5/v7 检查通过。
+
+**本版发行包没有在 A6000 或其他旧协议机型上实拍。** PR #7 作者的自建包（本版修复代码）在 A6000 上连续拍摄 5 组，全部成对保存，其中 3 组是机内删除照片后的场景。升级后请拍摄几张；如果仍停在核验界面，等待 1 分钟后按 MENU 返回，再通过 MENU → 导出诊断日志提交 `SONYLUT/DIAG/REPORT.ZIP`。[原因与修复](compatibility/LEGACY_STORE_PREDICTION.md)
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.9.0-beta.8 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.0-beta.8/SonyLutCamera-v0.9.0-beta.8.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.0-beta.8) · [安装教程](USER_GUIDE.md)
