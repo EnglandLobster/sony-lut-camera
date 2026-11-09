@@ -156,11 +156,58 @@ public final class LegacyDcfPredictionTest {
             s.db.publish(12,100,693);
             long token=s.completion.begin(0);
             String note=s.files.prediction();
-            check(note.contains("after=100/693 folder_max=100/691 candidates=100/694,101/694,101/1,100/692,101/692,"),"both numberings predicted: "+note);
+            check(note.contains("after=100/693 folder_max=100/691 before_head=100/692 candidates=100/694,101/694,101/1,100/692,101/692,"),"both numberings predicted: "+note);
             s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00694.JPG");}}));
             CaptureStoreCompletion.Receipt r=s.await(token,200);
             check(r.recovered&&r.predicted&&r.file.getName().equals("DSC00694.JPG"),"counter numbering after the phantom confirmed: "+r.file);
             System.out.println("PASS legacy prediction keeps the index head's own numbering");
+        }finally{s.close();}
+    }
+    /** The A6000 field report (ILCE-6000 3.21, beta.8): the newest photos were
+     * deleted in camera playback, so the folder's newest file falls far behind
+     * the still-advanced index head; the camera writes just before the head. */
+    private static void deletedInPlayback(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00711.JPG");s.db.publish(10,100,711);
+            s.photo("100MSDCF","DSC00712.JPG");s.db.publish(11,100,712);
+            s.db.publish(12,100,724); // head kept advancing; 713..724 never landed or were deleted
+            long token=s.completion.begin(0);
+            String note=s.files.prediction();
+            check(note.contains("folder_max=100/712 before_head=100/723 candidates=")&&note.contains("100/723,"),"identity before the phantom head predicted: "+note);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00723.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("DSC00723.JPG"),"write just below the phantom head confirmed: "+r.file);
+            System.out.println("PASS legacy prediction includes the identity before a phantom index head");
+        }finally{s.close();}
+    }
+    /** The full pair after a playback delete: the original lands just below the
+     * phantom head, then the graded file takes the phantom head's own number. */
+    private static void deletedPair(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00711.JPG");s.db.publish(10,100,711);
+            s.photo("100MSDCF","DSC00712.JPG");s.db.publish(11,100,712);
+            s.db.publish(12,100,724);
+            confirmPair(s,"DSC00723.JPG","DSC00724.JPG");
+            System.out.println("PASS legacy prediction confirms a pair below and at a phantom index head");
+        }finally{s.close();}
+    }
+    /** A predecessor still on the card is never a candidate; the head's successor still confirms. */
+    private static void beforeExists(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00722.JPG");s.db.publish(10,100,722);
+            File kept=s.photo("100MSDCF","DSC00723.JPG");s.db.publish(11,100,723);
+            s.db.publish(12,100,724);
+            long token=s.completion.begin(0);
+            String note=s.files.prediction();
+            check(note.contains("before_head=100/723 candidates=")&&note.contains("100/723:exists"),"existing predecessor excluded: "+note);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00725.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("DSC00725.JPG"),"successor of the phantom head confirmed: "+r.file);
+            check(kept.isFile(),"pre-existing predecessor untouched");
+            System.out.println("PASS legacy prediction never confirms an existing predecessor of a phantom head");
         }finally{s.close();}
     }
     /** Files present above an absent index head, alone or with older files below it. */
@@ -254,6 +301,9 @@ public final class LegacyDcfPredictionTest {
             unpredicted(new File(root,"unpredicted"));
             phantomAnchor(new File(root,"phantom"));
             seriesCounter(new File(root,"series"));
+            deletedInPlayback(new File(root,"deleted"));
+            deletedPair(new File(root,"deleted-pair"));
+            beforeExists(new File(root,"before-exists"));
             filesAbove(new File(root,"above"),false);
             filesAbove(new File(root,"above-below"),true);
             staleIndex(new File(root,"stale"));

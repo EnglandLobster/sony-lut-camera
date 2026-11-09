@@ -68,6 +68,10 @@ final class PhotoFiles {
      * outside the camera, or files newer than the published index. Sony may number
      * from its own counter or after the highest file present, so the identities
      * after the highest DCF number in the base's folder are added to the base's own.
+     * When the base names no file on the card, its predecessor is added too: after
+     * the newest photos were deleted in camera playback, ILCE-6000 3.21 field logs
+     * (PR #7) show the camera writing just before the still-advanced, now missing
+     * index head, far above the folder's newest file.
      * Keep only identities absent now; a pre-existing file can never confirm a store,
      * and exactly one candidate may appear. */
     synchronized void predictAfter(int folder,int file){
@@ -80,6 +84,8 @@ final class PhotoFiles {
             addAfter(next,folder,file);
             int newest=dcim.isDirectory()?newestNumber(folder):-1;
             if(newest>0&&newest!=file){addAfter(next,folder,newest);note.append(" folder_max=").append(folder).append('/').append(newest);}
+            boolean headMissing=file>1&&dcim.isDirectory()&&resolveNumbers(folder,file)==null;
+            if(headMissing){addBefore(next,folder,file);note.append(" before_head=").append(folder).append('/').append(file-1);}
             note.append(" candidates=");
             for(int[] identity:next){
                 boolean exists=dcim.isDirectory()&&resolveNumbers(identity[0],identity[1])!=null;
@@ -93,6 +99,10 @@ final class PhotoFiles {
     private static void addAfter(List<int[]> next,int folder,int file){
         if(file<9999)addIdentity(next,folder,file+1);
         if(folder<999){if(file<9999)addIdentity(next,folder+1,file+1);addIdentity(next,folder+1,1);}
+    }
+    private static void addBefore(List<int[]> next,int folder,int file){
+        if(file>1)addIdentity(next,folder,file-1);
+        if(folder<999&&file>1)addIdentity(next,folder+1,file-1);
     }
     private static void addIdentity(List<int[]> next,int folder,int file){
         for(int[] identity:next)if(identity[0]==folder&&identity[1]==file)return;
