@@ -235,7 +235,7 @@ public final class LibraryActivity extends Activity {
     }
     private void deleteRequest(){
         if(luts.isEmpty())return;LutLibrary.Entry entry=luts.get(UiList.clamp(lastSelection,luts.size()));
-        if(builtinIds.contains(entry.id)){showNotice("内置 LUT 不能删除",entry.name+" 是应用自带的色彩，每次打开都会自动恢复。\n只有自己导入的 LUT 可以删除。");return;}
+        if(builtinIds.contains(entry.id)){showNotice("内置 LUT 不能删除",entry.name+" 是应用自带的色彩，每次打开都会自动恢复，只能删除自己导入的 LUT。");return;}
         deleteEntry=entry;mode="delete_confirm";selection=0;render();
     }
     private void deleteLut(){
