@@ -130,6 +130,28 @@ final class LutLibrary {
             if(file.exists()&&!file.delete())throw new IOException("无法清理旧示例 LUT 源缓存");
         }
     }
+    /** Removes one managed entry and its derived caches. ENTRY.DAT is renamed
+     * to DELETE.DAT first, so an interrupted delete never exposes a partial
+     * LUT; purgeDeleted() retries the cleanup. Import sources are untouched. */
+    synchronized void remove(String id)throws IOException {
+        Entry entry=find(id);if(entry==null)throw new IOException("要删除的 LUT 不存在");
+        File dir=entry.file.getParentFile();
+        if(!new File(dir,"ENTRY.DAT").renameTo(new File(dir,"DELETE.DAT")))throw new IOException("无法删除 LUT");
+        clearMarked(dir,"DELETE.DAT");
+    }
+    /** Finishes deletes interrupted by power loss or a busy card. */
+    synchronized void purgeDeleted()throws IOException {
+        File[] dirs=root.listFiles();if(dirs==null)throw new IOException("无法读取 LUT 库");
+        for(File dir:dirs){
+            dir=dir.getCanonicalFile();
+            if(dir.getName().matches("L[0-9A-F]{7}")&&root.equals(dir.getParentFile())&&new File(dir,"DELETE.DAT").isFile())clearMarked(dir,"DELETE.DAT");
+        }
+    }
+    private static void clearMarked(File dir,String markerName)throws IOException {
+        File marker=new File(dir,markerName);File[] files=dir.listFiles();if(files==null)throw new IOException("无法删除 LUT");
+        for(File file:files)if(!file.equals(marker)&&!file.delete())throw new IOException("无法删除 LUT 文件");
+        if(!marker.delete()||!dir.delete())throw new IOException("无法删除 LUT 目录");
+    }
     private Entry read(File directory)throws IOException {
         directory=directory.getCanonicalFile();
         if(!directory.getName().matches("L[0-9A-F]{7}")||!root.equals(directory.getParentFile()))return null;

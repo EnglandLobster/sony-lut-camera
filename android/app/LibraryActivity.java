@@ -24,7 +24,8 @@ public final class LibraryActivity extends Activity {
     private String mode="loading",previous="library",notice="",previewId="",importFocusId;private int selection,lastSelection;private boolean busy,destroyed,importDone;
     private String diagnosticExport="";
     private boolean displayStarted,exiting;private String selectedId;
-    private LutLibrary.Entry previewEntry;
+    private LutLibrary.Entry previewEntry,deleteEntry;
+    private final Set<String> builtinIds=new HashSet<String>();private String defaultId;
     private NativePreviewProfile fittedPreview;
     private PreviewProfileStore.Choice previewChoice;
     private String fitError="";
@@ -50,8 +51,9 @@ public final class LibraryActivity extends Activity {
         mode="loading";runTask("正在打开 LUT 库",new Task(){public void run()throws Exception{
             previews=new LutPreview(LibraryActivity.this);library=new LutLibrary(ProductFiles.library());catalog=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory());
             library.retireBuiltinSamples(ProductFiles.builtins());
-            String defaultId=null;
-            for(BuiltinLuts.Entry entry:BuiltinLuts.read(getAssets().open("CATALOG.JSN"))){String id=installBuiltin(entry);if(entry.selected)defaultId=id;}
+            try{library.purgeDeleted();}catch(IOException e){android.util.Log.w("LutLibrary","deleted_entry_cleanup_pending",e);}
+            builtinIds.clear();defaultId=null;
+            for(BuiltinLuts.Entry entry:BuiltinLuts.read(getAssets().open("CATALOG.JSN"))){String id=installBuiltin(entry);builtinIds.add(id);if(entry.selected)defaultId=id;}
             selectedId=library.selectedId();if(library.find(selectedId)==null)selectedId=defaultId;luts=library.entries();
         }},new Runnable(){public void run(){mode="library";selection=indexOf(selectedId);render();requestPreview();if(showingCaptureRecovery)requireReleasedCapture();}});
     }
@@ -109,8 +111,15 @@ public final class LibraryActivity extends Activity {
             rows.add(new CameraPage.Row("退出应用","回到相机原生拍摄界面","退出"));
             if(SonyAppPolicy.hasDebugHelper(this))rows.add(new CameraPage.Row("测试连接","打开已安装的相机调试工具","打开"));
             rows.add(new CameraPage.Row("当前 LUT 的取景","近似色彩或原色 · 每个 LUT 单独记忆","设置"));
+            LutLibrary.Entry current=luts.isEmpty()?null:luts.get(UiList.clamp(lastSelection,luts.size()));
+            rows.add(new CameraPage.Row("删除当前 LUT",current==null?"LUT 库为空":builtinIds.contains(current.id)?current.name+" · 内置色彩不能删除":current.name,"删除"));
             rows.add(new CameraPage.Row("导出诊断日志","出问题后导出日志包，交给开发者分析","导出"));
             page.note="当前验证机型 Sony A6300";page.footer="↑↓ 选择   ● 确认   MENU 返回";
+        }else if(mode.equals("delete_confirm")){
+            page.section="删除 LUT";page.title=deleteEntry.name;page.subtitle="确定从 LUT 库删除这个色彩？";
+            rows.add(new CameraPage.Row("取消","保留这个 LUT","返回"));
+            rows.add(new CameraPage.Row("删除这个 LUT","连同它的预览缓存和取景设置一起删除","删除"));
+            page.note="已拍照片不受影响 · SD 卡 LUTS 文件夹里的源文件不会被删除，可重新导入";page.footer="↑↓ 选择   ● 确认   MENU 返回";
         }else if(mode.equals("diagnostics")){
             page.section="诊断日志";page.title=diagnosticExport.length()==0?"导出问题记录":"日志包已导出";
             page.subtitle=diagnosticExport.length()==0?"自动保留最近的启动、拍摄和错误记录":"SD 卡 / SONYLUT / DIAG / REPORT.ZIP";
@@ -224,6 +233,20 @@ public final class LibraryActivity extends Activity {
             try{fittedPreview=PreviewProfileStore.load(previewEntry);}catch(IOException e){fitError=explain(e);}
         }},new Runnable(){public void run(){mode="preview_options";selection=0;render();}});
     }
+    private void deleteRequest(){
+        if(luts.isEmpty())return;LutLibrary.Entry entry=luts.get(UiList.clamp(lastSelection,luts.size()));
+        if(builtinIds.contains(entry.id)){showNotice("内置 LUT 不能删除",entry.name+" 是应用自带的色彩，每次打开都会自动恢复。\n只有自己导入的 LUT 可以删除。");return;}
+        deleteEntry=entry;mode="delete_confirm";selection=0;render();
+    }
+    private void deleteLut(){
+        if(!requireReleasedCapture())return;final LutLibrary.Entry entry=deleteEntry;
+        runTask("正在删除 "+entry.name,new Task(){public void run()throws Exception{
+            SupportDiagnostics.event("lut_delete","lut_id="+entry.id);
+            library.remove(entry.id);
+            if(entry.id.equals(selectedId)){selectedId=defaultId;if(defaultId!=null)library.select(defaultId);}
+            luts=library.entries();
+        }},new Runnable(){public void run(){deleteEntry=null;previewId="";lastSelection=UiList.clamp(lastSelection,luts.size());libraryPage();}});
+    }
     private void choosePreview(final boolean enabled){
         final boolean capture=previewForCapture;fitError="";
         runTask(enabled?"正在准备近似预览":"正在保存取景方式",new Task(){public void run()throws Exception{
@@ -257,7 +280,8 @@ public final class LibraryActivity extends Activity {
         }else if(mode.equals("files")){if(selection==0){if(importDone)finishImport();else if(!imports.isEmpty())importFiles(-1);else scan();}
             else if(importResults.get(selection-1).startsWith("失败"))showNotice("这个文件未能导入",importResults.get(selection-1));else if(!importDone)importFiles(selection-1);
         }else if(mode.equals("gallery")){if(!photos.isEmpty())openGallery(photos.get(selection).id);
-        }else if(mode.equals("options")){if(selection==0){mode="import";selection=0;}else if(selection==1){mode="help";selection=0;}else if(selection==2){libraryPage();return;}else if(selection==3){exitToCamera();return;}else if(selection==page.rows.size()-1){exportDiagnostics();return;}else if(selection==4&&SonyAppPolicy.hasDebugHelper(this)){openDebugHelper();return;}else{previewSettings();return;}render();
+        }else if(mode.equals("options")){if(selection==0){mode="import";selection=0;}else if(selection==1){mode="help";selection=0;}else if(selection==2){libraryPage();return;}else if(selection==3){exitToCamera();return;}else if(selection==page.rows.size()-1){exportDiagnostics();return;}else if(selection==page.rows.size()-2){deleteRequest();return;}else if(selection==4&&SonyAppPolicy.hasDebugHelper(this)){openDebugHelper();return;}else{previewSettings();return;}render();
+        }else if(mode.equals("delete_confirm")){if(selection==1)deleteLut();else libraryPage();
         }else if(mode.equals("diagnostics")){if(selection==0)exportDiagnostics();else libraryPage();
         }else if(mode.equals("preview_options")||mode.equals("preview_warning")||mode.equals("preview_error")){
             if(selection==2)libraryPage();else choosePreview(selection==0);
