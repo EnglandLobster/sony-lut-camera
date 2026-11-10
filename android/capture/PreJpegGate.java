@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Save/ownership protocol. Grading may overlap the original save, but
  * the second store requires original confirmation; a new shot requires rearm. */

@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** The same real-graphics suite must expose rc.3's defect and pass the fix. */
 public final class PreviewGraphicsRegression {

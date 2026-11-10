@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 public final class CaptureStoreEventsTest {
     public static class LegacyCamera {

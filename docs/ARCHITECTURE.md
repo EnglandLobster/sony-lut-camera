@@ -1,6 +1,6 @@
 # 源码与目录边界
 
-Java 文件按职责分目录，仍使用同一 `org.hongen.sonylutprobe` 包；本次没有改变类名、Android 组件名、JNI 名称、可见性或进程边界。构建脚本递归收集源码，字体工具也递归扫描界面文字。
+Java 文件按职责分目录，全部使用同一 `io.github.englandlobster.lutcamera` 包（0.9.1 起，同时是应用包名；此前为 `org.hongen.sonylutprobe`，JNI 符号随之更名）。目录分类本身没有改变类名、Android 组件名、可见性或进程边界。测试连接工具仍为 `org.hongen.sonydevconnect`，主程序通过该包名的签名权限请求退出准备。构建脚本递归收集源码，字体工具也递归扫描界面文字。
 
 | 位置 | 职责／关键入口 |
 | --- | --- |

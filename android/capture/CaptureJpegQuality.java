@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 import java.io.IOException;
 
 /** Sony quality codes are discrete camera capabilities, not JPEG percentages. */

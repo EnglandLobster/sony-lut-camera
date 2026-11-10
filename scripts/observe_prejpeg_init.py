@@ -119,7 +119,7 @@ def main():
         if processes.get('rc') != 0 or not processes.get('stdout', '').strip():
             raise SystemExit('Unable to verify fresh process; no probe launched')
         names = [line.split()[-1] for line in processes['stdout'].splitlines() if line.split()]
-        if any(name == 'org.hongen.sonylutprobe' or name.startswith('org.hongen.sonylutprobe:') for name in names):
+        if any(name == 'io.github.englandlobster.lutcamera' or name.startswith('io.github.englandlobster.lutcamera:') for name in names):
             raise SystemExit('LUT process already exists; close and stop it before this explicit control')
     sock = socket.create_connection((args.host, 23), timeout=5)
     sock.settimeout(.2)
@@ -195,7 +195,7 @@ def main():
                                    args.wait_shutter_seconds)
         print('Observation ready; launching one ' + ('user-shutter ' + args.phase if args.capture else 'init-only') + ' ' + args.stage + ' control', flush=True)
         record['launch'] = adb(['shell', 'am', 'start', '-W', '-n',
-            'org.hongen.sonylutprobe/.PreJpegProbeActivity', '--es', 'phase', args.phase,
+            'io.github.englandlobster.lutcamera/.PreJpegProbeActivity', '--es', 'phase', args.phase,
             '--es', 'map_revision', args.map_revision,
             '--ez', 'init_only', 'false' if args.capture else 'true', '--es', 'init_stage', args.stage,
             '--ez', 'normalize_zoom', 'true' if args.normalize_zoom else 'false',

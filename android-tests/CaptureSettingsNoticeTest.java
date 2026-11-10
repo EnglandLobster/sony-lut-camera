@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 import java.util.*;
 public final class CaptureSettingsNoticeTest {
     public static void main(String[] args){

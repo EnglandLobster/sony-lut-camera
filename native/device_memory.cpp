@@ -96,7 +96,7 @@ std::string applyImage(JNIEnv* e,jobject image,const sl::Lut& lut,sl::YuvLutTabl
     std::ostringstream out;out<<"{\"lut_size\":"<<lut.size()<<",\"lut_ms\":"<<elapsed<<",\"properties_ms\":"<<properties<<",\"map_ms\":"<<mapTime<<",\"unmap_ms\":"<<unmapTime<<",\"table_prepare_ms\":"<<prepare<<",\"table_resident_bytes\":"<<(table?table->residentBytes():0)<<",\"cache_page_bytes\":"<<(table?table->pageBytes():0)<<",\"cache_evicted_pages\":"<<(table?table->evictedPages():0)<<",\"cache_sampled_pairs\":"<<(table?table->sampledPairs():0)<<",\"table_entries_before\":"<<entriesBefore<<",\"table_entries_reused\":"<<entriesPrepared<<",\"table_entries\":"<<(table?table->populatedEntries():0)<<",\"workers\":"<<workers<<",\"width\":"<<w<<",\"height\":"<<h<<"}";return out.str();
 }
 }
-extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_devicePreflight(JNIEnv* e,jclass){
+extern "C" JNIEXPORT jstring JNICALL Java_io_github_englandlobster_lutcamera_Native_devicePreflight(JNIEnv* e,jclass){
     try{
         jclass image=e->FindClass("com/sony/scalar/graphics/OptimizedImage");
         if(!image)return nullptr;
@@ -108,18 +108,18 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceP
         return e->NewStringUTF(modern?"physical_memory_info":"legacy_memory_properties");
     }catch(const std::exception& x){fail(e,x.what());return nullptr;}
 }
-extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceLut(JNIEnv* e,jclass,jobject image,jstring cube,jint workers){
+extern "C" JNIEXPORT jstring JNICALL Java_io_github_englandlobster_lutcamera_Native_deviceLut(JNIEnv* e,jclass,jobject image,jstring cube,jint workers){
     try{
         const char* p=e->GetStringUTFChars(cube,nullptr);if(!p)return nullptr;std::string path(p);e->ReleaseStringUTFChars(cube,p);
         sl::Lut lut;lut.load(path);return e->NewStringUTF(applyImage(e,image,lut,nullptr,workers).c_str());
     }catch(const std::exception& x){fail(e,x.what());return nullptr;}
 }
-extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_prepareDeviceLut(JNIEnv* e,jclass,jstring cube,jint workers){
+extern "C" JNIEXPORT jlong JNICALL Java_io_github_englandlobster_lutcamera_Native_prepareDeviceLut(JNIEnv* e,jclass,jstring cube,jint workers){
     try{const char* p=e->GetStringUTFChars(cube,nullptr);if(!p)return 0;std::string path(p);e->ReleaseStringUTFChars(cube,p);
         return reinterpret_cast<jlong>(prepareLut(path,"","",workers));
     }catch(const std::exception& x){fail(e,x.what());return 0;}
 }
-extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_prepareDeviceLutCompiled(JNIEnv* e,jclass,jstring cube,jstring bin,jstring digest,jint workers){
+extern "C" JNIEXPORT jlong JNICALL Java_io_github_englandlobster_lutcamera_Native_prepareDeviceLutCompiled(JNIEnv* e,jclass,jstring cube,jstring bin,jstring digest,jint workers){
     try{
         const char* p=e->GetStringUTFChars(cube,nullptr);if(!p)return 0;std::string path(p);e->ReleaseStringUTFChars(cube,p);
         p=e->GetStringUTFChars(bin,nullptr);if(!p)return 0;std::string cache(p);e->ReleaseStringUTFChars(bin,p);
@@ -127,7 +127,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_prepareDe
         return reinterpret_cast<jlong>(prepareLut(path,cache,id,workers));
     }catch(const std::exception& x){fail(e,x.what());return 0;}
 }
-extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_prepareDeviceLutBudget(JNIEnv* e,jclass,jstring cube,jstring bin,jstring digest,jint workers,jint cacheMiB){
+extern "C" JNIEXPORT jlong JNICALL Java_io_github_englandlobster_lutcamera_Native_prepareDeviceLutBudget(JNIEnv* e,jclass,jstring cube,jstring bin,jstring digest,jint workers,jint cacheMiB){
     try{
         const char* p=e->GetStringUTFChars(cube,nullptr);if(!p)return 0;std::string path(p);e->ReleaseStringUTFChars(cube,p);
         p=e->GetStringUTFChars(bin,nullptr);if(!p)return 0;std::string cache(p);e->ReleaseStringUTFChars(bin,p);
@@ -135,16 +135,16 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_prepareDe
         return reinterpret_cast<jlong>(prepareLut(path,cache,id,workers,cacheMiB));
     }catch(const std::exception& x){fail(e,x.what());return 0;}
 }
-extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceLutLoadInfo(JNIEnv* e,jclass,jlong cache){
+extern "C" JNIEXPORT jstring JNICALL Java_io_github_englandlobster_lutcamera_Native_deviceLutLoadInfo(JNIEnv* e,jclass,jlong cache){
     if(!cache){fail(e,"missing prepared LUT");return nullptr;}
     return e->NewStringUTF(reinterpret_cast<CachedLut*>(cache)->loadInfo.c_str());
 }
-extern "C" JNIEXPORT void JNICALL Java_org_hongen_sonylutprobe_Native_releaseDeviceLut(JNIEnv*,jclass,jlong cache){delete reinterpret_cast<CachedLut*>(cache);}
-extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceLutCached(JNIEnv* e,jclass,jobject image,jlong cache){
+extern "C" JNIEXPORT void JNICALL Java_io_github_englandlobster_lutcamera_Native_releaseDeviceLut(JNIEnv*,jclass,jlong cache){delete reinterpret_cast<CachedLut*>(cache);}
+extern "C" JNIEXPORT jstring JNICALL Java_io_github_englandlobster_lutcamera_Native_deviceLutCached(JNIEnv* e,jclass,jobject image,jlong cache){
     try{if(!cache)throw std::runtime_error("missing prepared LUT");CachedLut& c=*reinterpret_cast<CachedLut*>(cache);return e->NewStringUTF(applyImage(e,image,c.lut,&c.table,c.workers).c_str());}
     catch(const std::exception& x){fail(e,x.what());return nullptr;}
 }
-extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceLutReview(JNIEnv* e,jclass,jobject image,jlong cache,jobject bitmap){
+extern "C" JNIEXPORT jstring JNICALL Java_io_github_englandlobster_lutcamera_Native_deviceLutReview(JNIEnv* e,jclass,jobject image,jlong cache,jobject bitmap){
     void* pixels=nullptr;
     try {
         if(!cache)throw std::runtime_error("missing prepared LUT");CachedLut& c=*reinterpret_cast<CachedLut*>(cache);
@@ -156,7 +156,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceL
         AndroidBitmap_unlockPixels(e,bitmap);pixels=nullptr;return e->NewStringUTF(result.c_str());
     }catch(const std::exception& x){if(pixels)AndroidBitmap_unlockPixels(e,bitmap);fail(e,x.what());return nullptr;}
 }
-extern "C" JNIEXPORT void JNICALL Java_org_hongen_sonylutprobe_Native_devicePreview(JNIEnv* e,jclass,jobject image,jobject bitmap){
+extern "C" JNIEXPORT void JNICALL Java_io_github_englandlobster_lutcamera_Native_devicePreview(JNIEnv* e,jclass,jobject image,jobject bitmap){
     void* pixels=nullptr;
     try {
         void* m=memory(e,image);unsigned cw=number(m,"image-canvas-width"),ch=number(m,"image-canvas-height"),w=number(m,"image-target-width"),h=number(m,"image-target-height"),x=number(m,"image-target-x-offset"),y=number(m,"image-target-y-offset"),off=number(m,"image-data-offset");
@@ -170,7 +170,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_hongen_sonylutprobe_Native_devicePrev
         AndroidBitmap_unlockPixels(e,bitmap);pixels=nullptr;
     }catch(const std::exception& x){if(pixels)AndroidBitmap_unlockPixels(e,bitmap);fail(e,x.what());}
 }
-extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_saveSonyStream(JNIEnv* e,jclass,jobject stream,jstring path){
+extern "C" JNIEXPORT jlong JNICALL Java_io_github_englandlobster_lutcamera_Native_saveSonyStream(JNIEnv* e,jclass,jobject stream,jstring path){
     FILE* file=nullptr;std::string output;bool owned=false;
     try{
         jclass cls=e->FindClass("com/sony/scalar/io/MemoryInputStream");if(!cls||!stream||!e->IsInstanceOf(stream,cls))throw std::runtime_error("expected Sony JPEG stream");
@@ -189,14 +189,14 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_hongen_sonylutprobe_Native_saveSonyS
         int rc=fclose(file);file=nullptr;if(rc)throw std::runtime_error("JPEG close failed");return count;
     }catch(const std::exception& x){if(file)fclose(file);if(owned)unlink(output.c_str());fail(e,x.what());return -1;}
 }
-extern "C" JNIEXPORT jstring JNICALL Java_org_hongen_sonylutprobe_Native_deviceInfo(JNIEnv* e,jclass,jobject image){
+extern "C" JNIEXPORT jstring JNICALL Java_io_github_englandlobster_lutcamera_Native_deviceInfo(JNIEnv* e,jclass,jobject image){
     try{void* m=memory(e,image);std::ostringstream json;json<<"{";bool first=true;
         for(const char* key:{"memory-size","image-data-offset","image-canvas-width","image-canvas-height","image-target-width","image-target-height","image-target-x-offset","image-target-y-offset"}){
             const char* value=property(m,key);if(!first)json<<",";first=false;json<<"\""<<key<<"\":";if(value)json<<"\""<<value<<"\"";else json<<"null";
         }json<<"}";return e->NewStringUTF(json.str().c_str());
     }catch(const std::exception& x){fail(e,x.what());return nullptr;}
 }
-extern "C" JNIEXPORT jbyteArray JNICALL Java_org_hongen_sonylutprobe_Native_deviceRead(JNIEnv* e,jclass,jobject image,jint offset,jint length){
+extern "C" JNIEXPORT jbyteArray JNICALL Java_io_github_englandlobster_lutcamera_Native_deviceRead(JNIEnv* e,jclass,jobject image,jint offset,jint length){
     try{void* m=memory(e,image);if(offset<0||length<1||length>1024*1024)throw std::runtime_error("invalid bounded read");
         const char* text=property(m,"memory-size");if(!text)throw std::runtime_error("device memory size unavailable");
         char* end=nullptr;unsigned long size=strtoul(text,&end,0);if(!end||*end||!size||uint64_t(offset)+length>size)throw std::runtime_error("read exceeds device memory");

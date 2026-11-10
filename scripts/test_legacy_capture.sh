@@ -9,7 +9,7 @@ mkdir -p out/legacy-capture-tests
     android/capture/CaptureGeometry.java android/capture/PhotoFiles.java android/capture/ArwFile.java android/capture/PhotoIndex.java \
     android-tests/CaptureSurfaceGateTest.java android-tests/CaptureJpegQualityTest.java android-tests/CaptureStoreEventsTest.java android-tests/PhotoIndexTest.java
 for suite in CapturePlatformTest CaptureSurfaceGateTest CaptureJpegQualityTest CaptureStoreEventsTest PhotoIndexTest; do
-    "$java_home/bin/java" -cp out/legacy-capture-tests "org.hongen.sonylutprobe.$suite"
+    "$java_home/bin/java" -cp out/legacy-capture-tests "io.github.englandlobster.lutcamera.$suite"
 done
 
 bash scripts/test_capture_pipeline.sh

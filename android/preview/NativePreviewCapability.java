@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Absence selects the explicit original-colour view; no hardware is opened. */
 final class NativePreviewCapability {

@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Single-shot diagnostic barrier. Direct shutter stays OFF throughout colored
  * preview and restoration. Only a subsequent native preview-ready event enables

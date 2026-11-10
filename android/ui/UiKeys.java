@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 import android.view.KeyEvent;
 final class UiKeys {
     static final int NONE=0,UP=1,DOWN=2,LEFT=3,RIGHT=4,OK=5,BACK=6,PLAY=7;

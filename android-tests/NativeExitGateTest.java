@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 public final class NativeExitGateTest {
     private static void check(boolean ok,String message){if(!ok)throw new AssertionError(message);}

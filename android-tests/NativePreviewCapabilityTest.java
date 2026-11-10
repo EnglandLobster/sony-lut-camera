@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 public final class NativePreviewCapabilityTest {
     public static void main(String[] args){
         boolean expected=Boolean.parseBoolean(args[0]);

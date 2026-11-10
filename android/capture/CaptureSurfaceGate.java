@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Sony's push-buffer Surface may report isValid=false after its lifecycle
  * callbacks. Those callbacks, not the Android buffer flag, authorize opening. */

@@ -16,8 +16,8 @@ fi
 original_heap="$("$adb" -s "$serial" shell getprop dalvik.vm.heapsize | tr -d '\r')"
 "$adb" -s "$serial" shell setprop dalvik.vm.heapsize 24m
 trap '"$adb" -s "$serial" shell setprop dalvik.vm.heapsize "$original_heap"' EXIT
-apk="$("$adb" -s "$serial" shell pm path org.hongen.sonylutprobe | tr -d '\r' | sed 's/^package://')"
-if [[ ! "$apk" =~ ^/data/app/org\.hongen\.sonylutprobe-[0-9]+\.apk$ ]]; then
+apk="$("$adb" -s "$serial" shell pm path io.github.englandlobster.lutcamera | tr -d '\r' | sed 's/^package://')"
+if [[ ! "$apk" =~ ^/data/app/io\.github\.englandlobster\.lutcamera-[0-9]+\.apk$ ]]; then
     echo 'Install the matching app build and open the LUT library first.' >&2; exit 1
 fi
 mkdir -p out/legacy-smoke/classes out/legacy-smoke/dex
@@ -54,12 +54,12 @@ from pathlib import Path
 import sys
 apk=sys.argv[1]
 lines=['#!/system/bin/sh','set -e','export CLASSPATH=/data/local/tmp/legacy-smoke.jar:'+apk,
-       'app_process -Xmx24m -Djava.library.path=/data/data/org.hongen.sonylutprobe/lib /system/bin org.hongen.sonylutprobe.LegacyRuntimeSmoke /mnt/sdcard/SONYLUT/LIBRARY']
+       'app_process -Xmx24m -Djava.library.path=/data/data/io.github.englandlobster.lutcamera/lib /system/bin io.github.englandlobster.lutcamera.LegacyRuntimeSmoke /mnt/sdcard/SONYLUT/LIBRARY']
 for suite in ['CaptureSurfaceGateTest','CaptureJpegQualityTest','CaptureStoreEventsTest','CapturePipelineTest','CapturePairCompletionTest','LegacyDcfPredictionTest','CaptureReceiptPipelineTest','CaptureStoreRpcTest','IndexedStoreTest','PhotoIndexTest','CaptureStartupErrorTest','DevelopingPreviewTest']:
-    lines.append('app_process -Xmx24m /system/bin org.hongen.sonylutprobe.'+suite+' /data/local/tmp')
+    lines.append('app_process -Xmx24m /system/bin io.github.englandlobster.lutcamera.'+suite+' /data/local/tmp')
 for action in ['--write-fence','--read-fence']:
-    lines.append('app_process -Xmx24m /system/bin org.hongen.sonylutprobe.CaptureStoreRpcTest '+action+' /data/local/tmp/lut-store-fence-test')
-lines.append('app_process -Xmx24m -Djava.io.tmpdir=/data/local/tmp /system/bin org.hongen.sonylutprobe.CaptureMemoryMapTest /data/local/tmp/lut-map-fixtures')
+    lines.append('app_process -Xmx24m /system/bin io.github.englandlobster.lutcamera.CaptureStoreRpcTest '+action+' /data/local/tmp/lut-store-fence-test')
+lines.append('app_process -Xmx24m -Djava.io.tmpdir=/data/local/tmp /system/bin io.github.englandlobster.lutcamera.CaptureMemoryMapTest /data/local/tmp/lut-map-fixtures')
 lines.append('echo PASS_ALL_API10_SUITES')
 Path('out/legacy-smoke/run.sh').write_text('\n'.join(lines)+'\n')
 PY_RUNNER

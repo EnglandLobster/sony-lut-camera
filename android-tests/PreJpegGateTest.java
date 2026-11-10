@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 public final class PreJpegGateTest {
     private static void check(boolean b){if(!b)throw new AssertionError();}
     private static void rejects(Runnable r){try{r.run();throw new AssertionError("accepted invalid transition");}catch(IllegalStateException expected){}}

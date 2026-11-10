@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 import android.hardware.Camera;
 import java.util.LinkedHashMap;
 import java.util.Map;

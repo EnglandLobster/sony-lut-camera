@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 public final class UiModelsTest {
     private static void require(boolean value,String message){if(!value)throw new AssertionError(message);}

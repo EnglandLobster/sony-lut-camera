@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Optimization evidence is narrower than the supported capture API. */
 final class CapturePlatform {

@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 import android.os.Environment;
 import java.io.File;
 /** Sony's app data is a tiny RAM-backed partition. User content lives on SD. */

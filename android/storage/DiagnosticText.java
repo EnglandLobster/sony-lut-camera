@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Keep event size bounded and avoid exporting absolute device paths. */
 final class DiagnosticText {

@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** UI-thread ownership of approximate preview versus native physical capture.
  * Never synthesizes a shutter press or queues a photograph. */

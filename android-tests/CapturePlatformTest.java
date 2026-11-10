@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 public final class CapturePlatformTest {
     public static void main(String[] args){
         if(!CapturePlatform.saveOverlapVerified("ILCE-6300","2.01"))throw new AssertionError();

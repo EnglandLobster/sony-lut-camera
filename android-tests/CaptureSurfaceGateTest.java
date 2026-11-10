@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 public final class CaptureSurfaceGateTest {
     static void check(boolean value,String text){if(!value)throw new AssertionError(text);}

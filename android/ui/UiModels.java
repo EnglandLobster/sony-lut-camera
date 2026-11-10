@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 final class UiList {
     static int clamp(int index,int count){return count<=0?0:Math.max(0,Math.min(count-1,index));}

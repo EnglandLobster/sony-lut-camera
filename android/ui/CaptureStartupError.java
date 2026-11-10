@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** User-facing startup guidance; technical stack traces remain in the SD report. */
 final class CaptureStartupError {

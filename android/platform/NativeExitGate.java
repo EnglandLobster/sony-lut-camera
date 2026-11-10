@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** One completion may request native exit; stale callbacks after timeout cannot. */
 final class NativeExitGate {

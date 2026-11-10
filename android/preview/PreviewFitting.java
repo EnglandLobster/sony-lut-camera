@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Runs only on the library/import IO queue, before camera ownership is acquired. */
 final class PreviewFitting {

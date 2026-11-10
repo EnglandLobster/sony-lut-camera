@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 import java.lang.reflect.Method;
 
 /** Sony's OSD output precision is separate from Bitmap/Surface pixel formats.

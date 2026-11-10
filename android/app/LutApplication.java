@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Install diagnostics before any Activity, including early initialization failures. */
 public final class LutApplication extends android.app.Application {

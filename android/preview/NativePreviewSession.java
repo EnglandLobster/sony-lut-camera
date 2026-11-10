@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** All transitions belong to one UI thread. Failed restoration blocks handoff.
  * Baseline readback is a parameter check, not proof of capture-snapshot isolation.

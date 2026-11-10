@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 public final class PreviewCaptureBarrierTest {
     private static void check(boolean ok,String why){if(!ok)throw new AssertionError(why);}

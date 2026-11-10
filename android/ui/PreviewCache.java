@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 import java.util.*;
 
 /** UI-thread-owned byte-bounded LRU. Never recycles the image still on screen. */

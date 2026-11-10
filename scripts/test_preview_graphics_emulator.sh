@@ -16,7 +16,8 @@ for variant in baseline fixed; do
     stage="out/preview-graphics/$variant"
     mkdir -p "$stage/src" "$stage/classes" "$stage/dex"
     for source in DevelopingPreview DevelopTimeline ReviewGeometry; do
-        if [[ "$variant" == baseline ]]; then git show "v0.9.0-beta.7-rc.3:android/ui/$source.java" > "$stage/src/$source.java"
+        # The rc.3 baseline predates the 0.9.1 package rename; compile it in today's package.
+        if [[ "$variant" == baseline ]]; then git show "v0.9.0-beta.7-rc.3:android/ui/$source.java" | sed '1,/^package /s/^package [A-Za-z0-9_.]*;/package io.github.englandlobster.lutcamera;/' > "$stage/src/$source.java"
         else cp "android/ui/$source.java" "$stage/src/$source.java"; fi
     done
     "$java_home/bin/javac" --release 7 -Xlint:-options -encoding UTF-8 -cp "$sdk/platforms/android-36/android.jar" \
@@ -30,8 +31,8 @@ done
 cat > out/preview-graphics/run.sh <<'GUEST'
 #!/system/bin/sh
 set -e
-CLASSPATH=/data/local/tmp/preview-baseline.jar app_process /system/bin org.hongen.sonylutprobe.PreviewGraphicsRegression baseline
-CLASSPATH=/data/local/tmp/preview-fixed.jar app_process /system/bin org.hongen.sonylutprobe.PreviewGraphicsRegression fixed
+CLASSPATH=/data/local/tmp/preview-baseline.jar app_process /system/bin io.github.englandlobster.lutcamera.PreviewGraphicsRegression baseline
+CLASSPATH=/data/local/tmp/preview-fixed.jar app_process /system/bin io.github.englandlobster.lutcamera.PreviewGraphicsRegression fixed
 echo PASS_GRAPHICS_REGRESSION
 GUEST
 "$adb" -s "$serial" push out/preview-graphics/run.sh /data/local/tmp/preview-graphics.sh

@@ -11,15 +11,15 @@ python3 scripts/stage_capture_maps.py out/capture-pipeline/assets
     android/capture/CaptureStoreEvents.java android-tests/CaptureReceiptPipelineTest.java \
     android-tests/CapturePipelineTest.java android-tests/CaptureMemoryMapTest.java android-tests/CaptureStoreRpcTest.java android-tests/IndexedStoreTest.java android-tests/CapturePairCompletionTest.java \
     android-tests/LegacyDcfPredictionTest.java
-"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CapturePipelineTest
-"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureStoreRpcTest
-"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.IndexedStoreTest
-"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CapturePairCompletionTest
-"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.LegacyDcfPredictionTest
-"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureReceiptPipelineTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CapturePipelineTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureStoreRpcTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.IndexedStoreTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CapturePairCompletionTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.LegacyDcfPredictionTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureReceiptPipelineTest
 python3 scripts/test_store_receipt_dispatch.py
-"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureStoreRpcTest --write-fence out/capture-pipeline/process-fence
-"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureStoreRpcTest --read-fence out/capture-pipeline/process-fence
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureStoreRpcTest --write-fence out/capture-pipeline/process-fence
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureStoreRpcTest --read-fence out/capture-pipeline/process-fence
 python3 - <<'PY'
 from pathlib import Path
 root=Path('out/capture-pipeline')
@@ -44,10 +44,10 @@ for fixture in modern legacy partial; do
     expected=false; [[ "$fixture" == modern ]] && expected=true
     "$java_home/bin/javac" --release 7 -Xlint:-options -d "out/capture-pipeline/$fixture" \
         "out/capture-pipeline/$fixture/CameraEx.java" android/preview/NativePreviewCapability.java android-tests/NativePreviewCapabilityTest.java
-    "$java_home/bin/java" -Xmx24m -cp "out/capture-pipeline/$fixture" org.hongen.sonylutprobe.NativePreviewCapabilityTest "$expected"
+    "$java_home/bin/java" -Xmx24m -cp "out/capture-pipeline/$fixture" io.github.englandlobster.lutcamera.NativePreviewCapabilityTest "$expected"
 done
 if [[ "$#" == 0 ]]; then
-    "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureMemoryMapTest out/capture-pipeline/assets
+    "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureMemoryMapTest out/capture-pipeline/assets
 fi
 if [[ "$#" == 1 ]]; then
     python3 - "$1" <<'PY'
@@ -75,6 +75,6 @@ for row in rows:
     cases.append('\t'.join(map(str,[model,memory,pixels,str(Path(row['system'])/'etc/memmap'),filename,str(firmware).lower()])))
 Path('out/capture-pipeline/firmware-cases.tsv').write_text('\n'.join(cases)+'\n')
 PY
-    "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes org.hongen.sonylutprobe.CaptureMemoryMapTest \
+    "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureMemoryMapTest \
         out/capture-pipeline/assets out/capture-pipeline/firmware-cases.tsv
 fi

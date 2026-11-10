@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 
 /** Fit an image in physical screen coordinates, including non-square OSD pixels. */
 final class ReviewGeometry {

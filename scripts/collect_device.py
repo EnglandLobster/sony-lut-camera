@@ -12,12 +12,12 @@ commands={
  'CPUINFO.TXT':['cat','/proc/cpuinfo'],
  'MEMINFO.TXT':['cat','/proc/meminfo'],
  'PS.TXT':['ps'],
- 'APP-MEMORY.TXT':['dumpsys','meminfo','org.hongen.sonylutprobe'],
+ 'APP-MEMORY.TXT':['dumpsys','meminfo','io.github.englandlobster.lutcamera'],
  'LOGCAT.TXT':['logcat','-d','-v','threadtime','-t','400'],
  'SONYLUT-LOGCAT.TXT':['logcat','-d','-v','brief','-s','SonyLutProbe:I','*:S'],
 }
 for name in ('PROBE.TXT','PARAMS.TXT','RESULTS.JSONL'):
-    commands[name]=['run-as','org.hongen.sonylutprobe','cat','files/'+name]
+    commands[name]=['run-as','io.github.englandlobster.lutcamera','cat','files/'+name]
 status={}
 for name,cmd in commands.items():
     try:

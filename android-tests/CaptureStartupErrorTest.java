@@ -1,4 +1,4 @@
-package org.hongen.sonylutprobe;
+package io.github.englandlobster.lutcamera;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 public final class CaptureStartupErrorTest {

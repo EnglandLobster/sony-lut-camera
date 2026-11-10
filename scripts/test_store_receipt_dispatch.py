@@ -7,6 +7,7 @@ Pass --baseline-ref to require that the old source stalls on receipt 1.
 """
 import argparse
 import os
+import re
 from pathlib import Path
 import subprocess
 
@@ -17,6 +18,7 @@ args = parser.parse_args()
 os.chdir(ROOT)
 java = Path(os.environ.get('JAVA_HOME') or subprocess.check_output(
     ['/usr/libexec/java_home', '-v', '17'], text=True).strip()) / 'bin'
+PACKAGE = 'io.github.englandlobster.lutcamera'
 out = ROOT / 'out/receipt-dispatch'
 out.mkdir(parents=True, exist_ok=True)
 
@@ -30,8 +32,11 @@ for label, ref in ([('baseline', args.baseline_ref)] if args.baseline_ref else [
     start = activity.index('storeEvents=new CaptureStoreEvents(owner,new CaptureStoreEvents.Sink(){')
     end = activity.index('\n        if(!initOnly&&develops())', start)
     callback = activity[start:end]
-    (folder / 'CaptureStoreEvents.java').write_text(source('android/capture/CaptureStoreEvents.java', ref))
-    harness = '''package org.hongen.sonylutprobe;
+    # A baseline from before the package rename keeps its old declaration;
+    # compile it in the current package so it links against today's classes.
+    events = re.sub(r'^package [\w.]+;', 'package ' + PACKAGE + ';', source('android/capture/CaptureStoreEvents.java', ref), count=1, flags=re.M)
+    (folder / 'CaptureStoreEvents.java').write_text(events)
+    harness = '''package PACKAGE_NAME;
 import java.io.*;
 import java.util.*;
 public final class ReceiptDispatchReplay {
@@ -83,10 +88,10 @@ CALLBACK
         try{new ReceiptDispatchReplay().run(root,Boolean.parseBoolean(args[0]));}finally{CapturePipelineTest.remove(root);}
     }
 }
-'''.replace('CALLBACK', callback)
+'''.replace('CALLBACK', callback).replace('PACKAGE_NAME', PACKAGE)
     (folder / 'ReceiptDispatchReplay.java').write_text(harness)
     subprocess.run([str(java / 'javac'), '--release', '7', '-Xlint:-options', '-encoding', 'UTF-8',
                     '-cp', 'out/capture-pipeline/classes', '-d', str(folder),
                     str(folder / 'CaptureStoreEvents.java'), str(folder / 'ReceiptDispatchReplay.java')], check=True)
     subprocess.run([str(java / 'java'), '-Xmx24m', '-cp', str(folder) + os.pathsep + 'out/capture-pipeline/classes',
-                    'org.hongen.sonylutprobe.ReceiptDispatchReplay', str(bool(ref)).lower()], check=True)
+                    PACKAGE + '.ReceiptDispatchReplay', str(bool(ref)).lower()], check=True)

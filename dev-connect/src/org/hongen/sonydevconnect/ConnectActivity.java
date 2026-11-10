@@ -56,7 +56,8 @@ public final class ConnectActivity extends Activity {
         buttons.addView(reconnect,new LinearLayout.LayoutParams(0,-2,1));
         Button capture = new Button(this); capture.setText("打开 LUT Camera"); capture.setOnClickListener(new View.OnClickListener(){public void onClick(View v){
             if(busy||visit.exiting())return;
-            Intent next=getPackageManager().getLaunchIntentForPackage("org.hongen.sonylutprobe");
+            Intent next=getPackageManager().getLaunchIntentForPackage("io.github.englandlobster.lutcamera");
+            if(next==null)next=getPackageManager().getLaunchIntentForPackage("org.hongen.sonylutprobe"); // releases before 0.9.1
             if(next!=null)startActivity(next);else show("未安装 LUT Camera");
         }}); buttons.addView(capture,new LinearLayout.LayoutParams(0,-2,1)); page.addView(buttons); setContentView(page);
         thread = new HandlerThread("dev-connect"); thread.start(); work = new Handler(thread.getLooper()); connect();
