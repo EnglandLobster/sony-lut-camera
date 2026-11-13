@@ -46,7 +46,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         public void log(String name,String detail){event(name,detail);}
     }
     private final ViewfinderControls.Host controlHost=new ViewfinderControls.Host(){
-        public void changed(){refreshControls();}
+        public void changed(){showUserExposure();refreshControls();}
         public void hint(String text){if(productHud!=null&&!closed){productHud.showLiveHint(text);}}
         public void failed(String where,Exception error){
             Throwable root=cause(error);event("control_error",where+" "+root);
@@ -1276,8 +1276,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }
         };
         android.content.IntentFilter filter=new android.content.IntentFilter();
+        // A6300 reports the dial as key events; this specific action is a
+        // fallback. Generic hardware-state broadcasts (lens, HDMI, USB) must
+        // not be mistaken for a dial and remove the app's mode row.
         filter.addAction("com.sony.scalar.hardware.action.MODE_DIAL_CHANGED");
-        filter.addAction("com.android.server.DAConnectionManagerService.HardwareStateChanged");
         try{registerReceiver(modeDialReceiver,filter);}catch(RuntimeException e){modeDialReceiver=null;event("mode_dial_receiver_error",e.toString());}
     }
     private void unregisterModeDial(){
@@ -1309,7 +1311,12 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         productHud.panelSelected=controls.selected();productHud.panelHint=controls.panelHint();
         productHud.afVisible=controls.afVisible();productHud.afEditing=controls.afEditing();
         productHud.afX=controls.afX();productHud.afY=controls.afY();
-        // A user-set aperture/shutter is shown at once; telemetry follows.
+    }
+    /** After a user change only: show the verified aperture/shutter before
+     * telemetry reports it. Never on telemetry refreshes, which would put a
+     * stale value over one the camera changed itself (zoom aperture). */
+    private void showUserExposure(){
+        if(productHud==null||exposure==null)return;
         Map<String,String> p=exposure.parameters();
         if(p!=null){
             ManualExposure.Mode mode=exposure.mode();

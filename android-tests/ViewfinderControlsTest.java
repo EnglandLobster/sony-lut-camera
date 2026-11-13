@@ -26,6 +26,7 @@ public final class ViewfinderControlsTest {
         check(ControlLayout.input(522)==WHEEL&&ControlLayout.input(635)==WHEEL&&ControlLayout.input(648)==RING,"KURU/DIAL3/ring");
         check(ControlLayout.input(530)==null&&!ControlLayout.modeDial(530),"lens attach is not a control");
         check(ControlLayout.modeDial(572)&&ControlLayout.modeDial(624)&&ControlLayout.modeDial(537)&&!ControlLayout.modeDial(552),"PASM dial codes");
+        check(ControlLayout.modeDial(680)&&ControlLayout.modeDial(629)&&ControlLayout.dialMode(680)==null&&ControlLayout.dialName(680).equals("HFR"),"HFR and exposure-mode keys consumed");
 
         // A6300/A6000: the chosen Sony-style table.
         ControlLayout two=new ControlLayout(Arrays.asList(D1,D2));
@@ -130,6 +131,14 @@ public final class ViewfinderControlsTest {
         lf.beginPoint();lf.movePoint(1,0);lf.confirmPoint();
         check(lag.values.get("focus-point-x").equals("100"),"point commits inside flex-spot "+lag.values.get("focus-point-x"));
         lf.close();check(lag.values.get("focus-area-type").equals("multi")&&lag.values.get("focus-point-x").equals("0"),"lag restore");
+
+        // A remembered flex point in an area the camera refuses is not kept.
+        ManualExposureTest.Camera noFlex=new ManualExposureTest.Camera("program-auto");noFlex.rejectAreas.add("flex-spot");
+        noFlex.values.put("focus-point-x","300");noFlex.values.put("focus-point-y","-200");
+        FocusControls.Memory far=new FocusControls.Memory();far.area="flex-spot";far.x=800;far.y=800;
+        FocusControls nf=new FocusControls(noFlex,null);nf.open(far);
+        check(nf.x()==300&&nf.y()==-200&&nf.memory().x==300&&!nf.areas().contains("flex-spot"),"refused area keeps the camera point: "+nf.state());
+        nf.close();
 
         // No dial: mode row present and selects P/A/S/M.
         ManualExposureTest.Camera nodial=new ManualExposureTest.Camera("program-auto");

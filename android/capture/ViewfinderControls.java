@@ -76,7 +76,11 @@ final class ViewfinderControls {
                 case SETTINGS:return settings(action);
                 default:return list(action);
             }
-        }catch(Exception e){host.failed("key_"+panel,e);host.changed();return true;}
+        }catch(Exception e){
+            // A failed mode/WB write may still have moved Sony's white
+            // balance; the preview baseline must match the camera.
+            host.whiteBalanceChanged();host.failed("key_"+panel,e);host.changed();return true;
+        }
     }
     private boolean live(int action)throws Exception{
         if(action==UiKeyActions.RIGHT){open(Panel.ISO);return true;}
@@ -177,7 +181,7 @@ final class ViewfinderControls {
             String fallback=exposure.fallbackFrom();
             if(fallback!=null)host.hint("转盘档位 "+fallback+" 不可用 · 按 P 档拍摄");
             else if(changed)host.hint(modeName()+" · "+layout.hint(exposure.mode(),false));
-        }catch(Exception e){host.failed("dial_sync",e);}
+        }catch(Exception e){host.whiteBalanceChanged();host.failed("dial_sync",e);}
         host.changed();
     }
     /** Full press or half press: lists never cover a shot. */

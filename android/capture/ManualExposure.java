@@ -150,12 +150,29 @@ final class ManualExposure {
         rememberedAperture=remembered.aperture;rememberedShutter=remembered.shutter;
 
         Mode target=initial;
-        if(target==null){target=Mode.P;fallbackFrom=scene;}
-        else if(!physicalDial&&remembered.mode!=null&&supports(remembered.mode))target=remembered.mode;
-        if(target!=initial){
-            driver.write(one("scene-mode",scene(target)));wroteScene=true;
+        if(target==null){
+            // A non-P/A/S/M position must run as P; failing that is fatal.
+            target=Mode.P;fallbackFrom=scene;
+            driver.write(one("scene-mode",SCENE_P));wroteScene=true;
             p=read();
-            if(!scene(target).equals(p.get("scene-mode")))throw new IOException("exposure mode readback differs: "+scene(target));
+            if(!SCENE_P.equals(p.get("scene-mode")))throw new IOException("exposure mode readback differs: "+SCENE_P);
+        }else if(!physicalDial&&remembered.mode!=null&&supports(remembered.mode)&&remembered.mode!=initial){
+            // The remembered mode is a convenience: a refusal keeps the
+            // camera's mode instead of failing every later start.
+            final Mode wanted=remembered.mode;
+            try{
+                driver.write(one("scene-mode",scene(wanted)));wroteScene=true;
+                p=read();
+                if(!scene(wanted).equals(p.get("scene-mode")))throw new IOException("exposure mode readback "+p.get("scene-mode"));
+                target=wanted;
+            }catch(Exception e){
+                notes.add("mode");log("exposure_restore_skipped","mode "+e);
+                p=read();
+                if(!scene.equals(p.get("scene-mode"))){driver.write(one("scene-mode",scene));p=read();}
+                Mode actual=fromScene(p.get("scene-mode"));
+                if(actual==null)throw new IOException("exposure mode unrecoverable: "+p.get("scene-mode"));
+                target=actual;
+            }
         }
         mode=target;
         if("true".equals(p.get("auto-exposure-lock"))){driver.write(one("auto-exposure-lock","false"));p=read();}

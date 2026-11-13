@@ -29,8 +29,10 @@ final class CameraControlDriver implements ManualExposure.Driver,FocusControls.D
     }
 
     public void setIso(final int iso)throws Exception{
-        write(one("iso-sensitivity",Integer.toString(iso)));
-        if(Integer.toString(iso).equals(read().get("iso-sensitivity")))return;
+        try{
+            write(one("iso-sensitivity",Integer.toString(iso)));
+            if(Integer.toString(iso).equals(read().get("iso-sensitivity")))return;
+        }catch(RuntimeException e){android.util.Log.w("LutControls","iso_parameters_failed iso="+iso+" "+e);}
         // Sony's own ISO controller commits through an empty Parameters
         // object and ParametersModifier; some bodies ignore the bare key.
         modify(new Patch(){public void apply(Object m,Camera.Parameters p)throws Exception{
@@ -51,7 +53,9 @@ final class CameraControlDriver implements ManualExposure.Driver,FocusControls.D
         final boolean flex=FocusControls.FLEX.equals(area);
         Map<String,String> before=read();
         StringBuilder attempts=new StringBuilder();
-        for(int path=0;path<3;path++){
+        // The modifier path moved a flexible spot to -1000,-1000 on the
+        // A6300; it is only tried for areas without a point.
+        for(int path=0;path<(flex?2:3);path++){
             String name=path==0?"parameters":path==1?"keys":"keys_modifier";
             // Switching to a flexible spot, Sony applies the area and drops
             // the point of the same write (A6300 2026-11-13); a second write

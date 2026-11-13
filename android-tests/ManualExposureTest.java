@@ -17,6 +17,7 @@ public final class ManualExposureTest {
         /** The A6300 ignores absolute aperture/shutter writes (2026-11-12);
          * only the increment/decrement steps move them. */
         boolean acceptAbsolute;
+        final java.util.Set<String> rejectScenes=new java.util.HashSet<String>();
         Camera(String scene){
             String[] pairs={"scene-mode-values=program-auto,aperture-priority,shutter-speed,manual-exposure,auto",
                 "iso-sensitivity-values=0,100,200,400,800,1600,3200","iso-sensitivity=0",
@@ -34,6 +35,7 @@ public final class ManualExposureTest {
             writes++;
             for(Map.Entry<String,String> e:p.entrySet()){
                 String k=e.getKey(),v=e.getValue();
+                if(k.equals("scene-mode")&&rejectScenes.contains(v))continue;
                 if(k.equals("scene-mode")&&!v.equals(values.get("scene-mode"))){
                     // Sony may reset dependent fields while changing modes.
                     values.put("iso-sensitivity","0");values.put("exposure-compensation","0");values.put("whitebalance","auto");
@@ -162,6 +164,14 @@ public final class ManualExposureTest {
         ms.follow(ManualExposure.Mode.S,"S");check(modes.shutter().equals(sShutter),"S shutter returns "+modes.shutter()+" expected "+sShutter);
         ms.follow(ManualExposure.Mode.A,"A");check(modes.values.get("aperture").equals(aAperture),"A aperture returns");
         ms.close();
+
+        // A remembered mode the camera refuses is skipped; startup continues.
+        Camera noS=new Camera("program-auto");noS.rejectScenes.add("shutter-speed");
+        ManualExposure.Memory wantS=new ManualExposure.Memory();wantS.mode=ManualExposure.Mode.S;
+        ManualExposure ns=new ManualExposure(noS,null);ns.open(wantS,false);
+        check(ns.ready()&&ns.mode()==ManualExposure.Mode.P&&noS.values.get("scene-mode").equals("program-auto"),"refused remembered mode skipped");
+        check(ns.memory().mode==ManualExposure.Mode.P,"memory overwritten with the working mode");
+        ns.close();
 
         Camera unsupported=new Camera("program-auto");unsupported.values.put("iso-sensitivity-values","100,200");before=unsupported.read();
         rejected=false;try{new ManualExposure(unsupported,null).open(none(),true);}catch(Exception expected){rejected=true;}

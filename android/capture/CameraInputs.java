@@ -42,7 +42,8 @@ final class CameraInputs {
      * 2026-11-12); a body exposing per-position key status is also read. */
     static int dialPosition(){
         Integer dial=status(ControlLayout.MODE_DIAL);
-        if(dial!=null&&dial.intValue()>=ControlLayout.MODE_FIRST&&dial.intValue()<=ControlLayout.MODE_LAST)return dial.intValue();
+        if(dial!=null&&(dial.intValue()>=ControlLayout.MODE_FIRST&&dial.intValue()<=ControlLayout.MODE_LAST
+                ||dial.intValue()==ControlLayout.MODE_HFR))return dial.intValue();
         int found=-1;
         for(int code=ControlLayout.MODE_FIRST;code<=ControlLayout.MODE_LAST;code++){
             Integer value=status(code);

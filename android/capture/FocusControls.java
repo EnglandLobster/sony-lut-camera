@@ -136,8 +136,11 @@ final class FocusControls {
             // flexible spot whose point lagged is still a usable area.
             Map<String,String> now=null;try{now=driver.read();}catch(Exception ignored){}
             String actual=now==null?null:now.get("focus-area-type");
+            // Keep the camera's real point, not a remembered one that was
+            // never applied.
+            if(now!=null&&pointAvailable){x=clamp(number(now.get("focus-point-x")));y=clamp(number(now.get("focus-point-y")));}
             if(value.equals(actual)){
-                area=actual;x=clamp(number(now.get("focus-point-x")));y=clamp(number(now.get("focus-point-y")));
+                area=actual;
                 log("focus_area_point_unapplied",value+" "+root(e));
                 throw new IOException("对焦区域已切换，对焦点未更新");
             }

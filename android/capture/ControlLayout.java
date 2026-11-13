@@ -15,7 +15,7 @@ final class ControlLayout {
     enum Action { NONE, APERTURE, SHUTTER, EV, ISO }
 
     static final int DIAL1_STATUS=524,DIAL2_STATUS=527,KURU_STATUS=521,DIAL3_STATUS=633,RING_STATUS=647;
-    static final int MODE_DIAL=572,MODE_CHANGE=624,MODE_FIRST=534,MODE_LAST=551;
+    static final int MODE_DIAL=572,MODE_CHANGE=624,MODE_FIRST=534,MODE_LAST=551,MODE_HFR=680,EXPOSURE_MODE_FIRST=628,EXPOSURE_MODE_LAST=631;
 
     private final List<Input> order=new ArrayList<Input>();
 
@@ -47,7 +47,8 @@ final class ControlLayout {
     /** Physical PASM dial notifications. Sony applies the dial itself; an app
      * that leaves these keys to the framework can be closed by the launcher. */
     static boolean modeDial(int code){
-        return code==MODE_DIAL||code==MODE_CHANGE||(code>=MODE_FIRST&&code<=MODE_LAST);
+        return code==MODE_DIAL||code==MODE_CHANGE||code==MODE_HFR||(code>=MODE_FIRST&&code<=MODE_LAST)
+            ||(code>=EXPOSURE_MODE_FIRST&&code<=EXPOSURE_MODE_LAST);
     }
 
     /** Sony ISV_KEY_MODE_* dial position to an exposure mode, or null for
@@ -65,7 +66,7 @@ final class ControlLayout {
         switch(code){
             case 535:return "AUTO";case 536:return "AUTO+";case 537:return "P";case 538:return "S";case 539:return "A";case 540:return "M";
             case 541:case 550:case 551:return "MR";case 542:return "全景";case 544:return "动画";case 545:return "SCN";
-            case 547:return "连拍优先";case 548:return "闪光灯禁止";case 549:return "照片效果";
+            case 547:return "连拍优先";case 680:return "HFR";case 548:return "闪光灯禁止";case 549:return "照片效果";
             default:return "?";
         }
     }
