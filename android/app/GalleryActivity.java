@@ -105,7 +105,8 @@ public final class GalleryActivity extends Activity {
         int next=Math.max(0,Math.min(photos.size()-1,index+delta));
         if(next!=index){direction=delta>0?1:-1;index=next;original=false;load();}
     }
-    @Override public boolean dispatchKeyEvent(KeyEvent e){int k=UiKeys.key(e),dial=UiKeys.dial(e);
+    @Override public boolean dispatchKeyEvent(KeyEvent e){if(UiKeys.modeDial(e))return true; // Sony owns the PASM dial; never let it close the app.
+        int k=UiKeys.key(e),dial=UiKeys.dial(e);
         if(leaving)return true;
         if(k==UiKeys.PLAY||UiKeys.shutter(e)){
             if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)leave(true);

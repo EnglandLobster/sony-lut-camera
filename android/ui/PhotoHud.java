@@ -11,7 +11,16 @@ final class PhotoHud extends View {
     String mode="loading",name="LUT Camera",detail="正在准备拍摄",footer="",progress="",tag="";
     CaptureProgress.Stage processingStage=CaptureProgress.Stage.CAPTURE;
     boolean liveInfoVisible=true;
-    String liveExposure="",liveCompensation="+0.0 EV",qualityLabel="";
+    String liveExposure="",liveCompensation="+0.0 EV",qualityLabel="",liveMode="P",liveIso="",liveWhiteBalance="";
+    /** Viewfinder list: ISO/WB choices or focus settings. Null when closed. */
+    String panelTitle;String[] panelRows,panelValues;int panelSelected;String panelHint="";
+    /** Flexible-spot AF point in Sony's -1000..1000 frame coordinates. */
+    boolean afVisible,afEditing;int afX,afY;
+    /** Focus confirmation: 0 none, 1 in focus (green), 2 missed. Frames
+     * are Sony-reported in-focus AF frames in -1000..1000 frame space. */
+    static final int FOCUS_NONE=0,FOCUS_LOCKED=1,FOCUS_FAILED=2;
+    static final int GREEN=0xff4cd964;
+    int focusState;java.util.List<int[]> focusFrames=new java.util.ArrayList<int[]>();
     CaptureReadout readout=new CaptureReadout();
     private String liveHint="",settingsNotice="";
     private final Runnable clearSettingsNotice=new Runnable(){public void run(){settingsNotice="";invalidate();}};
@@ -124,6 +133,57 @@ final class PhotoHud extends View {
         }
         right(c,progress,w-28,409,17,CameraPage.ACCENT);
     }
+    /** The 3:2 capture frame as shown full-height in the native finder. */
+    private RectF imageFrame(float w){
+        float h=Math.min(480,w*2/3),iw=h*3/2;
+        return new RectF((w-iw)/2,(480-h)/2,(w+iw)/2,(480+h)/2);
+    }
+    private void afPoint(Canvas c,float w){
+        RectF f=imageFrame(w);
+        float cx=f.left+(afX+1000)*f.width()/2000f,cy=f.top+(afY+1000)*f.height()/2000f,r=afEditing?26:20;
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(afEditing?3:2);
+        p.setColor(0xc0000000);c.drawRect(cx-r-1,cy-r-1,cx+r+1,cy+r+1,p);
+        p.setColor(afEditing?CameraPage.ACCENT:focusState==FOCUS_LOCKED?GREEN:CameraPage.TEXT);c.drawRect(cx-r,cy-r,cx+r,cy+r,p);
+        p.setStyle(Paint.Style.FILL);
+    }
+    /** Sony-style confirmation: green frames where the camera focused and a
+     * green dot at the lower left; a miss says so in the same place. */
+    private void focusConfirmation(Canvas c,float w){
+        if(focusState==FOCUS_LOCKED){
+            RectF f=imageFrame(w);
+            p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
+            for(int[] r:focusFrames){
+                float l=f.left+(r[0]+1000)*f.width()/2000f,t=f.top+(r[1]+1000)*f.height()/2000f;
+                float rr=f.left+(r[2]+1000)*f.width()/2000f,b=f.top+(r[3]+1000)*f.height()/2000f;
+                p.setColor(0xc0000000);c.drawRect(l-1,t-1,rr+1,b+1,p);
+                p.setColor(GREEN);c.drawRect(l,t,rr,b,p);
+            }
+            p.setStyle(Paint.Style.FILL);
+            p.setColor(0xc0000000);c.drawCircle(26,428,11,p);
+            p.setColor(GREEN);c.drawCircle(26,428,9,p);
+        }else if(focusState==FOCUS_FAILED){
+            chip(c,"对焦失败",12,412,112,16,false);
+        }
+    }
+    private void panel(Canvas c,float w){
+        int rows=panelRows.length,visible=Math.min(rows,7);
+        int first=Math.max(0,Math.min(rows-visible,panelSelected-visible/2));
+        float pw=Math.min(300,w-40),left=w-pw-20,top=74,rowH=38,height=50+visible*rowH+(panelHint.length()>0?30:8);
+        p.setStyle(Paint.Style.FILL);p.setColor(0xe60d1114);c.drawRoundRect(new RectF(left,top,left+pw,top+height),8,8,p);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(CameraPage.LINE);c.drawRoundRect(new RectF(left+.5f,top+.5f,left+pw-.5f,top+height-.5f),8,8,p);
+        p.setStyle(Paint.Style.FILL);
+        text(c,fit(panelTitle==null?"":panelTitle,pw-32,17),left+16,top+30,17,CameraPage.ACCENT);
+        for(int i=0;i<visible;i++){
+            int index=first+i;boolean focus=index==panelSelected;float y=top+44+i*rowH;
+            if(focus){p.setColor(CameraPage.FOCUS);c.drawRoundRect(new RectF(left+8,y,left+pw-8,y+rowH-4),6,6,p);
+                p.setColor(CameraPage.ACCENT);c.drawRect(left+8,y+8,left+11,y+rowH-12,p);}
+            String value=panelValues==null?"":panelValues[index];
+            text(c,fit(panelRows[index],value.length()>0?pw*0.45f:pw-48,18),left+20,y+25,18,focus?CameraPage.TEXT:CameraPage.MUTED);
+            if(value.length()>0)right(c,fit(focus?"← "+value+" →":value,pw*0.5f,17),left+pw-18,y+25,17,focus?CameraPage.ACCENT:CameraPage.MUTED);
+        }
+        if(rows>visible)right(c,(panelSelected+1)+"/"+rows,left+pw-16,top+30,14,CameraPage.MUTED);
+        if(panelHint.length()>0)text(c,fit(panelHint,pw-32,14),left+16,top+height-12,14,CameraPage.MUTED);
+    }
     @Override protected void onDraw(Canvas c){float scale=getHeight()/480f;if(scale<=0)return;float w=getWidth()*pixelAspect/scale;
         c.save();c.scale(scale/pixelAspect,scale);
         boolean full=mode.equals("processing")||mode.equals("loading")||mode.equals("error");
@@ -151,13 +211,16 @@ final class PhotoHud extends View {
         }else if(mode.equals("live")){ 
             // Camera-style edge readouts, with outlined text instead of
             // full-width bars. The native preview geometry is unchanged.
+            if(afVisible)afPoint(c,w);
+            focusConfirmation(c,w);
             if(liveInfoVisible){
-                text(c,"P",14,34,24,CameraPage.ACCENT);
+                text(c,liveMode,14,34,24,CameraPage.ACCENT);
                 text(c,fit(name,w-180,18),48,31,18,CameraPage.TEXT);
                 text(c,fit(qualityLabel,w-180,16),48,55,16,CameraPage.MUTED);
                 battery(c,w-104,17);
-                String[] values={readout.shutterText(),readout.apertureText(),readout.isoText(),liveCompensation};
-                float cell=w/4;
+                String[] values={readout.shutterText(),readout.apertureText(),liveIso.length()>0?liveIso:readout.isoText(),
+                    liveCompensation,liveWhiteBalance};
+                float cell=w/values.length;
                 for(int i=0;i<values.length;i++)center(c,fit(values[i],cell-16,21),cell*(i+.5f),463,21,CameraPage.TEXT);
             }
             if(settingsNotice.length()>0){
@@ -169,6 +232,7 @@ final class PhotoHud extends View {
                 }
                 chip(c,"仅本次拍摄生效，退出后恢复",24,78+line*30,w-48,16,false);
             }
+            if(panelRows!=null)panel(c,w);
             if(liveHint.length()>0)chip(c,liveHint,12,390,w-24,16,false);
         }else{
             boolean hasDetail=detail.length()>0,hasTag=tag.length()>0;

@@ -6,11 +6,11 @@ import java.util.Map;
 
 /** Own only capture-format settings, restoring even a partially rejected write. */
 final class CaptureSetup {
-    private final SimpleExposure.Driver driver;
+    private final ParameterDriver driver;
     private final CaptureGeometry geometry;
     private Map<String,String> original;
-    CaptureSetup(SimpleExposure.Driver driver){this(driver,new CaptureGeometry(6000,4000));}
-    CaptureSetup(SimpleExposure.Driver driver,CaptureGeometry geometry){this.driver=driver;this.geometry=geometry;}
+    CaptureSetup(ParameterDriver driver){this(driver,new CaptureGeometry(6000,4000));}
+    CaptureSetup(ParameterDriver driver,CaptureGeometry geometry){this.driver=driver;this.geometry=geometry;}
     void open()throws Exception {
         if(original!=null)throw new IllegalStateException("capture settings already owned");
         Map<String,String> current=driver.read(),target=new LinkedHashMap<String,String>();

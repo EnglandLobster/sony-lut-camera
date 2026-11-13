@@ -7,7 +7,7 @@ import java.util.*;
 public final class CapturePipelineTest {
     private static File scratchParent;
     static void check(boolean value,String why){if(!value)throw new AssertionError(why);}
-    static class Driver implements SimpleExposure.Driver {
+    static class Driver implements ParameterDriver {
         final Map<String,String> values=new LinkedHashMap<String,String>();
         public Map<String,String> read(){return new LinkedHashMap<String,String>(values);}
         public void write(Map<String,String> patch){values.putAll(patch);}
