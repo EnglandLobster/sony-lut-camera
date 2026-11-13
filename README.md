@@ -10,7 +10,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform: Sony PMCA](https://img.shields.io/badge/platform-Sony%20PMCA-black)](docs/compatibility/README.md)
 
-**[⬇ 下载 v0.9.1 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.1/SonyLutCamera-v0.9.1.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.1) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
+**[⬇ 下载 v0.10.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.10.0/SonyLutCamera-v0.10.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
@@ -23,12 +23,13 @@
 - **全尺寸、最高画质**：使用本机原生比例的最大尺寸（A6300 为 6000×4000），自动选择机身支持的最高 JPEG 档位。
 - **导入自己的 LUT**：支持 2–65³ 的 `.cube`，单个文件最大 64 MiB，按内容去重。
 - **预装 10 个胶片风格 LUT**：Fuji、Ilford、Kodak、Ricoh，默认 Fuji C200，见[内置 LUT](docs/BUILTIN_LUTS.md)。
+- **手动曝光与对焦**：档位跟随机身 P/A/S/M 转盘，拨轮调光圈、快门和曝光补偿，可选 ISO、白平衡、对焦区域和自由点位置，半按合焦后显示绿框；设置会记住，退出后相机恢复原来的设置。
 - **近似实时取景**：导入时自动拟合相机原生色彩参数，取景接近成片效果；也可以改用原色取景。
 - **应用内相册**：随时切换原片和成片对比。
 
 ## 安装
 
-1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.1)下载 `SonyLutCamera-v0.9.1.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
+1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0)下载 `SonyLutCamera-v0.10.0.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
 2. 相机 USB 连接设为 MTP，用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装这个 APK。
 3. 在相机的应用程序列表里打开 **LUT Camera**。第一次打开时会把预装 LUT 写入 SD 卡，稍等片刻。
 
@@ -121,6 +122,14 @@ A6300 / A6000 这类「上拨盘 + 控制轮」的机身，拨轮按档位分工
 日志不包含照片和 LUT 内容，也不会自动上传。详见[诊断日志说明](docs/DIAGNOSTICS.md)。
 
 ## 版本动态
+
+**v0.10.0**
+
+- 新增手动曝光：档位跟随机身 P/A/S/M 转盘，拨轮按档位调光圈、快门、曝光补偿。
+- 新增 ISO（→）、白平衡（←）列表和对焦设置（↓）：移动对焦点、对焦区域、人脸优先。
+- 半按合焦后对焦框或合焦区域变绿，左下角亮绿点。
+- 档位、ISO、白平衡和对焦设置会记住；退出应用后相机恢复原来的设置。
+- 取景时左右键不再调曝光补偿，改用拨轮。
 
 **v0.9.1**
 

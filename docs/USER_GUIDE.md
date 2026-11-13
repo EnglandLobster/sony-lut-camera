@@ -1,9 +1,9 @@
 # LUT Camera 新手安装与使用教程
 
-适用：支持安装 PMCA 的 Sony 相机；当前版本 **0.9.1**。A6300 / 固件 2.01 的保存路径已实拍验证；本版修复 A6000 等旧机型停在“正在核验照片保存”的问题，尚待这些机型实拍确认。其他机型的实拍范围见[机型范围](compatibility/README.md)。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
+适用：支持安装 PMCA 的 Sony 相机；当前版本 **0.10.0**。A6300 / 固件 2.01 的保存路径和本版新增的手动曝光、对焦控制已实拍验证；A6000 等旧机型的保存确认修复和新控制尚待这些机型实拍确认。其他机型的实拍范围见[机型范围](compatibility/README.md)。先用电脑通过 USB 安装一次，以后拍摄和调色都在相机内完成。
 
-> **[直接下载 LUT Camera v0.9.1 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.9.1/SonyLutCamera-v0.9.1.apk)**
-> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.9.1) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
+> **[直接下载 LUT Camera v0.10.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.10.0/SonyLutCamera-v0.10.0.apk)**
+> [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0) 同时提供源码包、构建信息和 SHA-256 校验文件。选择 `.apk` 安装；`Source code.zip` 是源码，不能作为安装包使用。自行编译见 [构建说明](BUILD.md)。
 
 **操作路线：准备 APK 和安装工具 → 相机设为 MTP → 连接电脑 → 选择本地 APK 安装 → 相机里打开 LUT Camera。**
 
@@ -89,14 +89,14 @@ Windows 与 macOS 打开 PMCA 后，按钮名称相同：
 Windows PowerShell：
 
 ```powershell
-.\pmca-console-v0.18-win.exe install -f ".\SonyLutCamera-v0.9.1.apk"
+.\pmca-console-v0.18-win.exe install -f ".\SonyLutCamera-v0.10.0.apk"
 ```
 
 macOS 终端：
 
 ```sh
 chmod +x ./pmca-console-v0.18-osx
-./pmca-console-v0.18-osx install -f "./SonyLutCamera-v0.9.1.apk"
+./pmca-console-v0.18-osx install -f "./SonyLutCamera-v0.10.0.apk"
 ```
 
 如果使用 PMCA 的 Python 源码，则先按其 README 安装 Python 3 和 `requirements.txt` 里的依赖，再执行 `python3 pmca-console.py install -f "安装包完整路径"`。这不是新手图形安装路径的必需步骤。
@@ -198,12 +198,12 @@ TITLE "富士 3513 胶片"
 
 ## 覆盖更新
 
-**从 0.9.0-beta.9 及更早版本升级到 0.9.1：** 0.9.1 更换了应用包名，不能覆盖旧版；直接安装后相机里会出现两个名称和图标相同的 LUT Camera。请先删除旧版再安装：
+**从 0.9.0-beta.9 及更早版本升级到 0.9.1 或更新版本：** 0.9.1 更换了应用包名，不能覆盖旧版；直接安装后相机里会出现两个名称和图标相同的 LUT Camera。请先删除旧版再安装：
 
 1. 在相机的应用程序列表中打开「应用程序管理」→「管理和移除」，选择 LUT Camera 删除。
-2. 按上文步骤安装 0.9.1，打开后即可看到原来的 LUT 库。
+2. 按上文步骤安装新版，打开后即可看到原来的 LUT 库。
 
-删除应用不会删除 SD 卡上的 `SONYLUT/`（导入的 LUT、照片记录、诊断日志）、`LUTS/` 里的文件或照片。只有相机内部保存的旧诊断记录不会带到新版，SD 卡上的那份仍在。如果已经装了两个、分不清哪个是旧版，把两个都删除，再重新安装 0.9.1 即可。
+删除应用不会删除 SD 卡上的 `SONYLUT/`（导入的 LUT、照片记录、诊断日志）、`LUTS/` 里的文件或照片。只有相机内部保存的旧诊断记录不会带到新版，SD 卡上的那份仍在。如果已经装了两个、分不清哪个是旧版，把两个都删除，再重新安装新版即可。
 
 0.9.1 及以后的版本之间：退出 LUT Camera 并等待写卡结束，再按同样的 MTP 安装步骤选取新 APK。**同一签名、同一包名的版本可以直接覆盖安装**，不需要先卸载；原有导入 LUT 和照片保留。
 
@@ -213,7 +213,7 @@ TITLE "富士 3513 胶片"
 
 | 遇到的问题 | 按这个顺序检查 |
 | --- | --- |
-| Releases 页面只有源码、找不到 APK | 打开本页顶部的 v0.9.1 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
+| Releases 页面只有源码、找不到 APK | 打开本页顶部的 v0.10.0 发行链接并展开 Assets，选择 `.apk`；不要把源码压缩包改名为 `.apk`。 |
 | PMCA 没有找到相机 | 确认相机已开机 → 拔线后确认 USB 连接是 MTP → 换支持数据的线 → 直连电脑 USB 口 → 退出占用相机的程序 → 重新点击 Get camera info。 |
 | 插线后相机菜单不能操作 | 先拔 USB 线，设置 MTP 后再连接。 |
 | Finder 中没有出现 SD 卡盘符 | MTP 不是普通 U 盘模式；以 PMCA 能否读取相机信息为准。复制 LUT 或照片时可以使用读卡器。 |
