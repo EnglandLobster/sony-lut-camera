@@ -318,7 +318,8 @@ public final class LibraryActivity extends Activity {
     @Override public void onBackPressed(){if(exiting)return;if(page==null){exitToCamera();return;}if(busy)return;if(mode.equals("library")){lastSelection=selection;diagnosticExport="";mode="options";selection=0;render();}
         else if(mode.equals("notice")){if(previous.equals("loading"))exitToCamera();else action();}else if(mode.equals("help")){mode="options";selection=1;render();}else libraryPage();}
     private void moveSelection(int delta){if(page.rows.isEmpty())return;selection=UiList.move(selection,delta,page.rows.size());render();if(mode.equals("library"))requestPreview();}
-    @Override public boolean dispatchKeyEvent(KeyEvent e){if(exiting)return true;int key=UiKeys.key(e),dial=UiKeys.dial(e);if(key==UiKeys.NONE&&dial==0)return super.dispatchKeyEvent(e);if(e.getAction()!=KeyEvent.ACTION_DOWN)return true;if(page==null){if(key==UiKeys.BACK)exitToCamera();return true;}if(busy)return true;
+    @Override public boolean dispatchKeyEvent(KeyEvent e){if(UiKeys.modeDial(e))return true; // Sony owns the PASM dial; never let it close the app.
+        if(exiting)return true;int key=UiKeys.key(e),dial=UiKeys.dial(e);if(key==UiKeys.NONE&&dial==0)return super.dispatchKeyEvent(e);if(e.getAction()!=KeyEvent.ACTION_DOWN)return true;if(page==null){if(key==UiKeys.BACK)exitToCamera();return true;}if(busy)return true;
         if(key==UiKeys.PLAY){openGallery(null);}
         else if(dial!=0)moveSelection(dial);
         else if(key==UiKeys.UP||key==UiKeys.DOWN)moveSelection(key==UiKeys.UP?-1:1);

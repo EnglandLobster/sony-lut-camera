@@ -6,7 +6,7 @@ mkdir -p out/capture-pipeline/classes out/capture-pipeline/assets
 python3 scripts/stage_capture_maps.py out/capture-pipeline/assets
 "$java_home/bin/javac" --release 7 -Xlint:-options -encoding UTF-8 -d out/capture-pipeline/classes \
     android/capture/CaptureGeometry.java android/capture/CaptureMemoryMap.java \
-    android/capture/CaptureSetup.java android/capture/SimpleExposure.java android/capture/PreJpegGate.java \
+    android/capture/CaptureSetup.java android/capture/ParameterDriver.java android/capture/ManualExposure.java android/capture/FocusControls.java android/capture/ControlLayout.java android/capture/ViewfinderControls.java android/ui/UiKeyActions.java android/capture/PreJpegGate.java \
     android/capture/PhotoFiles.java android/capture/PhotoIndex.java android/capture/ArwFile.java android/capture/CaptureStoreCompletion.java android/capture/CaptureIndexQueries.java android/capture/CaptureRecoveryFence.java \
     android/capture/CaptureStoreEvents.java android-tests/CaptureReceiptPipelineTest.java \
     android-tests/CapturePipelineTest.java android-tests/CaptureMemoryMapTest.java android-tests/CaptureStoreRpcTest.java android-tests/IndexedStoreTest.java android-tests/CapturePairCompletionTest.java \

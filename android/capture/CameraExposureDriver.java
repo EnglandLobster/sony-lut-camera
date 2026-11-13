@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Sony CameraEx extends the normal Camera.Parameters map with ISO and metering. */
-final class CameraExposureDriver implements SimpleExposure.Driver {
+final class CameraExposureDriver implements ParameterDriver {
     private final Camera camera;
     CameraExposureDriver(Camera camera){this.camera=camera;}
     public Map<String,String> read(){

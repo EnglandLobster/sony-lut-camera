@@ -36,7 +36,37 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private LutLibrary.Entry selectedLut;
     private PhotoHud productHud;
     private volatile boolean developEnabledThisShot;
-    private SimpleExposure exposure;
+    private ManualExposure exposure;
+    private FocusControls focus;
+    private ViewfinderControls controls;
+    private boolean physicalDial,consumeBackRelease;
+    private android.content.BroadcastReceiver modeDialReceiver;
+    private int dialSyncRetries;
+    private final class ControlLog implements ManualExposure.Log,FocusControls.Log {
+        public void log(String name,String detail){event(name,detail);}
+    }
+    private final ViewfinderControls.Host controlHost=new ViewfinderControls.Host(){
+        public void changed(){refreshControls();}
+        public void hint(String text){if(productHud!=null&&!closed){productHud.showLiveHint(text);}}
+        public void failed(String where,Exception error){
+            Throwable root=cause(error);event("control_error",where+" "+root);
+            if(productHud!=null&&!closed)productHud.showLiveHint("设置未生效："+(root.getMessage()==null?root.getClass().getSimpleName():root.getMessage()));
+        }
+        public void whiteBalanceChanged(){if(previewDriver!=null)previewDriver.rebaseWhiteBalance();}
+    };
+    private final Runnable syncDial=new Runnable(){public void run(){
+        if(closed||controls==null)return;
+        if(workerActive||gate.state()!=PreJpegGate.State.READY||(autoPreview!=null&&autoPreview.state()!=AutoPreviewGate.State.PREVIEW
+                &&autoPreview.state()!=AutoPreviewGate.State.READY)){
+            // Never write camera settings during a capture/transition; follow later.
+            if(dialSyncRetries++<40)ui.postDelayed(this,250);else event("dial_sync_deferred_abandoned","state="+gate.state());
+            return;
+        }
+        dialSyncRetries=0;
+        int position=CameraInputs.dialPosition();
+        event("mode_dial_position","code="+position+" name="+ControlLayout.dialName(position)+" status="+CameraInputs.dialStatus());
+        controls.dialChanged(position);
+    }};
     private CaptureSetup captureSetup;
     private CaptureGeometry captureGeometry=new CaptureGeometry(6000,4000);
     private CaptureMemoryMap.Selection captureMap;
@@ -519,9 +549,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 event("quality_applied","jpeg_quality="+captureQuality+" label="+CaptureJpegQuality.label(captureQuality)+" original="+originalQuality);
             }
             if(productUi()){
-                exposure=new SimpleExposure(new CameraExposureDriver(camera));
-                try{exposure.open();}catch(Exception error){throw new IOException("automatic exposure setting failed",error);}
-                event("automatic_exposure_ready",exposure.state());
+                openControls();
                 settingsNotice=CaptureSettingsNotice.between(initialSettings,new CameraExposureDriver(camera).read());
                 if(originalColorOnly)settingsNotice+=(settingsNotice.length()>0?" · ":"")+"本机使用原色取景，照片仍应用完整 LUT";
             }
@@ -531,7 +559,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     public void changed(CaptureReadout values){
                         if(closed||destroyed||productHud==null)return;
                         productHud.readout=values;
-                        if(productHud.mode.equals("live")&&productHud.liveInfoVisible)productHud.update();
+                        if(productHud.mode.equals("live")&&productHud.liveInfoVisible)refreshControls();
                     }
                 });
                 telemetry.open(cameraEx,camera.getParameters());
@@ -1183,9 +1211,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         boolean entering=!productHud.mode.equals("live");
         productHud.setVisibility(View.VISIBLE);productHud.mode="live";
         productHud.qualityLabel="JPEG "+CaptureJpegQuality.label(captureQuality)+" · 本机最高画质";
-        productHud.liveExposure=exposure==null?"自动曝光":exposure.label();
-        productHud.liveCompensation=exposure==null?"-- EV":exposure.compensationLabel();
-        productHud.detail="自动曝光    "+productHud.liveExposure;
+        productHud.liveExposure=controls==null?"自动曝光":controls.modeName();
+        fillControls();
+        productHud.detail=productHud.liveExposure;
         productHud.footer="";productHud.progress="";
         if(previewIsolationProbe()&&isolationBarrier!=null)
             productHud.showPersistentLiveHint(isolationBarrier.captureReady()
@@ -1193,23 +1221,117 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 :"隔离测试：快门关闭 · 中央键准备拍摄");
         else if(autoPreview!=null){
             if(autoPreview.state()==AutoPreviewGate.State.PREVIEW)
-                productHud.showPersistentLiveHint("近似色彩预览 · 半按对焦，按下拍摄");
+                productHud.showPersistentLiveHint(controls!=null?controls.hint():"近似色彩预览 · 半按对焦，按下拍摄");
             else if(autoPreview.state()==AutoPreviewGate.State.WAITING||autoPreview.state()==AutoPreviewGate.State.RESTORING)
                 productHud.showPersistentLiveHint("正在准备拍摄 · 请保持半按");
             else if(autoPreview.ready())productHud.showLiveHint("已恢复拍摄原色 · 按下快门拍摄");
         }
-        else if(entering&&productHud.liveInfoVisible)productHud.showLiveHint("拨轮调亮度 · 中央归零 · ↑ 隐藏信息");
+        else if(entering&&productHud.liveInfoVisible&&controls!=null)productHud.showLiveHint(controls.hint());
         if(!settingsNoticeShown&&settingsNotice.length()>0){
             settingsNoticeShown=true;productHud.showSettingsNotice(settingsNotice);
             event("settings_notice",settingsNotice);
         }
         productHud.update();
     }
-    private void adjustExposure(int direction,boolean reset){
-        if(!active||closed||reviewing||workerActive||gate.state()!=PreJpegGate.State.READY||exposure==null)return;
-        try{exposure.adjust(direction,reset);event("exposure_adjusted",exposure.state());productLive();
-            if(!productHud.liveInfoVisible)productHud.showLiveHint(productHud.liveExposure);}
-        catch(Exception e){failure("exposure_adjust",e);}
+    private void openControls()throws Exception{
+        CameraControlDriver driver=new CameraControlDriver(cameraEx,camera);ControlLog log=new ControlLog();
+        android.content.SharedPreferences memory=getSharedPreferences("viewfinder_controls",0);
+        Boolean dial=CameraInputs.modeDial();
+        // Unknown means the app offers mode selection; a dial event turns it off.
+        physicalDial=Boolean.TRUE.equals(dial);
+        event("control_parameters",controlParameters(driver.read()));
+        exposure=new ManualExposure(driver,log);
+        try{exposure.open(ManualExposure.Memory.decode(memory.getString("exposure",null)),physicalDial);}
+        catch(Exception error){throw new IOException("exposure setting failed",error);}
+        focus=new FocusControls(driver,log);
+        try{focus.open(FocusControls.Memory.decode(memory.getString("focus",null)));}
+        catch(Exception error){event("focus_unavailable",cause(error).toString());try{focus.close();}catch(Exception ignored){}focus=null;}
+        controls=new ViewfinderControls(exposure,focus,new ControlLayout(CameraInputs.rotary()),physicalDial,controlHost);
+        event("controls_ready","inputs="+CameraInputs.describe()+" physical_dial="+dial+" "+exposure.state()+(focus==null?"":" "+focus.state()));
+        registerModeDial();
+        if(physicalDial){
+            int position=CameraInputs.dialPosition();
+            event("mode_dial_position","code="+position+" name="+ControlLayout.dialName(position)+" status="+CameraInputs.dialStatus()+" origin=open");
+            if(position>=0&&ControlLayout.dialMode(position)!=exposure.mode())controls.dialChanged(position);
+        }
+    }
+    /** Exposure/focus keys only; no image data or identity. */
+    private static String controlParameters(Map<String,String> p){
+        StringBuilder s=new StringBuilder();
+        for(Map.Entry<String,String> e:p.entrySet()){
+            String k=e.getKey();
+            if(k.contains("scene-mode")||k.contains("iso")||k.contains("aperture")||k.contains("shutter")||k.contains("exposure")
+                    ||k.contains("whitebalance")||k.contains("focus")||k.contains("face")||k.contains("af-")||k.contains("ae-")
+                    ||k.contains("metering")||k.contains("shooting-preview")||k.contains("drive"))
+                s.append(k).append('=').append(e.getValue()).append(';');
+        }
+        return s.toString();
+    }
+    private void registerModeDial(){
+        if(modeDialReceiver!=null)return;
+        modeDialReceiver=new android.content.BroadcastReceiver(){
+            @Override public void onReceive(android.content.Context c,android.content.Intent intent){
+                event("mode_dial_broadcast",String.valueOf(intent.getAction())+" extras="+(intent.getExtras()==null?"":intent.getExtras().keySet()));
+                dialMoved();
+            }
+        };
+        android.content.IntentFilter filter=new android.content.IntentFilter();
+        filter.addAction("com.sony.scalar.hardware.action.MODE_DIAL_CHANGED");
+        filter.addAction("com.android.server.DAConnectionManagerService.HardwareStateChanged");
+        try{registerReceiver(modeDialReceiver,filter);}catch(RuntimeException e){modeDialReceiver=null;event("mode_dial_receiver_error",e.toString());}
+    }
+    private void unregisterModeDial(){
+        if(modeDialReceiver==null)return;
+        try{unregisterReceiver(modeDialReceiver);}catch(RuntimeException ignored){}
+        modeDialReceiver=null;
+    }
+    private void dialMoved(){
+        if(controls==null)return;
+        if(!physicalDial){physicalDial=true;controls.physicalDial(true);event("physical_dial_detected","source=event");}
+        dialSyncRetries=0;ui.removeCallbacks(syncDial);
+        // Sony applies the new position asynchronously; read it shortly after.
+        ui.postDelayed(syncDial,150);
+    }
+    /** Dials may run while half-pressed; lists and settings only in live view. */
+    private boolean controlsAdjustable(boolean held){
+        if(controls==null||!active||closed||reviewing||workerActive||gate.state()!=PreJpegGate.State.READY)return false;
+        if(autoPreview==null)return true;
+        AutoPreviewGate.State state=autoPreview.state();
+        return state==AutoPreviewGate.State.PREVIEW||(held&&state==AutoPreviewGate.State.READY);
+    }
+    private void fillControls(){
+        if(productHud==null||controls==null)return;
+        productHud.liveMode=controls.modeLabel();
+        productHud.liveIso=controls.isoText(productHud.readout.autoIso);
+        productHud.liveCompensation=controls.compensationText();
+        productHud.liveWhiteBalance=controls.whiteBalanceText();
+        productHud.panelTitle=controls.title();productHud.panelRows=controls.rowLabels();productHud.panelValues=controls.rowValues();
+        productHud.panelSelected=controls.selected();productHud.panelHint=controls.panelHint();
+        productHud.afVisible=controls.afVisible();productHud.afEditing=controls.afEditing();
+        productHud.afX=controls.afX();productHud.afY=controls.afY();
+        // A user-set aperture/shutter is shown at once; telemetry follows.
+        Map<String,String> p=exposure.parameters();
+        if(p!=null){
+            ManualExposure.Mode mode=exposure.mode();
+            if(mode==ManualExposure.Mode.A||mode==ManualExposure.Mode.M){int v=ManualExposure.number(p.get("aperture"));if(v>0)productHud.readout.aperture=v;}
+            if(mode==ManualExposure.Mode.S||mode==ManualExposure.Mode.M){
+                int n=ManualExposure.number(p.get("shutter-speed-nume")),d=ManualExposure.number(p.get("shutter-speed-deno"));
+                if(n>0&&d>0){productHud.readout.shutterNumerator=n;productHud.readout.shutterDenominator=d;}
+            }
+        }
+    }
+    private void refreshControls(){
+        if(productHud==null||closed)return;
+        fillControls();
+        if(productHud.mode.equals("live")){productHud.liveExposure=controls==null?"自动曝光":controls.modeName();productHud.detail=productHud.liveExposure;}
+        productHud.update();
+    }
+    private void saveControlMemory(){
+        if(exposure==null||!exposure.ready())return;
+        android.content.SharedPreferences.Editor edit=getSharedPreferences("viewfinder_controls",0).edit();
+        edit.putString("exposure",exposure.memory().encode());
+        if(focus!=null)edit.putString("focus",focus.memory().encode());
+        if(!edit.commit())event("control_memory_error","commit failed");
     }
     private void clearOriginalReview(){showingOriginal=false;}
     private void maybeOpenGallery(){
@@ -1271,9 +1393,15 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         release(retainedImage);retainedImage=null;
         if(filter!=null)try{filter.getClass().getMethod("release").invoke(filter);}catch(Throwable e){cleanupFailed=true;event("filter_release_error",cause(e).toString());}filter=null;
         for(Object value:new Object[]{sequence,cameraEx})if(value!=null){
-            if(value==cameraEx&&exposure!=null){try{
-                exposure.close();event("exposure_restored","original settings readback matched");exposure=null;
-            }catch(Exception e){event("exposure_restore_error",cause(e).toString());}}
+            if(value==cameraEx&&exposure!=null){
+                ui.removeCallbacks(syncDial);unregisterModeDial();saveControlMemory();controls=null;
+                if(focus!=null)try{focus.close();event("focus_restored","original settings readback matched");}
+                catch(Exception e){event("focus_restore_error",cause(e).toString());}
+                focus=null;
+                try{exposure.close();event("exposure_restored","original settings readback matched");}
+                catch(Exception e){event("exposure_restore_error",cause(e).toString());}
+                exposure=null;
+            }
             if(value==cameraEx&&originalQuality!=null){try{
                 Camera.Parameters restore=camera.getParameters();restore.set("jpeg-quality",originalQuality);camera.setParameters(restore);
                 event("quality_restored","jpeg_quality="+camera.getParameters().get("jpeg-quality"));originalQuality=null;
@@ -1364,6 +1492,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         close();
     }}
     @Override public boolean dispatchKeyEvent(KeyEvent e){int key=e.getKeyCode(),scan=e.getScanCode();
+        if(productUi()&&UiKeys.modeDial(e)){
+            // Sony applies the PASM dial itself. Leaving the key to the
+            // framework can close a third-party app; follow the readback.
+            if(e.getAction()==KeyEvent.ACTION_DOWN){event("mode_dial_key","key="+key+" scan="+scan);dialMoved();}
+            return true;
+        }
+        if(productUi()&&controls!=null&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0
+                &&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS)&&controls.panelOpen())controls.shutter();
         if(automaticNativePreview()&&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS||key==772||scan==772||key==774||scan==774)){
             if(autoPreview==null){
                 if(gate.state()!=PreJpegGate.State.READY)return true;
@@ -1409,6 +1545,23 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 }
                 return true;
             }
+            ControlLayout.Input rotary=UiKeys.rotary(e);
+            if(rotary!=null&&controls!=null){
+                if(e.getAction()==KeyEvent.ACTION_DOWN){
+                    if(controlsAdjustable(!controls.panelOpen()))controls.rotate(rotary,UiKeys.rotaryDirection(e));
+                    else event("control_ignored","rotary="+rotary+" gate="+gate.state()+" preview="+(autoPreview==null?"none":autoPreview.state()));
+                }
+                return true;
+            }
+            if(action==UiKeys.BACK&&e.getAction()==KeyEvent.ACTION_UP&&consumeBackRelease){consumeBackRelease=false;return true;}
+            if(controls!=null&&controls.panelOpen()&&action!=UiKeys.NONE){
+                if(e.getAction()==KeyEvent.ACTION_DOWN&&(e.getRepeatCount()==0||action!=UiKeys.OK&&action!=UiKeys.BACK)){
+                    // MENU closes the list; its release must not also leave the viewfinder.
+                    if(action==UiKeys.BACK)consumeBackRelease=true;
+                    if(controlsAdjustable(false))controls.press(action);else controls.closePanel();
+                }
+                return true;
+            }
             if(action==UiKeys.UP){
                 if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0&&gate.state()==PreJpegGate.State.READY){
                     productHud.liveInfoVisible=!productHud.liveInfoVisible;productHud.hideLiveHint();productHud.update();
@@ -1416,13 +1569,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 }
                 return true;
             }
-            if(dial!=0){
-                if(e.getAction()==KeyEvent.ACTION_DOWN)adjustExposure(dial,false);
-                return true;
-            }
-            if(action==UiKeys.LEFT||action==UiKeys.RIGHT||action==UiKeys.OK){
-                if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0){
-                    adjustExposure(action==UiKeys.LEFT?-1:1,action==UiKeys.OK);
+            if(action==UiKeys.LEFT||action==UiKeys.RIGHT||action==UiKeys.OK||action==UiKeys.DOWN){
+                if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0&&controls!=null){
+                    if(controlsAdjustable(false))controls.press(action);
+                    else event("control_ignored","action="+action+" gate="+gate.state()+" preview="+(autoPreview==null?"none":autoPreview.state()));
                 }
                 return true;
             }

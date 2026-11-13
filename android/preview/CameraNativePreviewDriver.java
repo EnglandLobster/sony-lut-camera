@@ -86,6 +86,14 @@ final class CameraNativePreviewDriver implements NativePreviewSession.Driver {
         for(String key:KEYS)if(!key.startsWith("rgb-matrix")&&!equal(baseline.get(key),p.get(key)))
             throw new IOException("preview changed protected field "+key);
     }
+    /** A user white-balance choice is a new capture baseline, not a preview
+     * write. Called by the exposure controls after a verified WB change. */
+    void rebaseWhiteBalance(){
+        Camera.Parameters p=camera.getParameters();
+        for(String key:new String[]{"whitebalance","light-balance-for-white-balance","color-compensation-for-white-balance"})
+            if(baseline.containsKey(key))baseline.put(key,p.get(key));
+        android.util.Log.i("NativePreview","baseline_rebased whitebalance="+p.get("whitebalance"));
+    }
     public void verifyBaseline()throws Exception{
         Camera.Parameters p=camera.getParameters();
         for(String key:KEYS)if(!equal(baseline.get(key),p.get(key)))throw new IOException("baseline mismatch "+key);

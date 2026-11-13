@@ -1,7 +1,8 @@
 package io.github.englandlobster.lutcamera;
 import android.view.KeyEvent;
 final class UiKeys {
-    static final int NONE=0,UP=1,DOWN=2,LEFT=3,RIGHT=4,OK=5,BACK=6,PLAY=7;
+    static final int NONE=UiKeyActions.NONE,UP=UiKeyActions.UP,DOWN=UiKeyActions.DOWN,LEFT=UiKeyActions.LEFT,
+        RIGHT=UiKeyActions.RIGHT,OK=UiKeyActions.OK,BACK=UiKeyActions.BACK,PLAY=UiKeyActions.PLAY;
     // Sony AppRoot.USER_KEYCODE: DIAL1 and DIAL2 left/right. These are
     // incremental controls, distinct from the physical P/A/S/M mode dial.
     static int dial(KeyEvent e){int k=e.getKeyCode(),s=e.getScanCode();
@@ -9,6 +10,17 @@ final class UiKeys {
         if(k==525||k==528||s==525||s==528)return 1;
         return 0;
     }
+    /** Rotary input (DIAL1/DIAL2/control wheel/ring) or null. */
+    static ControlLayout.Input rotary(KeyEvent e){
+        ControlLayout.Input input=ControlLayout.input(e.getScanCode());
+        return input!=null?input:ControlLayout.input(e.getKeyCode());
+    }
+    static int rotaryDirection(KeyEvent e){
+        int d=ControlLayout.direction(e.getScanCode());
+        return d!=0?d:ControlLayout.direction(e.getKeyCode());
+    }
+    /** Physical PASM dial notification; must be consumed, see ControlLayout. */
+    static boolean modeDial(KeyEvent e){return ControlLayout.modeDial(e.getScanCode())||ControlLayout.modeDial(e.getKeyCode());}
     static int key(KeyEvent e){int k=e.getKeyCode(),s=e.getScanCode();
         if(k==207||s==207)return PLAY;
         if(k==KeyEvent.KEYCODE_DPAD_UP||s==103)return UP;

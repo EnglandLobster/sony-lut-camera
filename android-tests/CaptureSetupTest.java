@@ -6,7 +6,7 @@ import java.io.File;
 import java.util.*;
 
 public final class CaptureSetupTest {
-    static class Driver implements SimpleExposure.Driver {
+    static class Driver implements ParameterDriver {
         final Map<String,String> values=new LinkedHashMap<String,String>();
         boolean reject,partial;int writes;
         Driver(){values.put("drive-mode","burst");values.put("drive-mode-values","single,burst,bracket");
