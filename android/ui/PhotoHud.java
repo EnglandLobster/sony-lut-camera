@@ -16,6 +16,11 @@ final class PhotoHud extends View {
     String panelTitle;String[] panelRows,panelValues;int panelSelected;String panelHint="";
     /** Flexible-spot AF point in Sony's -1000..1000 frame coordinates. */
     boolean afVisible,afEditing;int afX,afY;
+    /** Focus confirmation: 0 none, 1 in focus (green), 2 missed. Frames
+     * are Sony-reported in-focus AF frames in -1000..1000 frame space. */
+    static final int FOCUS_NONE=0,FOCUS_LOCKED=1,FOCUS_FAILED=2;
+    static final int GREEN=0xff4cd964;
+    int focusState;java.util.List<int[]> focusFrames=new java.util.ArrayList<int[]>();
     CaptureReadout readout=new CaptureReadout();
     private String liveHint="",settingsNotice="";
     private final Runnable clearSettingsNotice=new Runnable(){public void run(){settingsNotice="";invalidate();}};
@@ -138,8 +143,27 @@ final class PhotoHud extends View {
         float cx=f.left+(afX+1000)*f.width()/2000f,cy=f.top+(afY+1000)*f.height()/2000f,r=afEditing?26:20;
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(afEditing?3:2);
         p.setColor(0xc0000000);c.drawRect(cx-r-1,cy-r-1,cx+r+1,cy+r+1,p);
-        p.setColor(afEditing?CameraPage.ACCENT:CameraPage.TEXT);c.drawRect(cx-r,cy-r,cx+r,cy+r,p);
+        p.setColor(afEditing?CameraPage.ACCENT:focusState==FOCUS_LOCKED?GREEN:CameraPage.TEXT);c.drawRect(cx-r,cy-r,cx+r,cy+r,p);
         p.setStyle(Paint.Style.FILL);
+    }
+    /** Sony-style confirmation: green frames where the camera focused and a
+     * green dot at the lower left; a miss says so in the same place. */
+    private void focusConfirmation(Canvas c,float w){
+        if(focusState==FOCUS_LOCKED){
+            RectF f=imageFrame(w);
+            p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
+            for(int[] r:focusFrames){
+                float l=f.left+(r[0]+1000)*f.width()/2000f,t=f.top+(r[1]+1000)*f.height()/2000f;
+                float rr=f.left+(r[2]+1000)*f.width()/2000f,b=f.top+(r[3]+1000)*f.height()/2000f;
+                p.setColor(0xc0000000);c.drawRect(l-1,t-1,rr+1,b+1,p);
+                p.setColor(GREEN);c.drawRect(l,t,rr,b,p);
+            }
+            p.setStyle(Paint.Style.FILL);
+            p.setColor(0xc0000000);c.drawCircle(26,428,11,p);
+            p.setColor(GREEN);c.drawCircle(26,428,9,p);
+        }else if(focusState==FOCUS_FAILED){
+            chip(c,"对焦失败",12,412,112,16,false);
+        }
     }
     private void panel(Canvas c,float w){
         int rows=panelRows.length,visible=Math.min(rows,7);
@@ -188,6 +212,7 @@ final class PhotoHud extends View {
             // Camera-style edge readouts, with outlined text instead of
             // full-width bars. The native preview geometry is unchanged.
             if(afVisible)afPoint(c,w);
+            focusConfirmation(c,w);
             if(liveInfoVisible){
                 text(c,liveMode,14,34,24,CameraPage.ACCENT);
                 text(c,fit(name,w-180,18),48,31,18,CameraPage.TEXT);

@@ -98,6 +98,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }};
     private volatile String startupFailure;
     private CaptureTelemetry telemetry;
+    private final FocusFeedback focusFeedback=new FocusFeedback();
+    private FocusNotifications focusNotifications;
     private int pendingReceipts;
     private long recordedPairShot=-1;
     private boolean showingOriginal;
@@ -563,6 +565,11 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     }
                 });
                 telemetry.open(cameraEx,camera.getParameters());
+                focusFeedback.clear();
+                focusNotifications=new FocusNotifications(ui,focusFeedback,new FocusNotifications.Observer(){
+                    public void changed(){showFocus();}
+                });
+                focusNotifications.open(cameraEx);
             }
             event("preview_request_begin","");camera.setPreviewDisplay(holder);camera.startPreview();event("preview_request_done","");
             ui.postDelayed(new Runnable(){public void run(){if(!closed&&gate.state()==PreJpegGate.State.NEW){
@@ -1209,6 +1216,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void productLive(){
         if(productHud==null)return;
         boolean entering=!productHud.mode.equals("live");
+        // A confirmation from the previous shot never carries into a new view.
+        if(entering){focusFeedback.clear();productHud.focusState=PhotoHud.FOCUS_NONE;productHud.focusFrames=new java.util.ArrayList<int[]>();}
         productHud.setVisibility(View.VISIBLE);productHud.mode="live";
         productHud.qualityLabel="JPEG "+CaptureJpegQuality.label(captureQuality)+" · 本机最高画质";
         productHud.liveExposure=controls==null?"自动曝光":controls.modeName();
@@ -1333,6 +1342,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(productHud.mode.equals("live")){productHud.liveExposure=controls==null?"自动曝光":controls.modeName();productHud.detail=productHud.liveExposure;}
         productHud.update();
     }
+    private void showFocus(){
+        if(closed||destroyed||productHud==null)return;
+        FocusFeedback.State state=focusFeedback.state();
+        int next=state==FocusFeedback.State.LOCKED?PhotoHud.FOCUS_LOCKED:state==FocusFeedback.State.FAILED?PhotoHud.FOCUS_FAILED:PhotoHud.FOCUS_NONE;
+        if(next==productHud.focusState&&next!=PhotoHud.FOCUS_LOCKED)return;
+        productHud.focusState=next;productHud.focusFrames=focusFeedback.lockedFrames();
+        if(productHud.mode.equals("live"))productHud.invalidate();
+    }
     private void saveControlMemory(){
         if(exposure==null||!exposure.ready())return;
         android.content.SharedPreferences.Editor edit=getSharedPreferences("viewfinder_controls",0).edit();
@@ -1397,6 +1414,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             catch(Exception e){event("isolation_restore_error",cause(e).toString());}
         if(productHud!=null)productHud.endDeveloping();
         if(telemetry!=null){telemetry.close();telemetry=null;}
+        if(focusNotifications!=null){focusNotifications.close();focusNotifications=null;}
         release(retainedImage);retainedImage=null;
         if(filter!=null)try{filter.getClass().getMethod("release").invoke(filter);}catch(Throwable e){cleanupFailed=true;event("filter_release_error",cause(e).toString());}filter=null;
         for(Object value:new Object[]{sequence,cameraEx})if(value!=null){
