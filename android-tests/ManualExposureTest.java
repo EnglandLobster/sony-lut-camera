@@ -14,6 +14,9 @@ public final class ManualExposureTest {
     static class Camera implements ManualExposure.Driver,FocusControls.Driver {
         final Map<String,String> values=new LinkedHashMap<String,String>();
         boolean ignoreIso,ignoreWb;int writes;
+        /** The A6300 ignores absolute aperture/shutter writes (2026-11-12);
+         * only the increment/decrement steps move them. */
+        boolean acceptAbsolute;
         Camera(String scene){
             String[] pairs={"scene-mode-values=program-auto,aperture-priority,shutter-speed,manual-exposure,auto",
                 "iso-sensitivity-values=0,100,200,400,800,1600,3200","iso-sensitivity=0",
@@ -37,6 +40,7 @@ public final class ManualExposureTest {
                 }
                 if(k.equals("iso-sensitivity")&&ignoreIso)continue;
                 if(k.equals("whitebalance")&&ignoreWb)continue;
+                if((k.equals("aperture")||k.startsWith("shutter-speed-"))&&!acceptAbsolute)continue;
                 if(k.equals("aperture")&&!APERTURES.contains(v))continue;
                 values.put(k,v);
             }
@@ -138,8 +142,26 @@ public final class ManualExposureTest {
         // Remembered value the camera refuses is skipped, not fatal.
         Camera refuse=new Camera("aperture-priority");ManualExposure.Memory bad=new ManualExposure.Memory();bad.aperture="9999";bad.iso=400;
         refuse.ignoreIso=true;ManualExposure r=new ManualExposure(refuse,null);r.open(bad,true);
-        check(r.ready()&&refuse.values.get("aperture").equals("560")&&r.iso()==0,"refused memory skipped");
+        check(r.ready()&&refuse.values.get("aperture").equals("800")&&r.iso()==0,"unreachable aperture stops at the closest step: "+refuse.values.get("aperture"));
         r.close();
+
+        // Remembered values are walked with Sony's steps from either side,
+        // reversing when the body's step direction is the opposite guess.
+        Camera walkA=new Camera("aperture-priority");ManualExposure.Memory wa=new ManualExposure.Memory();wa.aperture="320";
+        ManualExposure w=new ManualExposure(walkA,null);w.open(wa,true);
+        check(walkA.values.get("aperture").equals("320"),"aperture walked down "+walkA.values.get("aperture"));
+        w.close();check(walkA.values.get("aperture").equals("560"),"original A aperture walked back");
+        Camera walkS=new Camera("shutter-speed");ManualExposure.Memory ws=new ManualExposure.Memory();ws.shutter="1/30";
+        ManualExposure w2=new ManualExposure(walkS,null);w2.open(ws,true);
+        check(walkS.shutter().equals("1/30"),"shutter walked slower "+walkS.shutter());
+        w2.close();check(walkS.shutter().equals("1/125"),"original S shutter walked back "+walkS.shutter());
+        // S -> M -> S within a session keeps each mode's own shutter.
+        Camera modes=new Camera("shutter-speed");ManualExposure ms=new ManualExposure(modes,null);ms.open(none(),true);
+        ms.step(ControlLayout.Action.SHUTTER,2);String sShutter=modes.shutter();
+        ms.follow(ManualExposure.Mode.A,"A");ms.step(ControlLayout.Action.APERTURE,-2);String aAperture=modes.values.get("aperture");
+        ms.follow(ManualExposure.Mode.S,"S");check(modes.shutter().equals(sShutter),"S shutter returns "+modes.shutter()+" expected "+sShutter);
+        ms.follow(ManualExposure.Mode.A,"A");check(modes.values.get("aperture").equals(aAperture),"A aperture returns");
+        ms.close();
 
         Camera unsupported=new Camera("program-auto");unsupported.values.put("iso-sensitivity-values","100,200");before=unsupported.read();
         rejected=false;try{new ManualExposure(unsupported,null).open(none(),true);}catch(Exception expected){rejected=true;}

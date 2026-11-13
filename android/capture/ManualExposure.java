@@ -179,23 +179,68 @@ final class ManualExposure {
     }
     /** Absolute aperture/shutter of the remembered session for A/S/M. */
     private void reapplyModeValues(){
-        if((mode==Mode.A||mode==Mode.M)&&rememberedAperture!=null&&!rememberedAperture.equals(last.get("aperture")))
-            attempt("aperture",new Step(){public void run()throws Exception{
-                driver.write(one("aperture",rememberedAperture));
-                if(!rememberedAperture.equals(read().get("aperture")))throw new IOException("aperture readback "+last.get("aperture"));
-            }});
-        if((mode==Mode.S||mode==Mode.M)&&rememberedShutter!=null){
-            final String[] parts=rememberedShutter.split("/");
-            if(parts.length==2&&!(parts[0].equals(last.get("shutter-speed-nume"))&&parts[1].equals(last.get("shutter-speed-deno"))))
-                attempt("shutter",new Step(){public void run()throws Exception{
-                    Map<String,String> patch=new LinkedHashMap<String,String>();
-                    patch.put("shutter-speed-nume",parts[0]);patch.put("shutter-speed-deno",parts[1]);driver.write(patch);
-                    Map<String,String> r=read();
-                    if(!parts[0].equals(r.get("shutter-speed-nume"))||!parts[1].equals(r.get("shutter-speed-deno")))
-                        throw new IOException("shutter readback "+r.get("shutter-speed-nume")+"/"+r.get("shutter-speed-deno"));
-                }});
-        }
+        if((mode==Mode.A||mode==Mode.M)&&rememberedAperture!=null)
+            attempt("aperture",new Step(){public void run()throws Exception{moveAperture(rememberedAperture);}});
+        if((mode==Mode.S||mode==Mode.M)&&rememberedShutter!=null)
+            attempt("shutter",new Step(){public void run()throws Exception{moveShutter(rememberedShutter);}});
     }
+
+    // ---- absolute aperture/shutter through Sony's steps ---------------------------
+    /** The A6300 ignores absolute aperture and shutter writes (readback kept
+     * the old value, 2026-11-12), so absolute targets are reached with the
+     * same increment/decrement steps the dials use. */
+    private interface Reading { double of(Map<String,String> p); }
+    private interface Stepper { void step(int direction) throws Exception; }
+    private static final int WALK_LIMIT=60;
+    static double apertureValue(Map<String,String> p){int v=number(p.get("aperture"));return v>0?v:Double.NaN;}
+    static double shutterSeconds(Map<String,String> p){
+        int n=number(p.get("shutter-speed-nume")),d=number(p.get("shutter-speed-deno"));
+        return n>0&&d>0?(double)n/d:Double.NaN;
+    }
+    void moveAperture(String target)throws Exception{
+        int value=number(target);
+        if(value<=0)throw new IOException("invalid aperture "+target);
+        walk("aperture",value,new Reading(){public double of(Map<String,String> p){return apertureValue(p);}},
+            new Stepper(){public void step(int d)throws Exception{driver.stepAperture(d);}});
+    }
+    void moveShutter(String target)throws Exception{
+        String[] parts=target.split("/");
+        int n=parts.length==2?number(parts[0]):0,d=parts.length==2?number(parts[1]):0;
+        if(n<=0||d<=0)throw new IOException("invalid shutter "+target);
+        walk("shutter",(double)n/d,new Reading(){public double of(Map<String,String> p){return shutterSeconds(p);}},
+            new Stepper(){public void step(int dir)throws Exception{driver.stepShutter(dir);}});
+    }
+    private static boolean same(double a,double b){return Math.abs(a-b)<=Math.abs(b)*1e-6;}
+    /** Steps toward the target, reversing once if the first guess moved
+     * away (the step direction is body-defined). Stops at the target, at a
+     * lens or range limit, or after passing a target the body does not
+     * offer; the last two are reported for the log, never retried. */
+    private void walk(String what,double target,Reading reading,Stepper stepper)throws Exception{
+        double now=reading.of(read());
+        if(Double.isNaN(now))throw new IOException(what+" unreadable");
+        if(same(now,target))return;
+        int direction=target>now?1:-1;boolean reversed=false;
+        for(int i=0;i<WALK_LIMIT;i++){
+            stepper.step(direction);
+            double next=reading.of(read());
+            if(Double.isNaN(next))throw new IOException(what+" unreadable after step");
+            if(same(next,target))return;
+            if(same(next,now)){
+                if(reversed)break;
+                direction=-direction;reversed=true;continue; // limit in the guessed direction
+            }
+            boolean away=Math.abs(next-target)>Math.abs(now-target),passed=(now-target)*(next-target)<0;
+            double previous=now;now=next;
+            if(passed||away&&reversed){
+                // Leave the closer of the last two values.
+                if(Math.abs(previous-target)<Math.abs(now-target)){stepper.step(-direction);now=reading.of(read());}
+                break;
+            }
+            if(away){direction=-direction;reversed=true;}
+        }
+        throw new IOException(what+" stopped at "+now+" target "+target);
+    }
+
     private void parseIso(Map<String,String> p)throws IOException{
         isoValues.clear();
         for(String raw:required(p,"iso-sensitivity-values").split(",")){
@@ -420,7 +465,15 @@ final class ManualExposure {
         restore.remove("scene-mode");
         if(dialMoved){restore.remove("aperture");restore.remove("shutter-speed-nume");restore.remove("shutter-speed-deno");}
         String savedIso=restore.remove("iso-sensitivity");
+        String savedAperture=restore.remove("aperture");
+        String savedNume=restore.remove("shutter-speed-nume"),savedDeno=restore.remove("shutter-speed-deno");
         if(!restore.isEmpty())driver.write(restore);
+        // Absolute aperture/shutter are walked; the readback below reports
+        // a value the lens or body could not reach.
+        if(savedAperture!=null)try{moveAperture(savedAperture);}catch(Exception e){log("exposure_restore_walk","aperture "+e);}
+        if(savedNume!=null&&savedDeno!=null)try{moveShutter(savedNume+"/"+savedDeno);}catch(Exception e){log("exposure_restore_walk","shutter "+e);}
+        if(savedAperture!=null)restore.put("aperture",savedAperture);
+        if(savedNume!=null){restore.put("shutter-speed-nume",savedNume);restore.put("shutter-speed-deno",savedDeno);}
         if(savedIso!=null&&number(driver.read().get("iso-sensitivity"))!=number(savedIso))driver.setIso(number(savedIso));
         Map<String,String> readback=driver.read();
         if(savedIso!=null)restore.put("iso-sensitivity",savedIso);
