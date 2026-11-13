@@ -20,7 +20,8 @@ final class ViewfinderControls {
         /** A verified WB write: the preview baseline must follow it. */
         void whiteBalanceChanged();
     }
-    enum Panel { NONE, ISO, WB, SETTINGS, POINT }
+    /** CHOICE is the option list of one settings row (area, face, mode). */
+    enum Panel { NONE, ISO, WB, SETTINGS, CHOICE, POINT }
     private enum Row { POINT, AREA, FACE, MODE }
 
     private final ManualExposure exposure;
@@ -32,6 +33,8 @@ final class ViewfinderControls {
     private int selected;
     private boolean alternate;
     private final List<Row> rows=new ArrayList<Row>();
+    private Row choiceRow;private int settingsSelected;
+    private final List<String> choices=new ArrayList<String>();
 
     ViewfinderControls(ManualExposure exposure,FocusControls focus,ControlLayout layout,boolean physicalDial,Host host){
         this.exposure=exposure;this.focus=focus;this.layout=layout;this.physicalDial=physicalDial;this.host=host;
@@ -74,6 +77,7 @@ final class ViewfinderControls {
                 case NONE:return live(action);
                 case POINT:return point(action);
                 case SETTINGS:return settings(action);
+                case CHOICE:return choice(action);
                 default:return list(action);
             }
         }catch(Exception e){
@@ -116,6 +120,7 @@ final class ViewfinderControls {
             case ISO:return exposure.isoValues().size();
             case WB:return exposure.whiteBalanceValues().size();
             case SETTINGS:return rows.size();
+            case CHOICE:return choices.size();
             default:return 0;
         }
     }
@@ -141,10 +146,14 @@ final class ViewfinderControls {
         if(action==UiKeyActions.DOWN){move(1);return true;}
         if(action==UiKeyActions.BACK){closePanel();return true;}
         Row row=rows.get(selected);
-        if(action==UiKeyActions.OK&&row==Row.POINT){
-            focus.beginPoint();panel=Panel.POINT;host.changed();return true;
+        // Sony-style: centre opens the row (its option list, or the point
+        // editor); left/right is the quick change without opening it.
+        if(action==UiKeyActions.OK){
+            if(row==Row.POINT){focus.beginPoint();panel=Panel.POINT;}
+            else openChoice(row);
+            host.changed();return true;
         }
-        int direction=action==UiKeyActions.LEFT?-1:action==UiKeyActions.RIGHT||action==UiKeyActions.OK?1:0;
+        int direction=action==UiKeyActions.LEFT?-1:action==UiKeyActions.RIGHT?1:0;
         if(direction==0)return true;
         if(row==Row.AREA){
             List<String> areas=focus.areas();int i=areas.indexOf(focus.area());
@@ -160,13 +169,45 @@ final class ViewfinderControls {
         }
         host.changed();return true;
     }
+    private void openChoice(Row row){
+        choices.clear();String current;
+        if(row==Row.AREA){choices.addAll(focus.areas());current=focus.area();}
+        else if(row==Row.FACE){choices.add("off");choices.add("auto");current=focus.face()?"auto":"off";}
+        else{
+            for(ManualExposure.Mode m:ManualExposure.Mode.values())if(exposure.supports(m))choices.add(m.name());
+            current=exposure.mode().name();
+        }
+        choiceRow=row;settingsSelected=selected;
+        selected=Math.max(0,choices.indexOf(current));
+        panel=Panel.CHOICE;
+    }
+    private void backToSettings(){buildRows();panel=Panel.SETTINGS;selected=Math.min(settingsSelected,Math.max(0,rows.size()-1));}
+    private boolean choice(int action)throws Exception{
+        if(action==UiKeyActions.UP||action==UiKeyActions.LEFT){move(-1);return true;}
+        if(action==UiKeyActions.DOWN||action==UiKeyActions.RIGHT){move(1);return true;}
+        if(action==UiKeyActions.BACK){backToSettings();host.changed();return true;}
+        if(action!=UiKeyActions.OK)return true;
+        String value=choices.get(selected);Row row=choiceRow;
+        // Leave the list first: a refused value reports and shows settings.
+        backToSettings();
+        if(row==Row.AREA){
+            focus.setArea(value);
+            // Choosing a flexible spot goes straight to placing it.
+            if(focus.flexible()&&focus.pointAvailable()){focus.beginPoint();panel=Panel.POINT;}
+        }else if(row==Row.FACE)focus.setFace("auto".equals(value));
+        else{
+            exposure.selectMode(ManualExposure.Mode.valueOf(value));
+            alternate=false;host.whiteBalanceChanged();
+        }
+        host.changed();return true;
+    }
     private boolean point(int action)throws Exception{
         int dx=0,dy=0;
         if(action==UiKeyActions.UP)dy=-1;else if(action==UiKeyActions.DOWN)dy=1;
         else if(action==UiKeyActions.LEFT)dx=-1;else if(action==UiKeyActions.RIGHT)dx=1;
         if(dx!=0||dy!=0){if(focus.movePoint(dx,dy))host.changed();return true;}
         if(action==UiKeyActions.OK){focus.confirmPoint();panel=Panel.NONE;host.changed();return true;}
-        if(action==UiKeyActions.BACK){focus.cancelPoint();panel=Panel.SETTINGS;host.changed();return true;}
+        if(action==UiKeyActions.BACK){focus.cancelPoint();buildRows();panel=Panel.SETTINGS;selected=Math.min(selected,Math.max(0,rows.size()-1));host.changed();return true;}
         return true;
     }
 
@@ -196,8 +237,12 @@ final class ViewfinderControls {
 
     // ---- HUD model --------------------------------------------------------------
     String modeLabel(){return exposure.modeLabel();}
-    String modeName(){
-        switch(exposure.mode()){
+    private static String rowName(Row r){
+        return r==Row.POINT?"移动对焦点":r==Row.AREA?"对焦区域":r==Row.FACE?"人脸优先":"曝光模式";
+    }
+    String modeName(){return modeName(exposure.mode());}
+    static String modeName(ManualExposure.Mode mode){
+        switch(mode){
             case A:return "A 光圈优先";
             case S:return "S 快门优先";
             case M:return "M 手动曝光";
@@ -219,6 +264,7 @@ final class ViewfinderControls {
             case ISO:return "ISO";
             case WB:return "白平衡";
             case SETTINGS:return "对焦与拍摄设置";
+            case CHOICE:return rowName(choiceRow);
             default:return null;
         }
     }
@@ -236,9 +282,15 @@ final class ViewfinderControls {
             }
             case SETTINGS:{
                 String[] out=new String[rows.size()];
+                for(int i=0;i<out.length;i++)out[i]=rowName(rows.get(i));
+                return out;
+            }
+            case CHOICE:{
+                String[] out=new String[choices.size()];
                 for(int i=0;i<out.length;i++){
-                    Row r=rows.get(i);
-                    out[i]=r==Row.POINT?"移动对焦点":r==Row.AREA?"对焦区域":r==Row.FACE?"人脸优先":"曝光模式";
+                    String v=choices.get(i);
+                    out[i]=choiceRow==Row.AREA?FocusControls.areaLabel(v):choiceRow==Row.FACE?("auto".equals(v)?"开":"关")
+                        :modeName(ManualExposure.Mode.valueOf(v));
                 }
                 return out;
             }
@@ -261,7 +313,16 @@ final class ViewfinderControls {
     String panelHint(){
         switch(panel){
             case ISO:case WB:return "↑↓ 选择 · 中键确定 · MENU 返回";
-            case SETTINGS:return rows.isEmpty()?"":rows.get(selected)==Row.POINT?"中键移动对焦点 · MENU 返回":"←→ 更改 · MENU 返回";
+            case SETTINGS:{
+                if(rows.isEmpty())return "";
+                Row row=rows.get(selected);
+                if(row==Row.POINT)return "中键移动对焦点 · MENU 返回";
+                return "中键选择 · ←→ 快速切换 · MENU 返回";
+            }
+            case CHOICE:{
+                boolean flex=choiceRow==Row.AREA&&FocusControls.FLEX.equals(choices.get(selected))&&focus.pointAvailable();
+                return flex?"↑↓ 选择 · 中键确定并移动对焦点 · MENU 返回":"↑↓ 选择 · 中键确定 · MENU 返回";
+            }
             case POINT:return "方向键／拨轮移动 · 中键确定 · MENU 取消";
             default:return "";
         }

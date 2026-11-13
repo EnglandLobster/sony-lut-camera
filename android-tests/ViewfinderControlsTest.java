@@ -103,6 +103,24 @@ public final class ViewfinderControlsTest {
         v.press(UiKeyActions.DOWN);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.RIGHT);
         check(cam.values.get("face-detection-mode").equals("auto")&&v.rowValues()[2].equals("开"),"face priority on");
         v.press(UiKeyActions.UP);v.press(UiKeyActions.LEFT);check(cam.values.get("focus-area-type").equals("center"),"area cycles back");
+        // Centre opens the row's option list (Sony-style); MENU leaves it unchanged.
+        v.press(UiKeyActions.OK);
+        check(v.panel()==ViewfinderControls.Panel.CHOICE&&"对焦区域".equals(v.title())
+            &&Arrays.asList(v.rowLabels()).equals(Arrays.asList("广域","中间","自由点"))&&v.selected()==1,"area options open at current "+Arrays.asList(v.rowLabels()));
+        v.press(UiKeyActions.DOWN);check(v.panelHint().contains("中键确定并移动对焦点")&&cam.values.get("focus-area-type").equals("center"),"moving in the list changes nothing yet");
+        v.press(UiKeyActions.BACK);check(v.panel()==ViewfinderControls.Panel.SETTINGS&&cam.values.get("focus-area-type").equals("center")&&v.selected()==1,"MENU leaves the list unchanged");
+        v.press(UiKeyActions.OK);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.OK);
+        check(cam.values.get("focus-area-type").equals("flex-spot")&&v.panel()==ViewfinderControls.Panel.POINT&&v.afEditing(),"choosing flex-spot goes to the point");
+        v.press(UiKeyActions.BACK);check(v.panel()==ViewfinderControls.Panel.SETTINGS&&v.selected()==1,"MENU from the point returns to settings");
+        v.press(UiKeyActions.OK);v.press(UiKeyActions.UP);v.press(UiKeyActions.OK);
+        check(cam.values.get("focus-area-type").equals("center")&&v.panel()==ViewfinderControls.Panel.SETTINGS,"centre chosen, back in settings");
+        check(v.panelHint().contains("中键选择")&&v.panelHint().contains("快速切换"),"settings hint "+v.panelHint());
+        // Face priority through its list.
+        v.press(UiKeyActions.DOWN);v.press(UiKeyActions.OK);
+        check(Arrays.asList(v.rowLabels()).equals(Arrays.asList("关","开"))&&v.selected()==1,"face options");
+        v.press(UiKeyActions.UP);v.press(UiKeyActions.OK);check(cam.values.get("face-detection-mode").equals("off"),"face off from list");
+        v.press(UiKeyActions.OK);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.OK);check(cam.values.get("face-detection-mode").equals("auto"),"face on from list");
+        v.press(UiKeyActions.DOWN);v.press(UiKeyActions.DOWN);
         v.press(UiKeyActions.BACK);
         // Centre resets EV only where it applies; shutter closes lists.
         v.press(UiKeyActions.RIGHT);v.shutter();check(!v.panelOpen(),"shutter closes list");
@@ -146,6 +164,9 @@ public final class ViewfinderControlsTest {
         ViewfinderControls nv=new ViewfinderControls(ne,null,one,false,new Host());
         nv.press(UiKeyActions.DOWN);check(Arrays.asList(nv.rowLabels()).equals(Arrays.asList("曝光模式")),"mode row only");
         nv.press(UiKeyActions.RIGHT);check(nodial.values.get("scene-mode").equals("aperture-priority"),"mode row selects A");
+        nv.press(UiKeyActions.OK);check(Arrays.asList(nv.rowLabels()).equals(Arrays.asList("P 程序自动","A 光圈优先","S 快门优先","M 手动曝光"))&&nv.selected()==1,"mode options");
+        nv.press(UiKeyActions.DOWN);nv.press(UiKeyActions.DOWN);nv.press(UiKeyActions.OK);check(nodial.values.get("scene-mode").equals("manual-exposure"),"M from list");
+        nv.press(UiKeyActions.OK);nv.press(UiKeyActions.UP);nv.press(UiKeyActions.UP);nv.press(UiKeyActions.OK);check(nodial.values.get("scene-mode").equals("aperture-priority"),"A from list");
         nv.press(UiKeyActions.BACK);nv.rotate(D2,2);check(nodial.values.get("aperture").equals("710"),"single input aperture");
         nv.press(UiKeyActions.OK);nv.rotate(D2,1);check(ne.compensationLabel().equals("+0.3 EV"),"centre switches to EV");
         ne.close();check(nodial.values.get("scene-mode").equals("program-auto"),"app mode restored");
