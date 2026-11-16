@@ -90,9 +90,8 @@ public final class CapturePipelineTest {
             check(gate.beginRearm(gate.shot())&&gate.rearmed(gate.shot()),"safe next shot");
             long c=returnedStore(completion,41000);File third=new File(dir,"DSC00004.JPG");write(third,jpeg(width,height,true));
             completion.notified(c,"DCIM/100MSDCF/",third.getName());
-            check(completion.poll(c,41200)==null,"named file waits for stable file metadata");
-            index.saved(third);CaptureStoreCompletion.Receipt named=completion.poll(c,41400);
-            check(named!=null&&!named.recovered,"named receipt confirms the stable complete file");files.accepted(named.file);
+            index.saved(third);CaptureStoreCompletion.Receipt named=completion.poll(c,41200);
+            check(named!=null&&!named.recovered,"named receipt confirms the complete file on the first check");files.accepted(named.file);
             long stopping=returnedStore(completion,41500);completion.requestStop();
             check(completion.pending()&&completion.poll(stopping,41600)==null,"stop request retains pending ownership");
             File stoppingFile=new File(dir,"DSC00007.JPG");write(stoppingFile,jpeg(width,height,true));index.saved(stoppingFile);

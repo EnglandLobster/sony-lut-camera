@@ -40,7 +40,7 @@ public final class CaptureReceiptPipelineTest {
             public PhotoIndex.Entry saved(){return null;}
             public void accepted(File file){}
         };
-        CaptureStoreCompletion completion=new CaptureStoreCompletion(files,index,true,true);
+        CaptureStoreCompletion completion=new CaptureStoreCompletion(files,index,true);
         ReceiptSink sink=new ReceiptSink(completion);Camera camera=new Camera();
         CaptureStoreEvents events=new CaptureStoreEvents(camera,sink);
         try{

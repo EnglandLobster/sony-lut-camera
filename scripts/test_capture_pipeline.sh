@@ -8,7 +8,8 @@ python3 scripts/stage_capture_maps.py out/capture-pipeline/assets
     android/capture/CaptureGeometry.java android/capture/CaptureMemoryMap.java \
     android/capture/CaptureSetup.java android/capture/ParameterDriver.java android/capture/ManualExposure.java android/capture/FocusControls.java android/capture/ControlLayout.java android/capture/ViewfinderControls.java android/ui/UiKeyActions.java android/capture/PreJpegGate.java \
     android/capture/PhotoFiles.java android/capture/PhotoIndex.java android/capture/ArwFile.java android/capture/CaptureStoreCompletion.java android/capture/CaptureIndexQueries.java android/capture/CaptureRecoveryFence.java \
-    android/capture/CaptureStoreEvents.java android-tests/CaptureReceiptPipelineTest.java \
+    android/capture/CaptureStoreEvents.java android/capture/CaptureAutoReview.java android-tests/CaptureReceiptPipelineTest.java \
+    android-tests/JpegTailTest.java android-tests/CaptureAutoReviewTest.java \
     android-tests/CapturePipelineTest.java android-tests/CaptureMemoryMapTest.java android-tests/CaptureStoreRpcTest.java android-tests/IndexedStoreTest.java android-tests/CapturePairCompletionTest.java \
     android-tests/LegacyDcfPredictionTest.java
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CapturePipelineTest
@@ -17,6 +18,8 @@ python3 scripts/stage_capture_maps.py out/capture-pipeline/assets
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CapturePairCompletionTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.LegacyDcfPredictionTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureReceiptPipelineTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.JpegTailTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureAutoReviewTest
 python3 scripts/test_store_receipt_dispatch.py
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureStoreRpcTest --write-fence out/capture-pipeline/process-fence
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureStoreRpcTest --read-fence out/capture-pipeline/process-fence

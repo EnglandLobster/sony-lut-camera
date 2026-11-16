@@ -30,7 +30,7 @@ PY_CLEAN
 "$java_home/bin/javac" --release 7 -Xlint:-options \
     -cp "out/apk/classes:$sdk/platforms/android-36/android.jar" \
     -d out/legacy-smoke/classes android-tests/LegacyRuntimeSmoke.java \
-    android-tests/CaptureSurfaceGateTest.java android-tests/CaptureJpegQualityTest.java android-tests/CaptureStoreEventsTest.java android-tests/CapturePipelineTest.java android-tests/CapturePairCompletionTest.java android-tests/LegacyDcfPredictionTest.java android-tests/CaptureReceiptPipelineTest.java android-tests/CaptureMemoryMapTest.java android-tests/CaptureStoreRpcTest.java android-tests/IndexedStoreTest.java android-tests/PhotoIndexTest.java android-tests/CaptureStartupErrorTest.java android-tests/DevelopingPreviewTest.java
+    android-tests/CaptureSurfaceGateTest.java android-tests/CaptureJpegQualityTest.java android-tests/CaptureStoreEventsTest.java android-tests/CapturePipelineTest.java android-tests/CapturePairCompletionTest.java android-tests/LegacyDcfPredictionTest.java android-tests/CaptureReceiptPipelineTest.java android-tests/CaptureMemoryMapTest.java android-tests/CaptureStoreRpcTest.java android-tests/IndexedStoreTest.java android-tests/PhotoIndexTest.java android-tests/CaptureStartupErrorTest.java android-tests/DevelopingPreviewTest.java android-tests/JpegTailTest.java android-tests/CaptureAutoReviewTest.java
 find out/legacy-smoke/classes -name '*.class' > out/legacy-smoke/classes.txt
 "$java_home/bin/jar" cf out/legacy-smoke/app-classes.jar -C out/apk/classes .
 "$java_home/bin/java" -cp "$sdk/build-tools/36.0.0/lib/d8.jar" com.android.tools.r8.D8 \
@@ -55,7 +55,7 @@ import sys
 apk=sys.argv[1]
 lines=['#!/system/bin/sh','set -e','export CLASSPATH=/data/local/tmp/legacy-smoke.jar:'+apk,
        'app_process -Xmx24m -Djava.library.path=/data/data/io.github.englandlobster.lutcamera/lib /system/bin io.github.englandlobster.lutcamera.LegacyRuntimeSmoke /mnt/sdcard/SONYLUT/LIBRARY']
-for suite in ['CaptureSurfaceGateTest','CaptureJpegQualityTest','CaptureStoreEventsTest','CapturePipelineTest','CapturePairCompletionTest','LegacyDcfPredictionTest','CaptureReceiptPipelineTest','CaptureStoreRpcTest','IndexedStoreTest','PhotoIndexTest','CaptureStartupErrorTest','DevelopingPreviewTest']:
+for suite in ['CaptureSurfaceGateTest','CaptureJpegQualityTest','CaptureStoreEventsTest','CapturePipelineTest','CapturePairCompletionTest','LegacyDcfPredictionTest','CaptureReceiptPipelineTest','CaptureStoreRpcTest','IndexedStoreTest','PhotoIndexTest','CaptureStartupErrorTest','DevelopingPreviewTest','JpegTailTest','CaptureAutoReviewTest']:
     lines.append('app_process -Xmx24m /system/bin io.github.englandlobster.lutcamera.'+suite+' /data/local/tmp')
 for action in ['--write-fence','--read-fence']:
     lines.append('app_process -Xmx24m /system/bin io.github.englandlobster.lutcamera.CaptureStoreRpcTest '+action+' /data/local/tmp/lut-store-fence-test')
