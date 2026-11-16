@@ -12,6 +12,8 @@
 
 **[⬇ 下载 v0.10.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.10.0/SonyLutCamera-v0.10.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
+测试版 [v0.10.1-beta.1](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.1-beta.1)：A6300 以外的机型成片提速，**尚未上机验证**，[说明](docs/RELEASE.md)
+
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
 </div>
