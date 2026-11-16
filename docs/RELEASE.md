@@ -2,7 +2,7 @@
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.10.1-beta.1/SonyLutCamera-v0.10.1-beta.1.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.1-beta.1) · [安装教程](USER_GUIDE.md)
 
-code122，公开预发行测试包。签名和包名与 0.10.0 相同，可以直接覆盖安装，导入的 LUT 和照片都保留；想退回时再覆盖安装 [v0.10.0](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0) 即可。
+code122，公开预发行测试包。签名和包名与 0.10.0 相同，可以直接覆盖安装，导入的 LUT 和照片都保留；想退回时重新安装 [v0.10.0](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0)；如果相机不让旧版本覆盖新版本，先在相机的「应用程序管理」里删除本版再装，SD 卡上的 LUT 和照片不受影响。
 
 **本版没有在任何相机上实拍过。** 改动只通过了电脑上的测试和 Android 2.3 模拟器，发出来是请大家帮忙验证。不放心的话继续用 v0.10.0。
 
