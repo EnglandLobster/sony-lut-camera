@@ -120,7 +120,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private boolean lutApplied;private Bitmap sourceReference;
     private PhotoFiles photoFiles;
     private Object retainedImage;private long lutCache;private Bitmap lutReview;
-    private File originalFile,gradedFile;private String originalQuality;
+    private File originalFile,gradedFile;private String originalQuality;private CaptureAutoReview autoReview;
     private ReviewView review;private boolean awaitFirstFrame;
     private long displayedAt,nextReadyAt,rearmAt;private boolean finishingRearm,reviewing;
     private boolean reviewClearCheck;
@@ -551,6 +551,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 event("quality_applied","jpeg_quality="+captureQuality+" label="+CaptureJpegQuality.label(captureQuality)+" original="+originalQuality);
             }
             if(productUi()){
+                // The app shows its own result. Left on, the camera's picture review
+                // holds every shot for the time set in the camera menu.
+                try{
+                    autoReview=new CaptureAutoReview(CaptureAutoReview.camera(cameraType,cameraEx));
+                    int seconds=autoReview.disable();
+                    event("auto_review","camera_seconds="+seconds+" switched_off="+autoReview.changed());
+                }catch(Throwable error){autoReview=null;event("auto_review_unavailable",cause(error).toString());}
                 openControls();
                 settingsNotice=CaptureSettingsNotice.between(initialSettings,new CameraExposureDriver(camera).read());
                 if(originalColorOnly)settingsNotice+=(settingsNotice.length()>0?" · ":"")+"本机使用原色取景，照片仍应用完整 LUT";
@@ -1426,6 +1433,11 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 try{exposure.close();event("exposure_restored","original settings readback matched");}
                 catch(Exception e){event("exposure_restore_error",cause(e).toString());}
                 exposure=null;
+            }
+            if(value==cameraEx&&autoReview!=null){
+                try{if(autoReview.restore())event("auto_review_restored","");}
+                catch(Throwable e){event("auto_review_restore_error",cause(e).toString());}
+                autoReview=null;
             }
             if(value==cameraEx&&originalQuality!=null){try{
                 Camera.Parameters restore=camera.getParameters();restore.set("jpeg-quality",originalQuality);camera.setParameters(restore);
