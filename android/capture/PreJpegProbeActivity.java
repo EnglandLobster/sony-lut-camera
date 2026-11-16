@@ -794,10 +794,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         });
         if(!initOnly&&develops()){
             storeIndex=new CaptureStoreIndex(this,sd);
-            boolean verified=productUi()&&paired()&&storeEvents.hasNamedReceipt()
-                &&CapturePlatform.namedStoreCompletionVerified(captureModel,captureFirmware);
-            storeCompletion=new CaptureStoreCompletion(photoFiles,storeIndex,storeEvents.hasNamedReceipt(),verified);
-            event("named_store_validation",verified?"jpeg_header":"jpeg_structure");
+            storeCompletion=new CaptureStoreCompletion(photoFiles,storeIndex,storeEvents.hasNamedReceipt());
+            event("store_validation","jpeg_header_and_tail");
         }
         event("store_protocol",storeEvents.hasNamedReceipt()?"named_store_complete_with_index_recovery":"index_and_complete_file; overlap_original=false");
     }
@@ -949,8 +947,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(gate.arm()){
         final long shot=gate.shot();processingProgress.begin(shot);pressAt=SystemClock.elapsedRealtime();timingOrigin=origin;journalAtPress=journalWriteMs();
         originalFile=null;gradedFile=null;displayedAt=0;nextReadyAt=0;awaitFirstFrame=false;lutApplied=false;
+        // Bodies with the completed-store callback grade while the original is
+        // being written: pixel-checked on ILCE-6300 2.01, and the A7R II port of
+        // this engine has run the same way for all its users (ILCE-7RM2 4.01).
         overlapThisShot=overlapOriginal&&storeEvents!=null&&storeEvents.hasNamedReceipt()
-                &&(!productUi()||CapturePlatform.saveOverlapVerified(captureModel,captureFirmware))
                 &&(!alternateOverlap||shot%2==0);
         event("armed","origin="+origin+" lut_cache_reused="+(shot>1)+" overlap_original="+overlapThisShot);
         ui.post(new Runnable(){public void run(){if(shot==gate.shot()){clearOriginalReview();reviewing=false;review.setVisibility(View.INVISIBLE);review.setImageBitmap(null);}}});

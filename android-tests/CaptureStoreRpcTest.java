@@ -50,8 +50,9 @@ public final class CaptureStoreRpcTest {
                     boolean refused=false;try{completion.begin(33000);}catch(IllegalStateException e){refused=true;}check(refused,"no concurrent resubmission");
                 }finally{release.countDown();worker.join(2000);}
                 check(!worker.isAlive(),"late RPC return drains worker");
-                check(completion.poll(token,39800)==null,"late RPC return still requires stable indexed file");
-                CaptureStoreCompletion.Receipt result=completion.poll(token,40000);
+                CaptureStoreCompletion.Receipt result=completion.poll(token,39800);
+                if(modern)check(result!=null,"named receipt confirms as soon as the RPC has returned");
+                else{check(result==null,"late RPC return still requires stable indexed file");result=completion.poll(token,40000);}
                 check(result!=null&&result.stopRequested==stopping&&!completion.pending(),"late return completes exactly once respecting stop");
                 files.accepted(result.file);completion.notified(token,"DCIM/100MSDCF/","DSC00001.JPG");
                 check(completion.poll(token,41000)==null,"late duplicate ignored");

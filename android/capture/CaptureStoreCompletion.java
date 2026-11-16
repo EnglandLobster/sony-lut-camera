@@ -28,7 +28,7 @@ final class CaptureStoreCompletion {
         }
     }
     private final PhotoFiles files;private final Registration registration;
-    private final boolean namedProtocol,namedCompletionVerified;
+    private final boolean namedProtocol;
     private long generation,started;private boolean pending,notified,stopRequested,rpcActive,rpcComplete,confirmed;
     private File confirmedFile;private boolean confirmedRecovered,confirmedPredicted,confirmedValid;
     private boolean recoveryAvailable,continuationAllowed,continuation;
@@ -38,7 +38,7 @@ final class CaptureStoreCompletion {
     private volatile int indexQueries,fileChecks;
     String stage(){return stage;}
     String diagnostics(){return "confirmation_stage="+stage+" index_polls="+indexQueries+" index_poll_ms="+(indexNanos/1000000)
-        +" file_checks="+fileChecks+" file_ms="+(fileNanos/1000000)+" prediction="+files.prediction()+" last_error="+lastError;}
+        +" file_checks="+fileChecks+" file_ms="+(fileNanos/1000000)+" complete_by="+files.completeBy()+" prediction="+files.prediction()+" last_error="+lastError;}
     void readFailed(Throwable error){
         StringBuilder causes=new StringBuilder();Throwable item=error;
         for(int n=0;item!=null&&n<5;n++){
@@ -50,11 +50,7 @@ final class CaptureStoreCompletion {
         stage=stage.contains("index")?"index_error":"file_error";
     }
     CaptureStoreCompletion(PhotoFiles files,Registration registration,boolean namedProtocol){
-        this(files,registration,namedProtocol,false);
-    }
-    CaptureStoreCompletion(PhotoFiles files,Registration registration,boolean namedProtocol,boolean namedCompletionVerified){
         this.files=files;this.registration=registration;this.namedProtocol=namedProtocol;
-        this.namedCompletionVerified=namedCompletionVerified;
     }
     long begin(long now)throws Exception{return begin(now,false);}
     long beginFinalStore(long now)throws Exception{return begin(now,true);}
@@ -114,7 +110,7 @@ final class CaptureStoreCompletion {
             // RECORD_COUNT=2 can publish the database only after BOTH files.
             // Never require original-index visibility before submitting graded.
             stage="notified_file";begin=System.nanoTime();fileChecks++;
-            try{ready=files.pollNotified(now,!namedCompletionVerified);}finally{fileNanos+=System.nanoTime()-begin;}
+            try{ready=files.pollNotified(now);}finally{fileNanos+=System.nanoTime()-begin;}
         }else{
             if(namedProtocol&&(age<RECOVERY_DELAY_MS||!recoveryAvailable)){stage="await_notification";return null;}
             stage="index_query";PhotoIndex.Entry entry;begin=System.nanoTime();indexQueries++;

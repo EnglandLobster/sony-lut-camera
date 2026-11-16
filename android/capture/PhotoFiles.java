@@ -20,6 +20,7 @@ final class PhotoFiles {
     private File indexedFile;
     private int indexedFolder,indexedNumber;
     private long lookupAt=-1,validationAt=-1;
+    private String completeBy="none";
     // Legacy stores without a named receipt: exact DCF identities Sony can
     // assign next, each verified absent before the store was submitted.
     private int[][] predicted;
@@ -60,7 +61,7 @@ final class PhotoFiles {
     synchronized void refresh() throws IOException {
         known.clear();for(File f:imageFiles())known.add(f.getPath());resetCandidate();
     }
-    synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;indexedFile=null;lookupAt=-1;validationAt=-1;
+    synchronized void resetCandidate(){candidate=null;length=-1;modified=-1;indexedFile=null;lookupAt=-1;validationAt=-1;completeBy="none";
         predicted=null;predictedFile=null;predictedLookupAt=-1;predictionNote="none";}
     /** Sony numbers the next photo after the newest one: same folder, a new folder
      * (date form or full folder) with the series number, or a new folder at 0001.
@@ -135,10 +136,16 @@ final class PhotoFiles {
         }
         return pollComplete(predictedFile,now);
     }
-    synchronized File pollNotified(long now,boolean requireComplete)throws IOException{
+    synchronized File pollNotified(long now)throws IOException{
         File file=pollStored();
-        return requireComplete?pollComplete(file,now):file;
+        if(file==null)return null;
+        // Sony's completed-store event names a finished file: its closing
+        // marker confirms that at once. Otherwise wait as an unnotified store does.
+        if(format==Format.JPEG&&jpegEnds(file)){completeBy="tail";return file;}
+        return pollComplete(file,now);
     }
+    /** How the last store was found complete: tail, scan or none. */
+    synchronized String completeBy(){return completeBy;}
     /** Locate only the indexed DCF identity. Never stat/open unrelated photos. */
     synchronized File pollIndexed(PhotoIndex.Entry entry,long now)throws IOException{
         if(format!=Format.JPEG)throw new IOException("indexed store requires JPEG");
@@ -164,7 +171,16 @@ final class PhotoFiles {
         // 200 ms. Retry eventually: an in-place write can preserve FAT mtime.
         if(validationAt>=0&&now-validationAt<1000)return null;
         validationAt=now;
-        return completeStructure(file)?file:null;
+        return storedComplete(file)?file:null;
+    }
+    /** A stored photo is complete. Reading a whole JPEG back through Sony's
+     * filesystem service takes about 2 s per 10 MB, so look at both ends first
+     * and scan the entropy data only when the tail is not Sony's usual one. */
+    private boolean storedComplete(File file)throws IOException{
+        if(format!=Format.JPEG)return completeStructure(file);
+        if(jpegEnds(file)){completeBy="tail";return true;}
+        if(!completeJpeg(file))return false;
+        completeBy="scan";return true;
     }
     private File resolveIndexed(PhotoIndex.Entry entry)throws IOException{
         // A matching named callback gives an exact path without directory IO.
@@ -300,6 +316,33 @@ final class PhotoFiles {
             int hi=read(),lo=read();if(hi<0||lo<0)throw new EOFException();return hi<<8|lo;
         }
         void close()throws IOException{source.close();}
+    }
+    static final int TAIL_WINDOW=65536,TAIL_LIMIT=1<<20;
+    /** The file starts with SOI and its last nonzero bytes are EOI. Sony zero-pads
+     * a stored JPEG to a cluster boundary after the final image's EOI (the main
+     * image, or the appended preview), so a finished file ends this way and a
+     * partly written one does not. False also means "cannot tell": an unusual
+     * tail is left to the full scan. Reads at most TAIL_LIMIT bytes. */
+    static boolean jpegEnds(File file)throws IOException{
+        RandomAccessFile in=new RandomAccessFile(file,"r");
+        try{
+            long size=in.length();if(size<4)return false;
+            byte[] window=new byte[TAIL_WINDOW];long end=size;
+            in.readFully(window,0,2);if((window[0]&255)!=255||(window[1]&255)!=216)return false;
+            while(end>2&&size-end<TAIL_LIMIT){
+                int count=(int)Math.min(window.length,end-2);long start=end-count;
+                in.seek(start);in.readFully(window,0,count);
+                int last=count-1;while(last>=0&&window[last]==0)last--;
+                if(last>=0){
+                    if((window[last]&255)!=217)return false;
+                    if(last>0)return (window[last-1]&255)==255;
+                    if(start<=2)return false;
+                    in.seek(start-1);return in.read()==255;
+                }
+                end=start;
+            }
+            return false;
+        }catch(EOFException e){return false;}finally{in.close();}
     }
     // Sony pads JPEG files after EOI. Walk markers, skipping APP/EXIF thumbnails,
     // and recognize EOI only after an image scan, not at the physical file end.
