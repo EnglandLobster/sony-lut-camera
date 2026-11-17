@@ -1,3 +1,33 @@
+# v0.10.1-beta.3 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.10.1-beta.3/SonyLutCamera-v0.10.1-beta.3.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.1-beta.3) · [安装教程](USER_GUIDE.md)
+
+code124，公开预发行测试包。签名和包名与 0.10.0 相同，可以直接覆盖安装，导入的 LUT 和照片都保留。想退回时重新安装 [v0.10.0](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0)；如果相机不让旧版本覆盖新版本，先在相机的「应用程序管理」里删除本版再装，SD 卡上的 LUT 和照片不受影响。
+
+## 修复
+
+- **退出应用后，原生相机按快门不拍照**：半按能对焦，菜单、ISO、光圈都能调，只有全按快门没反应，关机再开机才恢复。原因是在 LUT 色彩取景里、刚拍完一张或出错后退出时，LUT Camera 把相机交还给系统时快门锁还锁着（色彩取景里锁着快门是为了防止误拍），原生相机不会去解开它。本版交还相机前按 Sony 自带拍摄程序的做法，先停掉直通快门，再打开快门锁。
+
+beta.2 的所有修复（待机后设置被还原、待机唤醒后进不了拍摄、卡在“正在拍摄”等）和 beta.1 的成片提速保留。
+
+## 请帮忙确认
+
+1. 之前遇到过退出后快门不能拍的朋友：装本版后照常拍几张，用 MENU 退出到原生相机，看全按快门能不能拍。
+2. 仍有问题时，重新进入 LUT Camera，在 LUT 库按 MENU → 更多 → 导出诊断日志，提交 `SONYLUT/DIAG/REPORT.ZIP`，写上机型、固件版本和退出的方式。
+
+## 验证与当前缺口
+
+- A6300 / 固件 2.01：
+  - 修复前（beta.2），拍一张后按 MENU 退出，原生相机全按快门不拍照，复现。日志显示释放相机时快门锁着。
+  - 修复后，拍完退出和不拍直接退出两种情况，原生快门都正常；日志记录快门锁已打开（`shutter_handback release_unlocked=true`，约 5 毫秒）。
+  - 在原色取景状态下退出（直通快门仍在运行）的情况还没有在真机上走到。
+- 主机产品与拍摄链路套件通过；API10 ARM 模拟器 24 MiB 整套与图形回归通过。发行 APK 签名证书与 0.10.0 相同。
+- A6300 以外的机型没有实拍本版。RX1R II 等用户反馈的是同样的现象，预计同一原因，待确认。
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.10.1-beta.2 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.10.1-beta.2/SonyLutCamera-v0.10.1-beta.2.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.1-beta.2) · [安装教程](USER_GUIDE.md)

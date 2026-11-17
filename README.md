@@ -12,7 +12,7 @@
 
 **[⬇ 下载 v0.10.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.10.0/SonyLutCamera-v0.10.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
-测试版 [v0.10.1-beta.2](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.1-beta.2)：修复在应用里待机或关机后相机设置被还原，并保留 beta.1 的成片提速，[说明](docs/RELEASE.md)
+测试版 [v0.10.1-beta.3](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.1-beta.3)：修复退出应用后原生相机按快门不拍照，并包含 beta.2 的待机修复，[说明](docs/RELEASE.md)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
