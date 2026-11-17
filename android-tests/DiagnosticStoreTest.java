@@ -56,6 +56,59 @@ public final class DiagnosticStoreTest {
         try{DiagnosticStore.export(local,sd,dest,"summary",skipped,all,50,10);}catch(IOException expected){rejected="no readable diagnostic logs".equals(expected.getMessage());}
         check(rejected&&skipped.isEmpty()&&Arrays.equals(published,Files.readAllBytes(report.toPath())),"every journal busy fails explicitly and keeps the last report");
     }
+    /** Paths of this JVM's open file descriptors (Linux /proc). */
+    static List<String> openPaths()throws Exception{
+        List<String> paths=new ArrayList<String>();File[] fds=new File("/proc/self/fd").listFiles();check(fds!=null,"/proc/self/fd unavailable");
+        for(File fd:fds)try{paths.add(Files.readSymbolicLink(fd.toPath()).toString());}catch(IOException closedMeanwhile){}
+        return paths;
+    }
+    static boolean held(File dir)throws Exception{String prefix=dir.getCanonicalPath();for(String p:openPaths())if(p.startsWith(prefix))return true;return false;}
+    /** Sony's power-off backup fails while any journal is open, so a writer
+     * must not keep one open between events, buffered or durable. */
+    static void noHeldFiles(File dir)throws Exception{
+        DiagnosticStore store=new DiagnosticStore(dir,"CAP","held-session");
+        check(!held(dir),"header written and closed");
+        store.append("buffered",false);
+        check(!held(dir)&&store.hasPending()&&!read(new File(dir,"CAP0.TXT")).contains("buffered"),"a plain event waits in memory without an open file");
+        store.flush(false);
+        check(!held(dir)&&!store.hasPending()&&read(new File(dir,"CAP0.TXT")).equals("held-session\nbuffered\n"),"flush appends and closes");
+        store.append("store_wait",true);
+        check(!held(dir)&&!store.hasPending()&&read(new File(dir,"CAP0.TXT")).endsWith("buffered\nstore_wait\n"),"a durable event is written at once and closed");
+        String block=String.join("",Collections.nCopies(1000,"x"));for(int i=0;i<9;i++)store.append(block,false);
+        check(!held(dir)&&read(new File(dir,"CAP0.TXT")).contains(block),"a full buffer is written without waiting");
+        store.close();boolean rejected=false;try{store.append("late",false);}catch(IOException expected){rejected=true;}
+        check(rejected&&!held(dir),"a closed writer refuses events");
+        store.resume();store.append("resumed",true);check(read(new File(dir,"CAP0.TXT")).endsWith("resumed\n")&&!held(dir),"resume appends to the active journal");
+    }
+    static String header(String boot){return "{\"event\":\"session_header\",\"detail\":\"app=x boot_id="+boot+"\"}";}
+    static String event(String name,long uptime){return "{\"seq\":1,\"wall_ms\":1700000000000,\"uptime_ms\":"+uptime+",\"event\":\""+name+"\",\"detail\":\"\"}";}
+    /** The private fallback stays small and drops a full history's older members;
+     * the next session reports how the previous one ended. */
+    static void fallbackAndPrevious(File dir)throws Exception{
+        check(dir.mkdirs(),"fallback fixture");
+        for(int i=0;i<6;i++)Files.write(new File(dir,"CAP"+i+".TXT").toPath(),new byte[60000]);
+        DiagnosticStore store=new DiagnosticStore(dir,"CAP",header("boot-a"),DiagnosticStore.FALLBACK_LIMIT,DiagnosticStore.FALLBACK_COUNT);
+        check(!new File(dir,"CAP2.TXT").exists()&&!new File(dir,"CAP5.TXT").exists()&&new File(dir,"CAP1.TXT").exists(),"a fallback keeps two members");
+        check(store.previousSession("boot-a").startsWith("previous=journal bytes=60000 same_boot=unknown"),"a header without boot id is unknown: "+store.previousSession("boot-a"));
+        String block=String.join("",Collections.nCopies(1000,"y"));for(int i=0;i<30;i++)store.append(block,false);store.close();
+        for(File f:dir.listFiles())check(f.length()<=DiagnosticStore.FALLBACK_LIMIT+1100,"fallback members stay small: "+f.length());
+        boolean rejected=false;try{new DiagnosticStore(dir,"UI",header("x"),DiagnosticStore.FALLBACK_LIMIT,3);}catch(IOException expected){rejected=true;}check(rejected,"bounds are checked");
+
+        File sd=new File(dir,"sd");
+        DiagnosticStore first=new DiagnosticStore(sd,"CAP",header("boot-a"));first.append(event("armed",500),false);first.append(event("closed",900),true);first.close();
+        String report=new DiagnosticStore(sd,"CAP",header("boot-a")).previousSession("boot-a");
+        check(report.equals("previous=journal bytes="+new File(sd,"CAP1.TXT").length()+" same_boot=true closed=true last_event=closed last_uptime_ms=900 last_wall_ms=1700000000000"),"a closed session: "+report);
+        DiagnosticStore cut=new DiagnosticStore(sd,"CAP",header("boot-a"));cut.append(event("store_wait",1200),true);
+        report=new DiagnosticStore(sd,"CAP",header("boot-b")).previousSession("boot-b");
+        check(report.contains("same_boot=false closed=false last_event=store_wait last_uptime_ms=1200"),"a session cut off by another boot: "+report);
+        Files.write(new File(sd,"CAP0.TXT").toPath(),new byte[0]);
+        check(new DiagnosticStore(sd,"CAP",header("boot-c")).previousSession("boot-c").equals("previous=empty bytes=0"),"a 0-byte journal from an older version");
+
+        File internal=new File(dir,"internal");check(internal.mkdirs(),"internal fixture");
+        for(String name:new String[]{"CAP0.TXT","CAP5.TXT","UI0.TXT","PRIVATE.TXT"})Files.write(new File(internal,name).toPath(),new byte[]{1});
+        DiagnosticStore.remove(internal,"CAP");
+        check(!new File(internal,"CAP0.TXT").exists()&&!new File(internal,"CAP5.TXT").exists()&&new File(internal,"UI0.TXT").exists()&&new File(internal,"PRIVATE.TXT").exists(),"remove clears only this role's journals");
+    }
     public static void main(String[] args)throws Exception {
         File root=Files.createTempDirectory("diagnostic-store").toFile(),local=new File(root,"internal"),sd=new File(root,"sd"),dest=new File(root,"exports");
         DiagnosticStore first=new DiagnosticStore(local,"CAP","first-session");first.append("camera_open_begin",true);first.close();
@@ -83,6 +136,8 @@ public final class DiagnosticStoreTest {
         check(DiagnosticText.clean("file=/storage/sdcard0/private/image.JPG").equals("file=<path>"),"absolute path redaction");
         check(DiagnosticText.quote("a\n\"b\\").equals("\"a\\n\\\"b\\\\\""),"JSON escaping");ui.close();
         busyJournals(new File(root,"busy"));
-        System.out.println("PASS diagnostics: rotation, interrupted session retention, unavailable storage, export allowlist, atomic failure, previous export, busy journals and ZIP validation");
+        noHeldFiles(new File(root,"held"));
+        fallbackAndPrevious(new File(root,"fallback"));
+        System.out.println("PASS diagnostics: rotation, interrupted session retention, unavailable storage, export allowlist, atomic failure, previous export, busy journals, ZIP validation, no journal held open between writes, small private fallback and previous-session summary");
     }
 }

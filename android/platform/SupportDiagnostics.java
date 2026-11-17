@@ -11,9 +11,14 @@ import java.util.UUID;
 final class SupportDiagnostics {
     private static DiagnosticStore internal,sd;
     private static File internalDir,sdDir;
-    private static String session,role,metadata;
+    private static String session,role,metadata,header,bootId;
     private static long sequence;
     private static String internalError="",sdError="";
+    /** Buffered events reach the journals at most this long after they happen. */
+    static final long FLUSH_DELAY_MS=1000;
+    private static Handler flusher;
+    private static boolean flushScheduled;
+    private static final Runnable FLUSH=new Runnable(){public void run(){flushPending();}};
     static synchronized void initialize(Context context){
         if(session!=null)return;session=UUID.randomUUID().toString();role="UI";
         try{FileInputStream in=new FileInputStream("/proc/self/cmdline");byte[] b=new byte[256];int n;
@@ -29,11 +34,18 @@ final class SupportDiagnostics {
             }catch(Exception absent){details.append(' ').append(field).append("=unavailable");}
             try{details.append(" firmware=").append(props.getMethod("getFirmwareVersion").invoke(null));}catch(Exception ignored){}
         }catch(Throwable unavailable){details.append(" sony_properties=").append(unavailable.getClass().getSimpleName());}
-        try{BufferedReader boot=new BufferedReader(new FileReader("/proc/sys/kernel/random/boot_id"));try{details.append(" boot_id=").append(boot.readLine());}finally{boot.close();}}catch(Exception ignored){}
-        metadata=details.toString();String header=line("session_header",metadata);
-        try{internal=new DiagnosticStore(internalDir,role,header);}catch(Exception e){internalError=e.toString();}
-        try{sd=new DiagnosticStore(sdDir,role,header);}catch(Exception e){sdError=e.toString();}
-        event("process_start","role="+role+" pid="+android.os.Process.myPid()+" internal="+(internal!=null)+" sd="+(sd!=null)+" "+memory()+" internal_free="+free(internalDir)+" sd_free="+free(Environment.getExternalStorageDirectory()));
+        try{BufferedReader boot=new BufferedReader(new FileReader("/proc/sys/kernel/random/boot_id"));try{bootId=boot.readLine();details.append(" boot_id=").append(bootId);}finally{boot.close();}}catch(Exception ignored){}
+        metadata=details.toString();header=line("session_header",metadata);
+        HandlerThread thread=new HandlerThread("LutDiagnostics");thread.start();flusher=new Handler(thread.getLooper());
+        // The SD card is the journal. Private storage is the camera's settings RAM
+        // disk (about 800 KB free on A6300 2.01), backed up at every standby and
+        // restored at a cold boot, so it keeps only a small fallback when SD fails.
+        String prior="previous=unavailable";
+        try{sd=new DiagnosticStore(sdDir,role,header);prior=sd.previousSession(bootId);DiagnosticStore.remove(internalDir,role);}
+        catch(Exception e){sdError=e.toString();openFallback();if(internal!=null)prior=internal.previousSession(bootId);}
+        event("process_start","role="+role+" pid="+android.os.Process.myPid()+" internal="+(internal!=null)+" sd="+(sd!=null)+" "+memory()+" internal_free="+free(internalDir)+" sd_free="+free(Environment.getExternalStorageDirectory())+" "+powerSettings());
+        event("previous_session",prior);
+        registerPowerEvents(context.getApplicationContext());
         final Thread.UncaughtExceptionHandler previous=Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler(){public void uncaughtException(Thread thread,Throwable error){
             try{failure("uncaught "+thread.getName(),error);}catch(Throwable ignored){}
@@ -50,9 +62,46 @@ final class SupportDiagnostics {
     }
     private static void writeEvent(String event,String detail){
         if(session==null)return;String line=line(event,detail);
-        boolean durable=event.equals("failed")||event.equals("uncaught")||event.equals("closed")||event.equals("process_start")||event.equals("camera_open_begin")||event.equals("sequence_open_begin")||event.equals("native_exit_requested")||event.equals("capture_interrupted")||event.equals("store_wait")||event.equals("recovery_snapshot_failed");
-        if(internal!=null)try{internal.append(line,durable);}catch(Exception e){internalError=e.toString();try{internal.close();}catch(Exception ignored){}internal=null;}
-        if(sd!=null)try{sd.append(line,durable);}catch(Exception e){sdError=e.toString();try{sd.close();}catch(Exception ignored){}sd=null;}
+        boolean durable=event.equals("failed")||event.equals("uncaught")||event.equals("closed")||event.equals("process_start")||event.equals("camera_open_begin")||event.equals("sequence_open_begin")||event.equals("native_exit_requested")||event.equals("capture_interrupted")||event.equals("store_wait")||event.equals("recovery_snapshot_failed")||event.equals("system_suspend");
+        if(sd!=null)try{sd.append(line,durable);}catch(Exception e){sdError=e.toString();try{sd.close();}catch(Exception ignored){}sd=null;openFallback();}
+        if(sd==null&&internal!=null)try{internal.append(line,durable);}catch(Exception e){internalError=e.toString();try{internal.close();}catch(Exception ignored){}internal=null;}
+        if(!flushScheduled&&flusher!=null&&((internal!=null&&internal.hasPending())||(sd!=null&&sd.hasPending())))flushScheduled=flusher.postDelayed(FLUSH,FLUSH_DELAY_MS);
+    }
+    /** Private-storage journal, opened only once the SD journal is unavailable. */
+    private static void openFallback(){
+        if(internal!=null||internalDir==null||header==null)return;
+        try{internal=new DiagnosticStore(internalDir,role,header,DiagnosticStore.FALLBACK_LIMIT,DiagnosticStore.FALLBACK_COUNT);
+            internal.append(line("sd_journal_unavailable",DiagnosticText.clean(sdError)),true);}
+        catch(Exception e){internalError=e.toString();internal=null;}
+    }
+    /** Auto power-off delay as the camera reports it; Sony-only, so read reflectively. */
+    static String powerSettings(){
+        try{Object value=Class.forName("com.sony.scalar.sysutil.didep.Settings").getMethod("getAutoPowerOffTime").invoke(null);return "auto_power_off="+value;}
+        catch(Throwable unavailable){return "auto_power_off=unavailable";}
+    }
+    static final String SONY_SUSPEND="com.android.server.SyncAndroidService.SUSPEND",SONY_RESUME="com.android.server.SyncAndroidService.RESUME";
+    /** Records standby and wake as each process sees them; standby writes everything buffered first. */
+    private static void registerPowerEvents(Context context){
+        try{
+            android.content.IntentFilter filter=new android.content.IntentFilter();
+            for(String action:new String[]{SONY_SUSPEND,SONY_RESUME,android.content.Intent.ACTION_SCREEN_OFF,android.content.Intent.ACTION_SCREEN_ON})filter.addAction(action);
+            context.registerReceiver(new android.content.BroadcastReceiver(){@Override public void onReceive(Context c,android.content.Intent intent){
+                String action=intent.getAction();
+                String name=SONY_SUSPEND.equals(action)?"system_suspend":SONY_RESUME.equals(action)?"system_resume":android.content.Intent.ACTION_SCREEN_OFF.equals(action)?"screen_off":"screen_on";
+                event(name,powerSettings());
+            }},filter);
+        }catch(Throwable error){event("power_events_unavailable",error.getClass().getSimpleName());}
+    }
+    /** Activity lifecycle in the journal, so a pause from standby is told apart from a user exit. */
+    static void lifecycle(android.app.Activity activity,String stage){
+        event("activity_"+stage,activity.getClass().getSimpleName()+" finishing="+activity.isFinishing());
+    }
+    static synchronized void flushPending(){
+        flushScheduled=false;
+        if(internal!=null)try{internal.flush(false);}catch(Exception e){internalError=e.toString();try{internal.close();}catch(Exception ignored){}internal=null;}
+        if(sd!=null)try{sd.flush(false);}catch(Exception e){sdError=e.toString();try{sd.close();}catch(Exception ignored){}sd=null;openFallback();}
+        // Still buffered only when the SD journal was busy (being exported).
+        if(flusher!=null&&((internal!=null&&internal.hasPending())||(sd!=null&&sd.hasPending())))flushScheduled=flusher.postDelayed(FLUSH,FLUSH_DELAY_MS);
     }
     static void failure(String where,Throwable error){
         try{writeFailure(where,error);}catch(Throwable ignored){event("failed","error details unavailable");}
@@ -67,7 +116,7 @@ final class SupportDiagnostics {
         }event("failed",out.toString());
     }
     private static String memory(){Runtime r=Runtime.getRuntime();return "heap_used="+(r.totalMemory()-r.freeMemory())+" heap_max="+r.maxMemory()+" native_heap="+Debug.getNativeHeapAllocatedSize();}
-    /** Close SD writers before intentional process exit, including fatal Java errors. */
+    /** Write buffered events before intentional process exit, including fatal Java errors. */
     static synchronized void close(){
         if(internal!=null)try{internal.close();}catch(Exception e){internalError=e.toString();}finally{internal=null;}
         if(sd!=null)try{sd.close();}catch(Exception e){sdError=e.toString();}finally{sd=null;}
@@ -83,8 +132,9 @@ final class SupportDiagnostics {
             +"A capture session without closed may have been interrupted; it is not proof of a crash.\n"
             +"No photos, LUT payloads, network credentials or system logcat are included.\n"
             +"Please describe the visible symptom and the action immediately before it.\n";
-        // Sony SD forbids a reader while a writer owns the same file (EBUSY).
-        // This process lock also pauses event appends until both writers resume.
+        // Sony SD forbids a reader while a writer has the same file open (EBUSY).
+        // Closing flushes this process's buffered events and, under this lock,
+        // pauses its appends; the other process opens its journal only to flush.
         File report;List<String> skipped=new ArrayList<String>();
         try{
             if(internal!=null)internal.close();if(sd!=null)sd.close();

@@ -123,6 +123,6 @@ public final class GalleryActivity extends Activity {
         return true;
     }
     @Override protected void onResume(){super.onResume();active=true;SonyAppPolicy.register(this);try{image.startDisplayTracking();schedule();}catch(Exception e){error(e);}}
-    @Override protected void onPause(){active=false;image.stopDisplayTracking();super.onPause();}
-    @Override protected void onDestroy(){destroyed=true;drawKey=null;io.shutdown();image.setImageBitmap(null);cache.clear();super.onDestroy();}
+    @Override protected void onPause(){SupportDiagnostics.lifecycle(this,"pause");active=false;image.stopDisplayTracking();super.onPause();}
+    @Override protected void onDestroy(){SupportDiagnostics.lifecycle(this,"destroy");destroyed=true;drawKey=null;io.shutdown();image.setImageBitmap(null);cache.clear();super.onDestroy();}
 }

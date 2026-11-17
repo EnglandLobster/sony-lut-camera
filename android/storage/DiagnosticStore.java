@@ -4,40 +4,108 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 
-/** Bounded journals and transactional export; owns only its named diagnostic files. */
+/** Bounded journals and transactional export; owns only its named diagnostic files.
+ * No file stays open between writes: Sony's power-off and auto power-off back up
+ * the /data/data RAM disk and release the SD card first, and an open journal on
+ * either made that fail and the camera cold-boot, losing native settings and
+ * leaving the SD journal at 0 bytes (A6300 2.01, 2026-11-14 and 2026-11-17).
+ * Events collect in memory and each flush opens, appends and closes. */
 final class DiagnosticStore implements Closeable {
-    static final int LIMIT=65536;
+    static final int LIMIT=65536,FLUSH_BYTES=8192;
+    /** Private-storage fallback, used only when the SD journal is unavailable: two
+     * small files per role, since that storage is the camera's settings RAM disk. */
+    static final int FALLBACK_LIMIT=8192,FALLBACK_COUNT=2;
     private final File directory;
     private final String role,header;
-    private final int count;
-    private FileOutputStream output;
+    private final int count,limit;
+    private final ByteArrayOutputStream pending=new ByteArrayOutputStream();
+    private boolean open;
     private int length;
-    DiagnosticStore(File directory,String role,String header)throws IOException {
+    DiagnosticStore(File directory,String role,String header)throws IOException {this(directory,role,header,LIMIT,role.equals("CAP")?6:2);}
+    DiagnosticStore(File directory,String role,String header,int limit,int count)throws IOException {
         if(!role.equals("CAP")&&!role.equals("UI"))throw new IOException("unknown log role");
-        this.directory=directory;this.role=role;this.header=header;count=role.equals("CAP")?6:2;
+        if(limit<1024||limit>LIMIT||count<1||count>(role.equals("CAP")?6:2))throw new IOException("invalid diagnostic bounds");
+        this.directory=directory;this.role=role;this.header=header;this.limit=limit;this.count=count;
         if(!directory.isDirectory()&&!directory.mkdirs())throw new IOException("cannot create diagnostic directory");
         rotate();
     }
     private File file(int index){return new File(directory,role+index+".TXT");}
     private void rotate()throws IOException {
-        close();
-        if(file(count-1).exists()&&!file(count-1).delete())throw new IOException("cannot rotate diagnostic log");
+        flush(false);open=false;
+        // A smaller fallback history also drops the older members a full one left.
+        for(int i=(role.equals("CAP")?6:2)-1;i>=count-1;i--)if(file(i).exists()&&!file(i).delete())throw new IOException("cannot rotate diagnostic log");
         for(int i=count-2;i>=0;i--)if(file(i).exists()&&!file(i).renameTo(file(i+1)))throw new IOException("cannot rotate diagnostic log");
-        output=new FileOutputStream(file(0));byte[] bytes=(header+"\n").getBytes("UTF-8");
-        if(bytes.length>8192)throw new IOException("diagnostic header too large");output.write(bytes);length=bytes.length;
+        byte[] bytes=(header+"\n").getBytes("UTF-8");
+        if(bytes.length>8192)throw new IOException("diagnostic header too large");
+        write(file(0),false,bytes,bytes.length,false);length=bytes.length;open=true;
     }
+    private static void write(File file,boolean append,byte[] bytes,int size,boolean sync)throws IOException {
+        FileOutputStream out=new FileOutputStream(file,append);
+        try{out.write(bytes,0,size);if(sync)out.getFD().sync();}finally{out.close();}
+    }
+    /** Durable events and a full buffer are written at once; anything else waits for {@link #flush}. */
     synchronized void append(String line,boolean durable)throws IOException {
         byte[] bytes=(line+"\n").getBytes("UTF-8");if(bytes.length>32768)throw new IOException("diagnostic event too large");
-        if(length+bytes.length>LIMIT)rotate();
-        if(output==null)throw new IOException("diagnostic writer closed");
-        output.write(bytes);length+=bytes.length;if(durable)output.getFD().sync();
+        if(!open)throw new IOException("diagnostic writer closed");
+        if(length+bytes.length>limit)rotate();
+        pending.write(bytes,0,bytes.length);length+=bytes.length;
+        if(durable||pending.size()>=FLUSH_BYTES)flush(durable);
     }
-    public synchronized void close()throws IOException {if(output!=null){try{output.close();}finally{output=null;}}}
+    synchronized boolean hasPending(){return pending.size()>0;}
+    /** Removes this role's journals from a directory this process no longer writes. */
+    static void remove(File directory,String role){
+        File[] files=directory.listFiles();if(files==null)return;
+        for(File file:files)if(owned(file.getName())&&file.getName().startsWith(role))file.delete();
+    }
+    /** How the previous session of this role ended, from the journal rotation
+     * just moved to index 1. Before 2026-11-17 an SD journal still open at a cold
+     * boot stayed at 0 bytes; a journal without "closed" whose header names
+     * another boot was cut off by a cold boot, battery pull or crash. */
+    synchronized String previousSession(String bootId){
+        File previous=file(1);
+        if(count<2||!previous.isFile())return "previous=none";
+        long size=previous.length();
+        if(size==0)return "previous=empty bytes=0";
+        try{
+            RandomAccessFile in=new RandomAccessFile(previous,"r");
+            try{
+                byte[] head=new byte[(int)Math.min(size,8192)];in.readFully(head);
+                String first=new String(head,"UTF-8");int end=first.indexOf('\n');if(end>=0)first=first.substring(0,end);
+                int tailSize=(int)Math.min(size,8192);byte[] tail=new byte[tailSize];in.seek(size-tailSize);in.readFully(tail);
+                String text=new String(tail,"UTF-8");
+                boolean closed=text.contains("\"event\":\"closed\"");
+                String last=text.trim();int cut=last.lastIndexOf('\n');if(cut>=0)last=last.substring(cut+1);
+                String sameBoot=bootId==null||first.indexOf("boot_id=")<0?"unknown":Boolean.toString(first.contains("boot_id="+bootId));
+                return "previous=journal bytes="+size+" same_boot="+sameBoot+" closed="+closed
+                    +" last_event="+field(last,"event")+" last_uptime_ms="+number(last,"uptime_ms")+" last_wall_ms="+number(last,"wall_ms");
+            }finally{in.close();}
+        }catch(IOException error){return "previous=unreadable error="+error.getClass().getSimpleName();}
+    }
+    private static String field(String json,String name){
+        String key="\""+name+"\":\"";int at=json.indexOf(key);if(at<0)return "unknown";
+        int end=json.indexOf('"',at+key.length());return end<0?"unknown":json.substring(at+key.length(),end);
+    }
+    private static String number(String json,String name){
+        String key="\""+name+"\":";int at=json.indexOf(key);if(at<0)return "unknown";
+        int end=at+key.length();while(end<json.length()&&Character.isDigit(json.charAt(end)))end++;
+        return end==at+key.length()?"unknown":json.substring(at+key.length(),end);
+    }
+    /** Appends the buffered events and closes the file again. While the other
+     * process exports this journal, Sony's SD stack refuses the open (EBUSY);
+     * the events then stay buffered for the next flush. Any other failure drops them. */
+    synchronized void flush(boolean sync)throws IOException {
+        if(pending.size()==0)return;
+        try{write(file(0),true,pending.toByteArray(),pending.size(),sync);}
+        catch(FileNotFoundException error){if(busy(error)&&pending.size()<LIMIT)return;pending.reset();throw error;}
+        catch(IOException error){pending.reset();throw error;}
+        pending.reset();
+    }
+    public synchronized void close()throws IOException {if(open){try{flush(false);}finally{open=false;}}}
     synchronized void resume()throws IOException {
-        if(output!=null)return;
+        if(open)return;
         if(!file(0).isFile())throw new IOException("active diagnostic log missing");
         if(file(0).length()>LIMIT)throw new IOException("active diagnostic log oversized");
-        length=(int)file(0).length();output=new FileOutputStream(file(0),true);
+        length=(int)file(0).length();open=true;
     }
     static boolean owned(String name){return name.matches("CAP[0-5]\\.TXT|UI[0-1]\\.TXT");}
     /** Opens one journal for export; tests substitute Sony's EBUSY refusal. */

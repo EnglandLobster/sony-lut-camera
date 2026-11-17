@@ -226,6 +226,16 @@ public final class LibraryActivity extends Activity {
                     .putExtra("develop_animation",getIntent().getBooleanExtra("develop_animation",true))
                     .putExtra("develop_animation_alternate",getIntent().getBooleanExtra("develop_animation_alternate",false)),CAPTURE_REQUEST);
     }
+    private int captureRestarts;
+    /** The capture screen found its process left over from a session that auto
+     * power-off ended; it has exited, so relaunching gets a fresh process. Once only. */
+    private void restartCapture(String lutId){
+        SupportDiagnostics.event("capture_restart","attempt="+(captureRestarts+1));
+        int index=-1;for(int i=0;i<luts.size();i++)if(luts.get(i).id.equals(lutId))index=i;
+        if(captureRestarts++>=1||index<0){captureRestarts=0;showNotice("无法进入拍摄","请关机再开机后重试。");return;}
+        final LutLibrary.Entry entry=luts.get(index);
+        ui.postDelayed(new Runnable(){public void run(){if(!destroyed)launchCapture(entry);}},500);
+    }
     private void previewSettings(){
         if(luts.isEmpty())return;previewForCapture=false;previewEntry=luts.get(UiList.clamp(lastSelection,luts.size()));fitError="";fittedPreview=null;
         runTask("正在读取预览设置",new Task(){public void run()throws Exception{
@@ -261,6 +271,8 @@ public final class LibraryActivity extends Activity {
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
         if(request==CAPTURE_REQUEST){capturePending=false;captureAway=false;
             if(data!=null&&data.getBooleanExtra("capture_recovery",false)){requireReleasedCapture();return;}
+            if(data!=null&&data.getBooleanExtra("restart_capture",false)){restartCapture(data.getStringExtra("lut_id"));return;}
+            captureRestarts=0;
         }
         if(request==CAPTURE_REQUEST&&data!=null&&data.hasExtra("startup_failure")){
             mode="library";render();requestPreview();
@@ -351,6 +363,7 @@ public final class LibraryActivity extends Activity {
 
         if(capturePending&&captureAway){capturePending=false;captureAway=false;showInterruptedCapture();}
 if(exiting&&page!=null){page.busy=false;exiting=false;render();}exiting=false;SonyAppPolicy.register(this);if(page!=null)try{page.startDisplayTracking();displayStarted=true;}catch(ClassNotFoundException e){android.util.Log.i("LutLibrary","non-Sony UI preview");}catch(Exception e){showNotice("屏幕初始化失败",explain(e));}}
-    @Override protected void onPause(){ui.removeCallbacks(recoveryRefresh);if(capturePending)captureAway=true;ui.removeCallbacks(exitTimeout);if(exitRequest!=null)exitRequest.cancel();if(exiting)android.util.Log.i("LutUI","native_exit_activity_paused");if(displayStarted){page.stopDisplayTracking();displayStarted=false;}super.onPause();}
-    @Override protected void onDestroy(){destroyed=true;previewRequests.next();io.shutdown();ui.removeCallbacksAndMessages(null);if(page!=null)page.preview=null;if(previews!=null)previews.clear();super.onDestroy();}
+    @Override protected void onStop(){SupportDiagnostics.lifecycle(this,"stop");super.onStop();}
+    @Override protected void onPause(){SupportDiagnostics.lifecycle(this,"pause");ui.removeCallbacks(recoveryRefresh);if(capturePending)captureAway=true;ui.removeCallbacks(exitTimeout);if(exitRequest!=null)exitRequest.cancel();if(exiting)android.util.Log.i("LutUI","native_exit_activity_paused");if(displayStarted){page.stopDisplayTracking();displayStarted=false;}super.onPause();}
+    @Override protected void onDestroy(){SupportDiagnostics.lifecycle(this,"destroy");destroyed=true;previewRequests.next();io.shutdown();ui.removeCallbacksAndMessages(null);if(page!=null)page.preview=null;if(previews!=null)previews.clear();super.onDestroy();}
 }

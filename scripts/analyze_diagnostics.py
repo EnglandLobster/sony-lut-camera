@@ -15,6 +15,7 @@ def analyze(path):
     sessions = defaultdict(dict)
     malformed = 0
     summary = ""
+    empty = []
     with zipfile.ZipFile(path) as archive:
         entries = archive.infolist()
         if len(entries) > 17 or sum(e.file_size for e in entries) > MAX_TOTAL:
@@ -25,6 +26,8 @@ def analyze(path):
             if entry.file_size > 65536:
                 raise ValueError("diagnostic member exceeds limit")
             text = archive.read(entry).decode("utf-8", errors="replace")
+            if entry.filename != "SUMMARY.TXT" and entry.file_size == 0:
+                empty.append(entry.filename)
             if entry.filename == "SUMMARY.TXT":
                 summary = text
                 continue
@@ -50,8 +53,13 @@ def analyze(path):
                        "header": next((e["detail"] for e in events if e["event"] == "session_header"), ""),
                        "events": len(events), "last_event": events[-1], "failures": failures,
                        "capture_parameters": [e["detail"] for e in events if e["event"] == "camera_parameters"],
-                       "save_events": [e for e in events if e["event"] in ("original_saved", "graded_saved", "pair_catalogued", "next_ready")]})
-    return {"summary": summary, "malformed_lines": malformed, "sessions": result}
+                       "save_events": [e for e in events if e["event"] in ("original_saved", "graded_saved", "pair_catalogued", "next_ready")],
+                       "previous_session": next((e["detail"] for e in events if e["event"] == "previous_session"), ""),
+                       "power_events": [e for e in events if e["event"] in POWER_EVENTS or e["event"].startswith("activity_")]})
+    return {"summary": summary, "malformed_lines": malformed, "empty_members": empty, "sessions": result}
+
+
+POWER_EVENTS = ("system_suspend", "system_resume", "screen_off", "screen_on", "stale_capture_process", "capture_restart")
 
 
 def main():
@@ -68,8 +76,16 @@ def main():
         for session in result["sessions"]:
             last = session["last_event"]
             print(f"- {session['role']} {session['session']}: {session['outcome']}; {session['events']} events; last={last['event']}")
+            if session["previous_session"]:
+                print("  before it: " + session["previous_session"])
+            for event in session["power_events"]:
+                if not event["event"].startswith("activity_resume"):
+                    print(f"  {event.get('uptime_ms', '?')} {event['event']} {event['detail']}")
             for error in session["failures"]:
                 print("  " + error["detail"].splitlines()[0])
+        if result["empty_members"]:
+            print("0-byte journals (open when the camera cold-booted; versions before 2026-11-17 kept journals open): "
+                  + ", ".join(result["empty_members"]))
         if result["malformed_lines"]:
             print(f"Partial/invalid lines: {result['malformed_lines']}")
         print("No close recorded means incomplete evidence, not necessarily a crash.")

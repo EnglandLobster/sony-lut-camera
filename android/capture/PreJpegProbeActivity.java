@@ -110,6 +110,20 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         ui.postDelayed(this,5000);
     }};
     private volatile String startupFailure;
+    /** See {@link ShutterConfirmation}: a full press the camera never took. */
+    private volatile boolean shutterNoticed;
+    private boolean fullPressHeld;
+    private final Runnable unfiredPress=new Runnable(){public void run(){
+        if(closed||fullPressHeld||shutterNoticed||gate.state()!=PreJpegGate.State.ARMED)return;
+        event("shutter_not_released","since_press_ms="+(SystemClock.elapsedRealtime()-pressAt));
+        cancelShutter("相机没有释放快门 · 请重新按下快门");
+    }};
+    private void watchUnfiredPress(){
+        ui.removeCallbacks(unfiredPress);
+        if(shutterNoticed||productHud==null||gate.state()!=PreJpegGate.State.ARMED)return;
+        long wait=ShutterConfirmation.waitMs(productHud.readout.shutterNumerator,productHud.readout.shutterDenominator);
+        if(wait>0)ui.postDelayed(unfiredPress,wait);
+    }
     private CaptureTelemetry telemetry;
     private final FocusFeedback focusFeedback=new FocusFeedback();
     private FocusNotifications focusNotifications;
@@ -133,7 +147,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private boolean lutApplied;private Bitmap sourceReference;
     private PhotoFiles photoFiles;
     private Object retainedImage;private long lutCache;private Bitmap lutReview;
-    private File originalFile,gradedFile;private String originalQuality;private CaptureAutoReview autoReview;
+    private File originalFile,gradedFile;private String originalQuality;
     private ReviewView review;private boolean awaitFirstFrame;
     private long displayedAt,nextReadyAt,rearmAt;private boolean finishingRearm,reviewing;
     private boolean reviewClearCheck;
@@ -334,6 +348,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             status=new TextView(this);status.setText("连续拍摄仅用于已验证的双文件 LUT 流程。");setContentView(status);return;
         }
         boolean freshEntry=!hasEnteredProbe;hasEnteredProbe=true;
+        if(productUi()&&!freshEntry){restartStaleProcess();return;}
         normalizeZoom=getIntent().getBooleanExtra("normalize_zoom",false);
         // Revision00 stalls even in a fresh process. The reference application
         // actually selects its newer bundled revision01, now verified to save
@@ -564,13 +579,11 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 event("quality_applied","jpeg_quality="+captureQuality+" label="+CaptureJpegQuality.label(captureQuality)+" original="+originalQuality);
             }
             if(productUi()){
-                // The app shows its own result. Left on, the camera's picture review
-                // holds every shot for the time set in the camera menu.
-                try{
-                    autoReview=new CaptureAutoReview(CaptureAutoReview.camera(cameraType,cameraEx));
-                    int seconds=autoReview.disable();
-                    event("auto_review","camera_seconds="+seconds+" switched_off="+autoReview.changed());
-                }catch(Throwable error){autoReview=null;event("auto_review_unavailable",cause(error).toString());}
+                // The camera's own picture review ("自动检视") stays as the user set
+                // it. Switched off, the firmware returns to live view 0.1-0.2 s
+                // after the shutter, before either record is stored; left on, only
+                // after the graded store (ILCE-6300 2.01, 2026-11-16).
+                // v0.10.1-beta.1 switched it off for the session.
                 openControls();
                 settingsNotice=CaptureSettingsNotice.between(initialSettings,new CameraExposureDriver(camera).read());
                 if(originalColorOnly)settingsNotice+=(settingsNotice.length()>0?" · ":"")+"本机使用原色取景，照片仍应用完整 LUT";
@@ -787,8 +800,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 if(kind.equals("ShutterListener")){
                     int status=((Integer)args[0]).intValue();event("shutter","status="+status);
                     // CameraEx.ShutterListener: OK=0, CANCELED=1, ERROR=2.
-                    if(status==0)arm("shutter_callback");
-                    else if(status==1)cancelShutter();
+                    if(status==0){arm("shutter_callback");shutterNoticed=true;ui.removeCallbacks(unfiredPress);}
+                    else if(status==1)cancelShutter("拍摄已取消 · 可重新半按对焦后拍摄");
                     else failure("shutter",new IOException("status "+status));
                 }else onPreviewStarted();return null;
             }});
@@ -940,7 +953,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 productHud.footer=storeCompletion.overdue(storeCompletion.token(),SystemClock.elapsedRealtime())?"MENU 返回 LUT 库，后台继续核验":"MENU 完成本次保存后返回";productHud.update();}
         }});
     }
-    private void cancelShutter(){
+    private void cancelShutter(String hint){
+        ui.removeCallbacks(unfiredPress);
         if(gate.state()!=PreJpegGate.State.ARMED){
             event("shutter_cancel_ignored","state="+gate.state());return;
         }
@@ -953,7 +967,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             review.setImageBitmap(null);review.setVisibility(View.INVISIBLE);
             if(active)review.showGraphicsOutput();
             if(productHud!=null){status.setVisibility(View.GONE);productLive();
-                productHud.detail="拍摄已取消 · 可重新半按对焦后拍摄";productHud.showLiveHint(productHud.detail);productHud.update();}
+                productHud.detail=hint;productHud.showLiveHint(productHud.detail);productHud.update();}
             else{status.setText("拍摄已取消 · 可重新拍摄");status.setVisibility(View.VISIBLE);}
             event("shutter_canceled","ready=true filter_preserved=true");
             if(autoPreview!=null)autoPreview.shotCanceled();
@@ -965,6 +979,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             autoPreview.fail(new IOException("shutter before preview baseline barrier: "+origin));return;
         }
         if(gate.arm()){
+        shutterNoticed=false;
         final long shot=gate.shot();processingProgress.begin(shot);pressAt=SystemClock.elapsedRealtime();timingOrigin=origin;journalAtPress=journalWriteMs();
         originalFile=null;gradedFile=null;displayedAt=0;nextReadyAt=0;awaitFirstFrame=false;lutApplied=false;
         // Bodies with the completed-store callback grade while the original is
@@ -1404,9 +1419,26 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }catch(final IOException e){event("catalog_failed",e.toString());ui.post(new Runnable(){public void run(){if(!destroyed&&productHud!=null){productHud.detail="照片已保存在 DCIM；回看记录保存失败";productHud.update();}}});}
         finally{ui.post(new Runnable(){public void run(){pendingReceipts--;maybeOpenGallery();exitProductProcess();}});}}});
     }
+    /** Set once a session in this process has released the camera and every receipt. */
+    private static volatile boolean priorSessionReleased;
+    /** Auto power-off pauses and closes the session, but the camera may wake into
+     * the library without destroying the paused screen, so this process outlives
+     * it (A6300 2.01, 2026-11-17). Vendor RAW setup needs a fresh process: once the
+     * old session released everything, hand the entry back to the library to
+     * relaunch and end this process. */
+    private void restartStaleProcess(){
+        event("stale_capture_process","prior_released="+priorSessionReleased);
+        if(!priorSessionReleased){
+            status=new TextView(this);status.setText("上次拍摄还没有结束。\n请返回 LUT 库，关机再开机后重试。");setContentView(status);return;
+        }
+        setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("restart_capture",true).putExtra("lut_id",getIntent().getStringExtra("lut_id")));
+        finish();
+        ui.post(new Runnable(){public void run(){SupportDiagnostics.close();android.os.Process.killProcess(android.os.Process.myPid());}});
+    }
     private void exitProductProcess(){
         // No camera handles or receipt writes may outlive the isolated process.
         // Finishing it makes the next entry satisfy the established fresh-JNI guard.
+        if(productUi()&&closed&&!cleanupFailed&&pendingReceipts==0)priorSessionReleased=true;
         if(productUi()&&destroyed&&closed&&!cleanupFailed&&pendingReceipts==0){
             if(thread!=null)thread.quit();
             SupportDiagnostics.close();
@@ -1439,18 +1471,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(filter!=null)try{filter.getClass().getMethod("release").invoke(filter);}catch(Throwable e){cleanupFailed=true;event("filter_release_error",cause(e).toString());}filter=null;
         for(Object value:new Object[]{sequence,cameraEx})if(value!=null){
             if(value==cameraEx&&exposure!=null){
-                ui.removeCallbacks(syncDial);ui.removeCallbacks(applySelection);unregisterModeDial();saveControlMemory();controls=null;
+                ui.removeCallbacks(syncDial);ui.removeCallbacks(applySelection);ui.removeCallbacks(unfiredPress);unregisterModeDial();saveControlMemory();controls=null;
                 if(focus!=null)try{focus.close();event("focus_restored","original settings readback matched");}
                 catch(Exception e){event("focus_restore_error",cause(e).toString());}
                 focus=null;
                 try{exposure.close();event("exposure_restored","original settings readback matched");}
                 catch(Exception e){event("exposure_restore_error",cause(e).toString());}
                 exposure=null;
-            }
-            if(value==cameraEx&&autoReview!=null){
-                try{if(autoReview.restore())event("auto_review_restored","");}
-                catch(Throwable e){event("auto_review_restore_error",cause(e).toString());}
-                autoReview=null;
             }
             if(value==cameraEx&&originalQuality!=null){try{
                 Camera.Parameters restore=camera.getParameters();restore.set("jpeg-quality",originalQuality);camera.setParameters(restore);
@@ -1501,12 +1528,17 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }
         open();
     }
+    private void lifecycle(String stage){
+        event("activity_"+stage,"finishing="+isFinishing()+" state="+gate.state()+" closed="+closed+" store_pending="+(storeCompletion!=null&&storeCompletion.pending())+" receipts="+pendingReceipts);
+    }
+    @Override protected void onStop(){if(productUi())lifecycle("stop");super.onStop();}
     @Override protected void onPause(){
+        if(productUi())lifecycle("pause");
         if(productUi()&&storeCompletion!=null&&storeCompletion.pending()){
             storeCompletion.requestStop();stopAfterStore=true;recoveryDetached=true;
         }
         active=false;ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;ui.removeCallbacks(hideReviewStatus);ui.removeCallbacks(processingTick);ui.removeCallbacks(restoreGraphics);if(review!=null&&!recoveryDetached)review.stopDisplayTracking();close();super.onPause();}
-    @Override protected void onDestroy(){destroyed=true;close();if(closed&&thread!=null&&pendingReceipts==0)thread.quit();
+    @Override protected void onDestroy(){if(productUi())lifecycle("destroy");destroyed=true;close();if(closed&&thread!=null&&pendingReceipts==0)thread.quit();
         if(Thread.getDefaultUncaughtExceptionHandler()==exceptionHandler)Thread.setDefaultUncaughtExceptionHandler(previousExceptionHandler);
         super.onDestroy();exitProductProcess();}
     @Override public void onBackPressed(){
@@ -1550,11 +1582,17 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }
         if(productUi()&&controls!=null&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0
                 &&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS)&&controls.panelOpen())controls.shutter();
+        if(key==518||scan==518||key==KeyEvent.KEYCODE_CAMERA){
+            // A held button may still be waiting for focus; judge the press only once it is released.
+            if(e.getAction()==KeyEvent.ACTION_UP){fullPressHeld=false;watchUnfiredPress();}
+            else if(e.getRepeatCount()==0){fullPressHeld=true;ui.removeCallbacks(unfiredPress);}
+        }
         if(automaticNativePreview()&&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS||key==772||scan==772||key==774||scan==774)){
             if(autoPreview==null){
                 if(gate.state()!=PreJpegGate.State.READY)return true;
             }else{
-                event("auto_preview_key","key="+key+" scan="+scan+" action="+e.getAction()+" state="+autoPreview.state());
+                event("auto_preview_key","key="+key+" scan="+scan+" action="+e.getAction()+" state="+autoPreview.state()
+                    +" age_ms="+(SystemClock.uptimeMillis()-e.getEventTime()));
                 boolean half=key==516||scan==516||key==KeyEvent.KEYCODE_FOCUS;
                 boolean releaseHalf=key==772||scan==772||(half&&e.getAction()==KeyEvent.ACTION_UP);
                 if(releaseHalf){autoPreview.release();return true;}
