@@ -53,7 +53,20 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(productHud!=null&&!closed)productHud.showLiveHint("设置未生效："+(root.getMessage()==null?root.getClass().getSimpleName():root.getMessage()));
         }
         public void whiteBalanceChanged(){if(previewDriver!=null)previewDriver.rebaseWhiteBalance();}
+        public void selectionMoved(){
+            // First move previews at once; while a key is held or a dial
+            // spins, at most one camera write per interval, the last row always.
+            ui.removeCallbacks(applySelection);
+            long wait=selectionAppliedAt+SELECTION_PREVIEW_INTERVAL_MS-SystemClock.uptimeMillis();
+            if(wait<=0)applySelection.run();else ui.postDelayed(applySelection,wait);
+        }
     };
+    private static final long SELECTION_PREVIEW_INTERVAL_MS=150;
+    private long selectionAppliedAt;
+    private final Runnable applySelection=new Runnable(){public void run(){
+        if(controls==null||!controls.panelOpen()||!controlsAdjustable(false))return;
+        controls.applySelection();selectionAppliedAt=SystemClock.uptimeMillis();
+    }};
     private final Runnable syncDial=new Runnable(){public void run(){
         if(closed||controls==null)return;
         if(workerActive||gate.state()!=PreJpegGate.State.READY||(autoPreview!=null&&autoPreview.state()!=AutoPreviewGate.State.PREVIEW
@@ -1426,7 +1439,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(filter!=null)try{filter.getClass().getMethod("release").invoke(filter);}catch(Throwable e){cleanupFailed=true;event("filter_release_error",cause(e).toString());}filter=null;
         for(Object value:new Object[]{sequence,cameraEx})if(value!=null){
             if(value==cameraEx&&exposure!=null){
-                ui.removeCallbacks(syncDial);unregisterModeDial();saveControlMemory();controls=null;
+                ui.removeCallbacks(syncDial);ui.removeCallbacks(applySelection);unregisterModeDial();saveControlMemory();controls=null;
                 if(focus!=null)try{focus.close();event("focus_restored","original settings readback matched");}
                 catch(Exception e){event("focus_restore_error",cause(e).toString());}
                 focus=null;

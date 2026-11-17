@@ -12,7 +12,10 @@ public final class ViewfinderControlsTest {
     static final ManualExposure.Mode P=ManualExposure.Mode.P,A=ManualExposure.Mode.A,S=ManualExposure.Mode.S,M=ManualExposure.Mode.M;
 
     static class Host implements ViewfinderControls.Host {
-        int changed,wb;String hint="";String failure;
+        int changed,wb,moved;String hint="";String failure;
+        /** The Activity previews at once or after a pause; hold models the pause. */
+        ViewfinderControls controls;boolean hold;
+        public void selectionMoved(){moved++;if(!hold&&controls!=null)controls.applySelection();}
         public void changed(){changed++;}
         public void hint(String text){hint=text;}
         public void failed(String where,Exception error){failure=where+" "+error;}
@@ -57,18 +60,48 @@ public final class ViewfinderControlsTest {
         check(focus.areas().equals(Arrays.asList("multi","center","flex-spot","local")),"internal AF areas hidden, zone alias merged: "+focus.areas());
         check(FocusControls.areaLabel("local").equals("区"),"local is the zone area");
         Host host=new Host();
-        ViewfinderControls v=new ViewfinderControls(exposure,focus,two,true,host);
+        ViewfinderControls v=new ViewfinderControls(exposure,focus,two,true,host);host.controls=v;
         v.rotate(D1,1);check(cam.values.get("aperture").equals("630"),"top dial aperture in M");
         v.rotate(D2,-1);check(cam.shutter().equals("1/60"),"wheel shutter in M");
         check(v.modeLabel().equals("M")&&v.isoText(0).equals("ISO 200"),"HUD mode/ISO");
-        // ISO list: ▶ opens at the current value, ▼ moves, centre applies.
+        // ISO list: ▶ opens at the current value, ▼ previews each row on the
+        // camera, centre keeps it.
         check(v.press(UiKeyActions.RIGHT)&&v.panel()==ViewfinderControls.Panel.ISO&&v.rowLabels()[v.selected()].equals("200"),"ISO list");
-        v.press(UiKeyActions.DOWN);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.OK);
+        check(v.panelHint().contains("实时预览")&&v.panelHint().contains("MENU 取消"),"ISO list hint "+v.panelHint());
+        v.press(UiKeyActions.DOWN);
+        check(cam.values.get("iso-sensitivity").equals("400")&&v.panelOpen()&&v.isoText(0).equals("ISO 400"),"ISO previewed while moving");
+        v.press(UiKeyActions.DOWN);v.press(UiKeyActions.OK);
         check(cam.values.get("iso-sensitivity").equals("800")&&!v.panelOpen(),"ISO applied");
-        v.press(UiKeyActions.RIGHT);v.rotate(D2,-10);check(v.rowLabels()[v.selected()].equals("AUTO"),"dial moves list to AUTO");
-        v.press(UiKeyActions.BACK);check(cam.values.get("iso-sensitivity").equals("800")&&!v.panelOpen(),"MENU cancels");
-        // WB list rebases the preview baseline.
-        v.press(UiKeyActions.LEFT);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.OK);
+        // MENU cancels: back to the value the list opened with.
+        v.press(UiKeyActions.RIGHT);v.rotate(D2,-10);
+        check(v.rowLabels()[v.selected()].equals("AUTO")&&cam.values.get("iso-sensitivity").equals("0"),"dial moves list to AUTO and previews it");
+        v.press(UiKeyActions.BACK);check(cam.values.get("iso-sensitivity").equals("800")&&exposure.iso()==800&&!v.panelOpen(),"MENU cancels");
+        // Held key: rows pass without a write until input pauses; the pause
+        // previews the last row only.
+        host.hold=true;int moved=host.moved,writes=cam.writes;
+        v.press(UiKeyActions.RIGHT);v.press(UiKeyActions.UP);v.press(UiKeyActions.UP);
+        check(host.moved==moved+2&&cam.writes==writes&&cam.values.get("iso-sensitivity").equals("800")&&v.rowLabels()[v.selected()].equals("200"),"held key defers the preview");
+        v.applySelection();check(cam.values.get("iso-sensitivity").equals("200"),"pause previews the highlighted row");
+        // Centre before the pause still takes the highlighted row; MENU before it writes nothing new.
+        v.press(UiKeyActions.UP);v.press(UiKeyActions.OK);
+        check(cam.values.get("iso-sensitivity").equals("100")&&!v.panelOpen(),"centre applies a row not yet previewed");
+        v.press(UiKeyActions.RIGHT);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.BACK);v.applySelection();
+        check(cam.values.get("iso-sensitivity").equals("100")&&!v.panelOpen(),"MENU before the pause keeps the value; a late preview is ignored");
+        host.hold=false;
+        // A previewed value stays when the shutter closes the list.
+        v.press(UiKeyActions.RIGHT);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.DOWN);v.shutter();
+        check(cam.values.get("iso-sensitivity").equals("800")&&exposure.iso()==800&&!v.panelOpen(),"shutter keeps the previewed ISO");
+        // A row the camera refuses: reported, highlight back on the value in effect.
+        v.press(UiKeyActions.RIGHT);cam.ignoreIso=true;v.press(UiKeyActions.DOWN);
+        check(host.failure!=null&&host.failure.startsWith("preview_ISO")&&v.rowLabels()[v.selected()].equals("800")&&v.panelOpen(),"refused preview: "+host.failure);
+        cam.ignoreIso=false;host.failure=null;v.press(UiKeyActions.BACK);
+        check(cam.values.get("iso-sensitivity").equals("800"),"ISO unchanged after refused preview");
+        // WB list previews too and rebases the preview baseline on each write.
+        v.press(UiKeyActions.LEFT);v.press(UiKeyActions.DOWN);
+        check(cam.values.get("whitebalance").equals("daylight")&&host.wb==1&&v.panelOpen(),"WB previewed and baseline rebased");
+        v.press(UiKeyActions.DOWN);v.press(UiKeyActions.BACK);
+        check(cam.values.get("whitebalance").equals("auto")&&host.wb==3&&!v.panelOpen(),"MENU restores WB and rebases: "+host.wb);
+        host.wb=0;v.press(UiKeyActions.LEFT);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.OK);
         check(cam.values.get("whitebalance").equals("daylight")&&host.wb==1,"WB applied and baseline rebased");
         check(v.whiteBalanceText().equals("日光"),"WB label");
         // Settings: AF point, area, face; no mode row with a physical dial.
@@ -170,6 +203,6 @@ public final class ViewfinderControlsTest {
         nv.press(UiKeyActions.BACK);nv.rotate(D2,2);check(nodial.values.get("aperture").equals("710"),"single input aperture");
         nv.press(UiKeyActions.OK);nv.rotate(D2,1);check(ne.compensationLabel().equals("+0.3 EV"),"centre switches to EV");
         ne.close();check(nodial.values.get("scene-mode").equals("program-auto"),"app mode restored");
-        System.out.println("ViewfinderControlsTest passed: Sony dial codes, layouts, lists, AF point, face priority, dial follow, memory");
+        System.out.println("ViewfinderControlsTest passed: Sony dial codes, layouts, lists, live ISO/WB preview, AF point, face priority, dial follow, memory");
     }
 }

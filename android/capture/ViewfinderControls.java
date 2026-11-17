@@ -10,8 +10,10 @@ import java.util.List;
  * Live view: dials follow {@link ControlLayout}; → ISO list, ← white
  * balance list, ↓ focus/shooting settings, centre resets EV (or switches the
  * shared function on one-dial bodies). Lists: ↑↓/dials move, ←→ change a
- * setting row, centre applies, MENU closes. Every function is reachable with
- * keys all supported bodies have (wheel, four-way, centre, MENU). */
+ * setting row, centre applies, MENU closes. The ISO and white balance lists
+ * preview the highlighted value on the camera while moving: centre keeps it,
+ * MENU returns to the value the list opened with. Every function is reachable
+ * with keys all supported bodies have (wheel, four-way, centre, MENU). */
 final class ViewfinderControls {
     interface Host {
         void changed();
@@ -19,6 +21,9 @@ final class ViewfinderControls {
         void failed(String where,Exception error);
         /** A verified WB write: the preview baseline must follow it. */
         void whiteBalanceChanged();
+        /** The ISO/WB highlight moved: call {@link #applySelection()} now or
+         * once input pauses, so a held key does not queue a write per row. */
+        void selectionMoved();
     }
     /** CHOICE is the option list of one settings row (area, face, mode). */
     enum Panel { NONE, ISO, WB, SETTINGS, CHOICE, POINT }
@@ -31,6 +36,8 @@ final class ViewfinderControls {
     private final Host host;
     private Panel panel=Panel.NONE;
     private int selected;
+    /** Value in effect when the ISO/WB list opened; MENU returns to it. */
+    private int isoBefore;private String wbBefore;
     private boolean alternate;
     private final List<Row> rows=new ArrayList<Row>();
     private Row choiceRow;private int settingsSelected;
@@ -102,7 +109,7 @@ final class ViewfinderControls {
             buildRows();
             if(rows.isEmpty()){host.hint("本机未提供可调的对焦设置");return;}
         }
-        panel=next;
+        panel=next;isoBefore=exposure.iso();wbBefore=exposure.whiteBalance();
         if(next==Panel.ISO)selected=Math.max(0,exposure.isoValues().indexOf(Integer.valueOf(exposure.iso())));
         else if(next==Panel.WB)selected=Math.max(0,exposure.whiteBalanceValues().indexOf(exposure.whiteBalance()));
         else selected=0;
@@ -127,16 +134,46 @@ final class ViewfinderControls {
     private void move(int steps){
         int count=size();if(count==0)return;
         int next=Math.max(0,Math.min(count-1,selected+steps));
-        if(next!=selected){selected=next;host.changed();}
+        if(next!=selected){
+            selected=next;host.changed();
+            if(panel==Panel.ISO||panel==Panel.WB)host.selectionMoved();
+        }
+    }
+    /** Live preview: write the highlighted ISO/WB value. A value the camera
+     * refuses puts the highlight back on the one in effect. */
+    void applySelection(){
+        if(panel!=Panel.ISO&&panel!=Panel.WB)return;
+        try{apply(panel,selected);}
+        catch(Exception e){
+            // A failed WB write may still have moved Sony's white balance.
+            if(panel==Panel.WB)host.whiteBalanceChanged();
+            selected=Math.max(0,panel==Panel.ISO?exposure.isoValues().indexOf(Integer.valueOf(exposure.iso()))
+                :exposure.whiteBalanceValues().indexOf(exposure.whiteBalance()));
+            host.failed("preview_"+panel,e);
+        }
+        host.changed();
+    }
+    private void apply(Panel list,int index)throws Exception{
+        if(list==Panel.ISO)exposure.setIso(exposure.isoValues().get(index).intValue());
+        else setWhiteBalance(exposure.whiteBalanceValues().get(index));
+    }
+    private void setWhiteBalance(String value)throws Exception{
+        if(value.equals(exposure.whiteBalance()))return;
+        exposure.setWhiteBalance(value);host.whiteBalanceChanged();
     }
     private boolean list(int action)throws Exception{
         if(action==UiKeyActions.UP||action==UiKeyActions.LEFT){move(-1);return true;}
         if(action==UiKeyActions.DOWN||action==UiKeyActions.RIGHT){move(1);return true;}
-        if(action==UiKeyActions.BACK){closePanel();return true;}
-        if(action==UiKeyActions.OK){
+        if(action==UiKeyActions.BACK){
+            // Cancel: undo whatever the live preview wrote.
             Panel was=panel;panel=Panel.NONE;
-            if(was==Panel.ISO)exposure.setIso(exposure.isoValues().get(selected).intValue());
-            else{exposure.setWhiteBalance(exposure.whiteBalanceValues().get(selected));host.whiteBalanceChanged();}
+            if(was==Panel.ISO){if(exposure.isoValues().contains(Integer.valueOf(isoBefore)))exposure.setIso(isoBefore);}
+            else if(wbBefore!=null&&exposure.whiteBalanceValues().contains(wbBefore))setWhiteBalance(wbBefore);
+            host.changed();return true;
+        }
+        if(action==UiKeyActions.OK){
+            // The highlight may be ahead of a preview write still pending.
+            Panel was=panel;panel=Panel.NONE;apply(was,selected);
             host.changed();return true;
         }
         return true;
@@ -225,7 +262,8 @@ final class ViewfinderControls {
         }catch(Exception e){host.whiteBalanceChanged();host.failed("dial_sync",e);}
         host.changed();
     }
-    /** Full press or half press: lists never cover a shot. */
+    /** Full press or half press: lists never cover a shot. An ISO/WB value
+     * already previewed stays in effect. */
     void shutter(){
         if(panel==Panel.POINT){
             // A shot never waits behind the editor: a refused point is dropped.
@@ -312,7 +350,7 @@ final class ViewfinderControls {
     int selected(){return selected;}
     String panelHint(){
         switch(panel){
-            case ISO:case WB:return "↑↓ 选择 · 中键确定 · MENU 返回";
+            case ISO:case WB:return "↑↓ 实时预览 · 中键确定 · MENU 取消";
             case SETTINGS:{
                 if(rows.isEmpty())return "";
                 Row row=rows.get(selected);
