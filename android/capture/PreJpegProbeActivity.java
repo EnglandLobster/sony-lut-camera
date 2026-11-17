@@ -138,6 +138,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private HandlerThread thread;private Handler work;
     private SurfaceHolder holder;private TextView status;
     private Object cameraEx,sequence,filter;private Camera camera;
+    /** True between startDirectShutter and its stopped callback. */
+    private volatile boolean directShutterRunning;
     private Class<?> cameraType,sequenceType,rawType,imageType;
     private volatile boolean active,prepared,workerActive,destroyed;
     private boolean initOnly,preparePending;private volatile boolean closed;private String phase,mapPath,initStage,mapRevision;private File run,sd;
@@ -693,7 +695,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(automaticNativePreview()&&automaticProfile!=null){
                 gate.registered(false);prepareAutomaticPreview();return;
             }
-            gate.registered(false);cameraType.getMethod("startDirectShutter").invoke(cameraEx);
+            gate.registered(false);cameraType.getMethod("startDirectShutter").invoke(cameraEx);directShutterRunning=true;
             sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,false);
             event("ready","phase="+phase+" continuous="+continuous);message(paired()?(continuous?"按快门拍照 · 连续会话\n成片后半按返回取景，继续拍下一张。\n原片保留 · "+captureGeometry+" · "+CaptureJpegQuality.label(captureQuality):"编码前 LUT 单次测试\n请正常半按对焦、全按拍一张。\n保留原片，两张均为 "+CaptureJpegQuality.label(captureQuality)+"。"):
                 ("handoff".equals(phase)?"接口验证 1：RAW 交还相机保存":(managedJpegQuality()?"单张 EXTRA FINE 保存验证":"接口验证 2：索尼显影后直接保存"))+"\n请正常半按对焦、全按拍一张。\n本次不添加 LUT。");
@@ -718,7 +720,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }
             public void enableCapture()throws Exception{
                 isolationPreview.requireBaseline();
-                cameraType.getMethod("startDirectShutter").invoke(cameraEx);
+                cameraType.getMethod("startDirectShutter").invoke(cameraEx);directShutterRunning=true;
                 sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,false);
             }
         });
@@ -754,6 +756,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 final String type="com.sony.scalar.hardware.CameraEx$DirectShutterStoppedCallback";
                 Object callback=listener(type,new InvocationHandler(){public Object invoke(Object p,Method m,Object[] args){
                     if(m.getDeclaringClass()==Object.class)return objectMethod(p,m,args);
+                    directShutterRunning=false;
                     ui.post(new Runnable(){public void run(){if(!active||closed||cameraEx!=owner)return;
                         event("auto_preview_shutter_stopped","");done.run();}});return null;
                 }});
@@ -773,7 +776,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }
             public void enable()throws Exception{
                 isolationPreview.requireBaseline();
-                cameraType.getMethod("startDirectShutter").invoke(cameraEx);
+                cameraType.getMethod("startDirectShutter").invoke(cameraEx);directShutterRunning=true;
                 sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,false);
                 event("auto_preview_capture_ready","baseline_verified=true direct_shutter=true");
             }
@@ -1445,6 +1448,34 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             android.os.Process.killProcess(android.os.Process.myPid());
         }
     }
+    /** Leave the shutter the way Sony's own shooting app does before it
+     * releases the camera: DirectShutter stopped and acknowledged
+     * (SpinalExecutor.myRelease waits for onShutterStopped) and the sequence
+     * release lock open (ImagingAdapterImpl unlocks after every shot). This
+     * app otherwise releases with the lock engaged in the colored viewfinder,
+     * after a shot and after a failure, or with DirectShutter still running.
+     * Users report the native shutter staying dead after leaving the app until
+     * the camera is switched off; which of the two causes it is unconfirmed. */
+    private void handBackShutter(){
+        long start=SystemClock.elapsedRealtime();boolean wasRunning=directShutterRunning,stopped=!wasRunning,unlocked=false;
+        if(wasRunning)try{
+            final java.util.concurrent.CountDownLatch done=new java.util.concurrent.CountDownLatch(1);
+            final String type="com.sony.scalar.hardware.CameraEx$DirectShutterStoppedCallback";
+            Object callback=listener(type,new InvocationHandler(){public Object invoke(Object p,Method m,Object[] args){
+                if(m.getDeclaringClass()==Object.class)return objectMethod(p,m,args);
+                directShutterRunning=false;done.countDown();return null;
+            }});
+            cameraType.getMethod("stopDirectShutter",Class.forName(type)).invoke(cameraEx,callback);
+            // The callback arrives on the camera's worker looper, which is idle
+            // here because close() waits for workerActive to clear.
+            stopped=done.await(1000,java.util.concurrent.TimeUnit.MILLISECONDS);
+        }catch(Throwable e){event("shutter_handback_error","stop "+cause(e));}
+        // Unlocking with DirectShutter still live could start an exposure
+        // nobody will store; leave it locked if the stop was not acknowledged.
+        if(stopped)try{sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,false);unlocked=true;}
+        catch(Throwable e){event("shutter_handback_error","unlock "+cause(e));}
+        event("shutter_handback","direct_shutter_was_running="+wasRunning+" stopped="+stopped+" release_unlocked="+unlocked+" wait_ms="+(SystemClock.elapsedRealtime()-start));
+    }
     private void release(Object value){if(value!=null)try{
         Method valid=value.getClass().getMethod("isValid");if(((Boolean)valid.invoke(value)).booleanValue())value.getClass().getMethod("release").invoke(value);
     }catch(Throwable e){cleanupFailed=true;event("release_error",cause(e).toString());}}
@@ -1493,6 +1524,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(value==cameraEx&&captureSetup!=null)try{
                 captureSetup.close();captureSetup=null;event("capture_settings_restored","original settings readback matched");
             }catch(Exception e){event("capture_settings_restore_error",cause(e).toString());}
+            if(value==sequence)handBackShutter();
             try{
             event("release_begin",value.getClass().getName());value.getClass().getMethod("release").invoke(value);event("release_done",value.getClass().getName());
             if(value==cameraEx&&previewDriver!=null)previewDriver.cameraReleased();
