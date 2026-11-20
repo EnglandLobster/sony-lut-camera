@@ -154,8 +154,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     /** LUT sessions: also store the developed original as its own JPEG. Off
      * in the product unless the user enables it (owner, 2026-11-20). */
     private boolean saveOriginal;
-    /** Experimental (2026-11-20): Sony's develop marks the RAW and the
-     * single graded store writes it beside the JPEG, like RAW+JPEG. */
+    /** Owner decision 2026-11-20 (保存方式 ＋RAW): Sony's develop marks the
+     * RAW and the single graded store writes it beside the JPEG, like the
+     * camera's RAW+JPEG. Verified on ILCE-6300 2.01; the ARW is not read back. */
     private boolean saveRaw;
     // Store notifications queue on the same worker as grading. The original
     // remains the sole pending store until confirmed, even with overlap enabled.
@@ -178,7 +179,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(!active||destroyed||!processingVisible)return;
         long tenths=(SystemClock.elapsedRealtime()-pressAt)/100;
         if(productHud!=null){productHud.setVisibility(View.VISIBLE);productHud.mode="processing";productHud.detail=processingText;productHud.processingStage=processingProgress.stage();productHud.progress=(tenths/10)+"."+(tenths%10)+" 秒";
-            productHud.footer="正在保存原片与成片，请保持相机开机";productHud.update();status.setVisibility(View.GONE);}
+            productHud.footer=(paired()?"正在保存原片与成片":rawPaired()?"正在保存成片与 RAW":"正在保存成片")+"，请保持相机开机";productHud.update();status.setVisibility(View.GONE);}
         else status.setText(processingText+"\n"+(tenths/10)+"."+(tenths%10)+" 秒");
         // Updating the hidden legacy TextView would request a new layout and
         // defeat the product HUD's partial redraw while the negative is still.
@@ -226,7 +227,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(awaitFirstFrame&&getDrawable()!=null){
                 awaitFirstFrame=false;final long shownAt=SystemClock.elapsedRealtime();
                 final long shot=gate.shot();displayedAt=shownAt;
-                savedStatus("成片 "+seconds(shownAt-pressAt)+" 秒"+(continuous?" · 正在准备下一张":paired()?" · 已保存原片 + LUT":" · 已保存 LUT 成片"));
+                savedStatus("成片 "+seconds(shownAt-pressAt)+" 秒"+(continuous?" · 正在准备下一张":paired()?" · 已保存原片 + LUT":rawPaired()?" · 已保存 LUT 成片 + RAW":" · 已保存 LUT 成片"));
                 work.post(new Runnable(){public void run(){
                     if(closed||shot!=gate.shot())return;
                     event("first_frame","shutter_to_displayed_ms="+(shownAt-pressAt)+" journal_write_ms="+journalWriteMs()+" journal_shot_ms="+(journalWriteMs()-journalAtPress)+" original="+originalFile+" graded="+gradedFile);
@@ -516,6 +517,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         rawType.getMethod("isValid");rawType.getMethod("release");
         Class<?> develop=Class.forName("com.sony.scalar.hardware.CameraSequence$DefaultDevelopFilter");
         develop.getConstructor();develop.getMethod("setSource",rawType,boolean.class);
+        if(rawPaired())develop.getMethod("setRawFileStoreEnabled",boolean.class);
         for(String name:new String[]{"isSupported","execute","getOutput","release"})develop.getMethod(name);
         event("post_capture_api","develop/image/store declarations present before opening camera");
     }
@@ -1088,7 +1090,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     // hand it to Sony as the session's single record.
                     retainedImage=image;applyRetainedLut("developed_no_original");retainedImage=null;
                     gate.saving();storeAt=SystemClock.elapsedRealtime();imageTransferred=true;
-                    processing(CaptureProgress.Stage.SAVE,"正在保存成片");
+                    processing(CaptureProgress.Stage.SAVE,rawPaired()?"正在保存成片与 RAW":"正在保存成片");
                     event("store_begin","type=YC role=graded release_source=true original=skipped raw_file_store="+rawPaired());
                     storeToCamera(imageType,image,true);
                 }else{
