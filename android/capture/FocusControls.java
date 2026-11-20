@@ -88,12 +88,17 @@ final class FocusControls {
     }
     private void log(String name,String detail){if(log!=null)log.log(name,detail);}
 
-    void open(Memory remembered)throws Exception{
+    void open(Memory remembered)throws Exception{open(remembered,null);}
+    private static final String[] NATIVE_KEYS={"focus-area-type","focus-point-x+focus-point-y","face-detection-mode"};
+    /** @param pending native settings an earlier session did not restore, or null */
+    void open(Memory remembered,NativeSettings.Pending pending)throws Exception{
         if(original!=null)throw new IllegalStateException("focus session already entered");
         Map<String,String> p=driver.read();
         Map<String,String> saved=new LinkedHashMap<String,String>();
         for(String key:new String[]{"focus-area-type","focus-point-x","focus-point-y","face-detection-mode"})
             if(p.get(key)!=null)saved.put(key,p.get(key));
+        List<String> adopted=NativeSettings.adopt(saved,pending,NATIVE_KEYS);
+        if(!adopted.isEmpty())log("focus_native_recovered",adopted.toString());
         original=saved;
         area=p.get("focus-area-type");
         areas.clear();areas.addAll(areaValues(p.get("focus-area-type-values"),area));
@@ -116,6 +121,8 @@ final class FocusControls {
         log("focus_open",state()+" areas="+areas+" face_values="+faces+" skipped="+skipped);
     }
 
+    /** The native settings exit restores; null outside a session. */
+    Map<String,String> original(){return original==null?null:new LinkedHashMap<String,String>(original);}
     List<String> areas(){return new ArrayList<String>(areas);}
     String area(){return area;}
     boolean faceAvailable(){return faceAvailable;}

@@ -46,7 +46,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         public void log(String name,String detail){event(name,detail);}
     }
     private final ViewfinderControls.Host controlHost=new ViewfinderControls.Host(){
-        public void changed(){showUserExposure();refreshControls();}
+        public void changed(){
+            showUserExposure();refreshControls();
+            ui.removeCallbacks(saveLeftSettings);if(!closed)ui.postDelayed(saveLeftSettings,LEFT_SAVE_DELAY_MS);
+        }
         public void hint(String text){if(productHud!=null&&!closed){productHud.showLiveHint(text);}}
         public void failed(String where,Exception error){
             Throwable root=cause(error);event("control_error",where+" "+root);
@@ -1287,12 +1290,16 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // Unknown means the app offers mode selection; a dial event turns it off.
         physicalDial=Boolean.TRUE.equals(dial);
         event("control_parameters",controlParameters(driver.read()));
+        NativeSettings.Pending nativeExposure=NativeSettings.Pending.decode(memory.getString(NATIVE_EXPOSURE,null),memory.getString(LEFT_EXPOSURE,null));
+        NativeSettings.Pending nativeFocus=NativeSettings.Pending.decode(memory.getString(NATIVE_FOCUS,null),memory.getString(LEFT_FOCUS,null));
+        if(nativeExposure!=null||nativeFocus!=null)event("native_settings_pending","exposure="+(nativeExposure!=null)+" focus="+(nativeFocus!=null));
         exposure=new ManualExposure(driver,log);
-        try{exposure.open(ManualExposure.Memory.decode(memory.getString("exposure",null)),physicalDial);}
+        try{exposure.open(ManualExposure.Memory.decode(memory.getString("exposure",null)),physicalDial,nativeExposure);}
         catch(Exception error){throw new IOException("exposure setting failed",error);}
         focus=new FocusControls(driver,log);
-        try{focus.open(FocusControls.Memory.decode(memory.getString("focus",null)));}
+        try{focus.open(FocusControls.Memory.decode(memory.getString("focus",null)),nativeFocus);}
         catch(Exception error){event("focus_unavailable",cause(error).toString());try{focus.close();}catch(Exception ignored){}focus=null;}
+        controlDriver=driver;saveNativeSettings();
         controls=new ViewfinderControls(exposure,focus,new ControlLayout(CameraInputs.rotary()),physicalDial,controlHost);
         event("controls_ready","inputs="+CameraInputs.describe()+" physical_dial="+dial+" "+exposure.state()+(focus==null?"":" "+focus.state()));
         registerModeDial();
@@ -1388,8 +1395,52 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         productHud.focusState=next;productHud.focusFrames=focusFeedback.lockedFrames();
         if(productHud.mode.equals("live"))productHud.invalidate();
     }
+    /** Native settings stay on disk until a session restores them; see
+     * {@link NativeSettings}. Written once the session has recorded them,
+     * then what the app leaves in the camera follows every change. */
+    private static final String NATIVE_EXPOSURE="native_exposure",LEFT_EXPOSURE="left_exposure",NATIVE_FOCUS="native_focus",LEFT_FOCUS="left_focus";
+    private static final long LEFT_SAVE_DELAY_MS=1000;
+    private CameraControlDriver controlDriver;
+    private final Runnable saveLeftSettings=new Runnable(){public void run(){saveLeftSettings(true);}};
+    private void saveNativeSettings(){
+        android.content.SharedPreferences.Editor edit=getSharedPreferences("viewfinder_controls",0).edit();
+        Map<String,String> e=exposure==null?null:exposure.original(),f=focus==null?null:focus.original();
+        if(e!=null)edit.putString(NATIVE_EXPOSURE,NativeSettings.encode(e));else edit.remove(NATIVE_EXPOSURE).remove(LEFT_EXPOSURE);
+        if(f!=null)edit.putString(NATIVE_FOCUS,NativeSettings.encode(f));else edit.remove(NATIVE_FOCUS).remove(LEFT_FOCUS);
+        if(!edit.commit())event("native_settings_error","commit failed");
+        saveLeftSettings(false);
+    }
+    /** Records what the app currently leaves in the camera, and native
+     * aperture/shutter first seen since the last save. */
+    private void saveLeftSettings(boolean async){
+        if(controlDriver==null||exposure==null)return;
+        Map<String,String> e=exposure.original(),f=focus==null?null:focus.original();
+        if(e==null&&f==null)return;
+        Map<String,String> now,leftExposure;
+        try{now=controlDriver.read();leftExposure=e==null?null:exposure.left();}
+        catch(Exception error){event("native_settings_error","read "+cause(error));return;}
+        android.content.SharedPreferences.Editor edit=getSharedPreferences("viewfinder_controls",0).edit();
+        if(e!=null)edit.putString(NATIVE_EXPOSURE,NativeSettings.encode(e)).putString(LEFT_EXPOSURE,NativeSettings.encode(leftExposure));
+        if(f!=null)edit.putString(LEFT_FOCUS,NativeSettings.encode(NativeSettings.project(now,f.keySet())));
+        if(async)edit.apply();else if(!edit.commit())event("native_settings_error","commit failed");
+    }
+    /** After an exit restore: a part that matched is done; a part that did
+     * not keeps its native values and records what stayed in the camera. */
+    private void finishNativeSettings(Map<String,String> nativeExposure,Map<String,String> leftExposure,boolean exposureRestored,Map<String,String> nativeFocus,boolean focusRestored){
+        Map<String,String> now=null;
+        if(!focusRestored&&nativeFocus!=null)
+            try{now=controlDriver.read();}catch(Exception error){event("native_settings_error","read "+cause(error));}
+        android.content.SharedPreferences.Editor edit=getSharedPreferences("viewfinder_controls",0).edit();
+        if(exposureRestored||nativeExposure==null)edit.remove(NATIVE_EXPOSURE).remove(LEFT_EXPOSURE);
+        else if(leftExposure!=null)edit.putString(NATIVE_EXPOSURE,NativeSettings.encode(nativeExposure)).putString(LEFT_EXPOSURE,NativeSettings.encode(leftExposure));
+        if(focusRestored||nativeFocus==null)edit.remove(NATIVE_FOCUS).remove(LEFT_FOCUS);
+        else if(now!=null)edit.putString(LEFT_FOCUS,NativeSettings.encode(NativeSettings.project(now,nativeFocus.keySet())));
+        if(!edit.commit())event("native_settings_error","commit failed");
+        if(!exposureRestored||!focusRestored)event("native_settings_kept","exposure="+!exposureRestored+" focus="+!focusRestored);
+    }
     private void saveControlMemory(){
         if(exposure==null||!exposure.ready())return;
+        try{exposure.refresh();}catch(Exception error){event("control_memory_error","refresh "+cause(error));}
         android.content.SharedPreferences.Editor edit=getSharedPreferences("viewfinder_controls",0).edit();
         edit.putString("exposure",exposure.memory().encode());
         if(focus!=null)edit.putString("focus",focus.memory().encode());
@@ -1502,13 +1553,21 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(filter!=null)try{filter.getClass().getMethod("release").invoke(filter);}catch(Throwable e){cleanupFailed=true;event("filter_release_error",cause(e).toString());}filter=null;
         for(Object value:new Object[]{sequence,cameraEx})if(value!=null){
             if(value==cameraEx&&exposure!=null){
-                ui.removeCallbacks(syncDial);ui.removeCallbacks(applySelection);ui.removeCallbacks(unfiredPress);unregisterModeDial();saveControlMemory();controls=null;
+                ui.removeCallbacks(syncDial);ui.removeCallbacks(applySelection);ui.removeCallbacks(unfiredPress);ui.removeCallbacks(saveLeftSettings);
+                unregisterModeDial();saveControlMemory();controls=null;
+                Map<String,String> nativeFocus=focus==null?null:focus.original(),leftExposure=null;
+                boolean focusRestored=true,exposureRestored=true;
                 if(focus!=null)try{focus.close();event("focus_restored","original settings readback matched");}
-                catch(Exception e){event("focus_restore_error",cause(e).toString());}
+                catch(Exception e){focusRestored=false;event("focus_restore_error",cause(e).toString());}
                 focus=null;
                 try{exposure.close();event("exposure_restored","original settings readback matched");}
-                catch(Exception e){event("exposure_restore_error",cause(e).toString());}
+                catch(Exception e){exposureRestored=false;event("exposure_restore_error",cause(e).toString());
+                    try{leftExposure=exposure.left();}catch(Exception error){event("native_settings_error","read "+cause(error));}}
+                // After close: a native value first seen while restoring counts.
+                Map<String,String> nativeExposure=exposure.original();
                 exposure=null;
+                if(controlDriver!=null)finishNativeSettings(nativeExposure,leftExposure,exposureRestored,nativeFocus,focusRestored);
+                controlDriver=null;
             }
             if(value==cameraEx&&originalQuality!=null){try{
                 Camera.Parameters restore=camera.getParameters();restore.set("jpeg-quality",originalQuality);camera.setParameters(restore);
