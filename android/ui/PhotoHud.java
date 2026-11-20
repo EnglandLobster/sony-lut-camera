@@ -16,6 +16,8 @@ final class PhotoHud extends View {
     String panelTitle;String[] panelRows,panelValues;int panelSelected;String panelHint="";
     /** Flexible-spot AF point in Sony's -1000..1000 frame coordinates. */
     boolean afVisible,afEditing;int afX,afY;
+    /** Composition guides over the capture frame, in both DISP states. */
+    CompositionGrid grid=CompositionGrid.OFF;
     /** Focus confirmation: 0 none, 1 in focus (green), 2 missed. Frames
      * are Sony-reported in-focus AF frames in -1000..1000 frame space. */
     static final int FOCUS_NONE=0,FOCUS_LOCKED=1,FOCUS_FAILED=2;
@@ -138,6 +140,17 @@ final class PhotoHud extends View {
         float h=Math.min(480,w*2/3),iw=h*3/2;
         return new RectF((w-iw)/2,(480-h)/2,(w+iw)/2,(480+h)/2);
     }
+    /** Thin light lines with a dark edge so they read on bright and dark scenes. */
+    private void grid(Canvas c,float w){
+        float[][] lines=grid.lines();if(lines.length==0)return;
+        RectF f=imageFrame(w);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeCap(Paint.Cap.BUTT);
+        for(int pass=0;pass<2;pass++){
+            p.setStrokeWidth(pass==0?3:1.2f);p.setColor(pass==0?0x50000000:0xb0ffffff);
+            for(float[] l:lines)c.drawLine(f.left+l[0]*f.width(),f.top+l[1]*f.height(),f.left+l[2]*f.width(),f.top+l[3]*f.height(),p);
+        }
+        p.setStyle(Paint.Style.FILL);
+    }
     private void afPoint(Canvas c,float w){
         RectF f=imageFrame(w);
         float cx=f.left+(afX+1000)*f.width()/2000f,cy=f.top+(afY+1000)*f.height()/2000f,r=afEditing?26:20;
@@ -211,6 +224,7 @@ final class PhotoHud extends View {
         }else if(mode.equals("live")){ 
             // Camera-style edge readouts, with outlined text instead of
             // full-width bars. The native preview geometry is unchanged.
+            grid(c,w);
             if(afVisible)afPoint(c,w);
             focusConfirmation(c,w);
             if(liveInfoVisible){

@@ -24,10 +24,12 @@ final class ViewfinderControls {
         /** The ISO/WB highlight moved: call {@link #applySelection()} now or
          * once input pauses, so a held key does not queue a write per row. */
         void selectionMoved();
+        /** The composition grid changed: drawing and memory only. */
+        void gridChanged(CompositionGrid grid);
     }
     /** CHOICE is the option list of one settings row (area, face, mode). */
     enum Panel { NONE, ISO, WB, SETTINGS, CHOICE, POINT }
-    private enum Row { POINT, AREA, FACE, MODE }
+    private enum Row { POINT, AREA, FACE, MODE, GRID }
 
     private final ManualExposure exposure;
     private final FocusControls focus;
@@ -42,6 +44,7 @@ final class ViewfinderControls {
     private final List<Row> rows=new ArrayList<Row>();
     private Row choiceRow;private int settingsSelected;
     private final List<String> choices=new ArrayList<String>();
+    private CompositionGrid grid=CompositionGrid.OFF;
 
     ViewfinderControls(ManualExposure exposure,FocusControls focus,ControlLayout layout,boolean physicalDial,Host host){
         this.exposure=exposure;this.focus=focus;this.layout=layout;this.physicalDial=physicalDial;this.host=host;
@@ -49,6 +52,10 @@ final class ViewfinderControls {
 
     /** A PASM dial event arrived on a body whose probe did not report one. */
     void physicalDial(boolean value){physicalDial=value;}
+    /** Remembered grid; set once after construction. */
+    void grid(CompositionGrid value){grid=value==null?CompositionGrid.OFF:value;}
+    CompositionGrid grid(){return grid;}
+    private void setGrid(CompositionGrid value){if(value!=grid){grid=value;host.gridChanged(value);}}
     Panel panel(){return panel;}
     boolean panelOpen(){return panel!=Panel.NONE;}
     void closePanel(){
@@ -105,10 +112,7 @@ final class ViewfinderControls {
         return false;
     }
     private void open(Panel next){
-        if(next==Panel.SETTINGS){
-            buildRows();
-            if(rows.isEmpty()){host.hint("本机未提供可调的对焦设置");return;}
-        }
+        if(next==Panel.SETTINGS)buildRows();
         panel=next;isoBefore=exposure.iso();wbBefore=exposure.whiteBalance();
         if(next==Panel.ISO)selected=Math.max(0,exposure.isoValues().indexOf(Integer.valueOf(exposure.iso())));
         else if(next==Panel.WB)selected=Math.max(0,exposure.whiteBalanceValues().indexOf(exposure.whiteBalance()));
@@ -121,6 +125,7 @@ final class ViewfinderControls {
         if(focus!=null&&focus.areas().size()>1)rows.add(Row.AREA);
         if(focus!=null&&focus.faceAvailable())rows.add(Row.FACE);
         if(!physicalDial)rows.add(Row.MODE);
+        rows.add(Row.GRID);
     }
     private int size(){
         switch(panel){
@@ -196,6 +201,7 @@ final class ViewfinderControls {
             List<String> areas=focus.areas();int i=areas.indexOf(focus.area());
             focus.setArea(areas.get(((i<0?0:i)+direction+areas.size())%areas.size()));
         }else if(row==Row.FACE)focus.setFace(!focus.face());
+        else if(row==Row.GRID)setGrid(grid.step(direction));
         else if(row==Row.MODE){
             ManualExposure.Mode[] modes=ManualExposure.Mode.values();int i=exposure.mode().ordinal();
             for(int n=0;n<modes.length;n++){
@@ -210,6 +216,7 @@ final class ViewfinderControls {
         choices.clear();String current;
         if(row==Row.AREA){choices.addAll(focus.areas());current=focus.area();}
         else if(row==Row.FACE){choices.add("off");choices.add("auto");current=focus.face()?"auto":"off";}
+        else if(row==Row.GRID){for(CompositionGrid g:CompositionGrid.values())choices.add(g.key);current=grid.key;}
         else{
             for(ManualExposure.Mode m:ManualExposure.Mode.values())if(exposure.supports(m))choices.add(m.name());
             current=exposure.mode().name();
@@ -232,6 +239,7 @@ final class ViewfinderControls {
             // Choosing a flexible spot goes straight to placing it.
             if(focus.flexible()&&focus.pointAvailable()){focus.beginPoint();panel=Panel.POINT;}
         }else if(row==Row.FACE)focus.setFace("auto".equals(value));
+        else if(row==Row.GRID)setGrid(CompositionGrid.decode(value));
         else{
             exposure.selectMode(ManualExposure.Mode.valueOf(value));
             alternate=false;host.whiteBalanceChanged();
@@ -276,7 +284,7 @@ final class ViewfinderControls {
     // ---- HUD model --------------------------------------------------------------
     String modeLabel(){return exposure.modeLabel();}
     private static String rowName(Row r){
-        return r==Row.POINT?"移动对焦点":r==Row.AREA?"对焦区域":r==Row.FACE?"人脸优先":"曝光模式";
+        return r==Row.POINT?"移动对焦点":r==Row.AREA?"对焦区域":r==Row.FACE?"人脸优先":r==Row.GRID?"网格线":"曝光模式";
     }
     String modeName(){return modeName(exposure.mode());}
     static String modeName(ManualExposure.Mode mode){
@@ -288,7 +296,7 @@ final class ViewfinderControls {
         }
     }
     String hint(){
-        return layout.hint(exposure.mode(),alternate)+" · → ISO · ← 白平衡 · ↓ 对焦";
+        return layout.hint(exposure.mode(),alternate)+" · → ISO · ← 白平衡 · ↓ 设置";
     }
     String isoText(int measured){
         int iso=exposure.iso();
@@ -301,7 +309,7 @@ final class ViewfinderControls {
         switch(panel){
             case ISO:return "ISO";
             case WB:return "白平衡";
-            case SETTINGS:return "对焦与拍摄设置";
+            case SETTINGS:return "对焦与取景设置";
             case CHOICE:return rowName(choiceRow);
             default:return null;
         }
@@ -328,7 +336,7 @@ final class ViewfinderControls {
                 for(int i=0;i<out.length;i++){
                     String v=choices.get(i);
                     out[i]=choiceRow==Row.AREA?FocusControls.areaLabel(v):choiceRow==Row.FACE?("auto".equals(v)?"开":"关")
-                        :modeName(ManualExposure.Mode.valueOf(v));
+                        :choiceRow==Row.GRID?CompositionGrid.decode(v).label:modeName(ManualExposure.Mode.valueOf(v));
                 }
                 return out;
             }
@@ -343,6 +351,7 @@ final class ViewfinderControls {
             if(r==Row.POINT)out[i]="";
             else if(r==Row.AREA)out[i]=FocusControls.areaLabel(focus.area());
             else if(r==Row.FACE)out[i]=focus.face()?"开":"关";
+            else if(r==Row.GRID)out[i]=grid.label;
             else out[i]=modeName();
         }
         return out;

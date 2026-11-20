@@ -12,7 +12,7 @@ public final class ViewfinderControlsTest {
     static final ManualExposure.Mode P=ManualExposure.Mode.P,A=ManualExposure.Mode.A,S=ManualExposure.Mode.S,M=ManualExposure.Mode.M;
 
     static class Host implements ViewfinderControls.Host {
-        int changed,wb,moved;String hint="";String failure;
+        int changed,wb,moved,grids;String hint="";String failure;CompositionGrid grid;
         /** The Activity previews at once or after a pause; hold models the pause. */
         ViewfinderControls controls;boolean hold;
         public void selectionMoved(){moved++;if(!hold&&controls!=null)controls.applySelection();}
@@ -20,6 +20,7 @@ public final class ViewfinderControlsTest {
         public void hint(String text){hint=text;}
         public void failed(String where,Exception error){failure=where+" "+error;}
         public void whiteBalanceChanged(){wb++;}
+        public void gridChanged(CompositionGrid value){grids++;grid=value;}
     }
 
     public static void main(String[] args)throws Exception{
@@ -107,7 +108,7 @@ public final class ViewfinderControlsTest {
         // Settings: AF point, area, face; no mode row with a physical dial.
         v.press(UiKeyActions.DOWN);
         List<String> rows=Arrays.asList(v.rowLabels());
-        check(rows.equals(Arrays.asList("移动对焦点","对焦区域","人脸优先")),"settings rows "+rows);
+        check(rows.equals(Arrays.asList("移动对焦点","对焦区域","人脸优先","网格线")),"settings rows "+rows);
         v.press(UiKeyActions.OK);check(v.panel()==ViewfinderControls.Panel.POINT&&v.afEditing(),"enter point editing");
         v.press(UiKeyActions.RIGHT);v.press(UiKeyActions.RIGHT);v.press(UiKeyActions.UP);v.rotate(D2,1);
         check(v.afX()==200&&v.afY()==0&&cam.values.get("focus-area-type").equals("multi"),"local movement only");
@@ -153,8 +154,19 @@ public final class ViewfinderControlsTest {
         check(Arrays.asList(v.rowLabels()).equals(Arrays.asList("关","开"))&&v.selected()==1,"face options");
         v.press(UiKeyActions.UP);v.press(UiKeyActions.OK);check(cam.values.get("face-detection-mode").equals("off"),"face off from list");
         v.press(UiKeyActions.OK);v.press(UiKeyActions.DOWN);v.press(UiKeyActions.OK);check(cam.values.get("face-detection-mode").equals("auto"),"face on from list");
-        v.press(UiKeyActions.DOWN);v.press(UiKeyActions.DOWN);
-        v.press(UiKeyActions.BACK);
+        // Composition grid: off by default; ←→ cycles, centre opens the list.
+        v.press(UiKeyActions.DOWN);
+        check(v.rowLabels()[v.selected()].equals("网格线")&&v.rowValues()[v.selected()].equals("关")&&v.grid()==CompositionGrid.OFF,"grid row off");
+        v.press(UiKeyActions.RIGHT);check(v.grid()==CompositionGrid.THIRDS&&host.grid==CompositionGrid.THIRDS&&v.rowValues()[3].equals("九宫格"),"grid quick change");
+        v.press(UiKeyActions.LEFT);v.press(UiKeyActions.LEFT);check(v.grid()==CompositionGrid.CENTER&&host.grids==3,"grid wraps backwards");
+        v.press(UiKeyActions.OK);
+        check(v.panel()==ViewfinderControls.Panel.CHOICE&&"网格线".equals(v.title())
+            &&Arrays.asList(v.rowLabels()).equals(Arrays.asList("关","九宫格","九宫格＋对角线","方形网格","中心十字"))&&v.selected()==4,"grid options "+Arrays.asList(v.rowLabels()));
+        v.press(UiKeyActions.UP);v.press(UiKeyActions.BACK);check(v.grid()==CompositionGrid.CENTER&&host.grids==3,"MENU leaves grid unchanged");
+        v.press(UiKeyActions.OK);v.press(UiKeyActions.UP);v.press(UiKeyActions.UP);v.press(UiKeyActions.OK);
+        check(v.grid()==CompositionGrid.THIRDS_DIAGONAL&&host.grid==CompositionGrid.THIRDS_DIAGONAL&&v.panel()==ViewfinderControls.Panel.SETTINGS,"grid chosen from list");
+        v.press(UiKeyActions.BACK);check(!v.panelOpen()&&v.grid()==CompositionGrid.THIRDS_DIAGONAL,"grid stays after closing");
+        check(v.hint().endsWith("↓ 设置"),"live hint "+v.hint());
         // Centre resets EV only where it applies; shutter closes lists.
         v.press(UiKeyActions.RIGHT);v.shutter();check(!v.panelOpen(),"shutter closes list");
         check(host.failure==null,"no failures: "+host.failure);
@@ -195,7 +207,7 @@ public final class ViewfinderControlsTest {
         ManualExposureTest.Camera nodial=new ManualExposureTest.Camera("program-auto");
         ManualExposure ne=new ManualExposure(nodial,null);ne.open(new ManualExposure.Memory(),false);
         ViewfinderControls nv=new ViewfinderControls(ne,null,one,false,new Host());
-        nv.press(UiKeyActions.DOWN);check(Arrays.asList(nv.rowLabels()).equals(Arrays.asList("曝光模式")),"mode row only");
+        nv.press(UiKeyActions.DOWN);check(Arrays.asList(nv.rowLabels()).equals(Arrays.asList("曝光模式","网格线")),"mode and grid rows");
         nv.press(UiKeyActions.RIGHT);check(nodial.values.get("scene-mode").equals("aperture-priority"),"mode row selects A");
         nv.press(UiKeyActions.OK);check(Arrays.asList(nv.rowLabels()).equals(Arrays.asList("P 程序自动","A 光圈优先","S 快门优先","M 手动曝光"))&&nv.selected()==1,"mode options");
         nv.press(UiKeyActions.DOWN);nv.press(UiKeyActions.DOWN);nv.press(UiKeyActions.OK);check(nodial.values.get("scene-mode").equals("manual-exposure"),"M from list");
@@ -203,6 +215,24 @@ public final class ViewfinderControlsTest {
         nv.press(UiKeyActions.BACK);nv.rotate(D2,2);check(nodial.values.get("aperture").equals("710"),"single input aperture");
         nv.press(UiKeyActions.OK);nv.rotate(D2,1);check(ne.compensationLabel().equals("+0.3 EV"),"centre switches to EV");
         ne.close();check(nodial.values.get("scene-mode").equals("program-auto"),"app mode restored");
-        System.out.println("ViewfinderControlsTest passed: Sony dial codes, layouts, lists, live ISO/WB preview, AF point, face priority, dial follow, memory");
+        // Grid without focus controls on a dial body: the list still opens.
+        ManualExposureTest.Camera bare=new ManualExposureTest.Camera("program-auto");
+        ManualExposure be=new ManualExposure(bare,null);be.open(new ManualExposure.Memory(),true);
+        Host bh=new Host();ViewfinderControls bv=new ViewfinderControls(be,null,two,true,bh);
+        bv.grid(CompositionGrid.decode("square"));
+        bv.press(UiKeyActions.DOWN);check(Arrays.asList(bv.rowLabels()).equals(Arrays.asList("网格线"))&&bv.rowValues()[0].equals("方形网格"),"grid only, remembered value");
+        bv.press(UiKeyActions.RIGHT);check(bv.grid()==CompositionGrid.CENTER&&bh.grids==1,"grid without focus");
+        be.close();
+        // Stored values: unknown or missing falls back to off; lines stay in the frame.
+        check(CompositionGrid.decode(null)==CompositionGrid.OFF&&CompositionGrid.decode("golden")==CompositionGrid.OFF,"grid decode fallback");
+        for(CompositionGrid g:CompositionGrid.values()){
+            check(CompositionGrid.decode(g.key)==g,"grid key "+g);
+            for(float[] l:g.lines())for(float x:l)check(l.length==4&&x>=0&&x<=1,"grid line in frame "+g);
+        }
+        check(CompositionGrid.OFF.lines().length==0&&CompositionGrid.THIRDS.lines().length==4&&CompositionGrid.THIRDS_DIAGONAL.lines().length==6
+            &&CompositionGrid.SQUARE.lines().length==8&&CompositionGrid.CENTER.lines().length==2,"grid line counts");
+        float[][] sq=CompositionGrid.SQUARE.lines();
+        check(Math.abs((sq[1][0]-sq[0][0])*3-(sq[6][1]-sq[5][1])*2)<1e-5,"square cells are square on 3:2");
+        System.out.println("ViewfinderControlsTest passed: Sony dial codes, layouts, lists, live ISO/WB preview, AF point, face priority, dial follow, memory, composition grid");
     }
 }

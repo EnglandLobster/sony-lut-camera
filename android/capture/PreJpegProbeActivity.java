@@ -63,6 +63,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             long wait=selectionAppliedAt+SELECTION_PREVIEW_INTERVAL_MS-SystemClock.uptimeMillis();
             if(wait<=0)applySelection.run();else ui.postDelayed(applySelection,wait);
         }
+        public void gridChanged(CompositionGrid grid){
+            event("viewfinder_grid","value="+grid.key);
+            getSharedPreferences("viewfinder_controls",0).edit().putString(GRID,grid.key).apply();
+        }
     };
     private static final long SELECTION_PREVIEW_INTERVAL_MS=150;
     private long selectionAppliedAt;
@@ -1301,7 +1305,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         catch(Exception error){event("focus_unavailable",cause(error).toString());try{focus.close();}catch(Exception ignored){}focus=null;}
         controlDriver=driver;saveNativeSettings();
         controls=new ViewfinderControls(exposure,focus,new ControlLayout(CameraInputs.rotary()),physicalDial,controlHost);
-        event("controls_ready","inputs="+CameraInputs.describe()+" physical_dial="+dial+" "+exposure.state()+(focus==null?"":" "+focus.state()));
+        controls.grid(CompositionGrid.decode(memory.getString(GRID,null)));
+        event("controls_ready","inputs="+CameraInputs.describe()+" physical_dial="+dial+" grid="+controls.grid().key+" "+exposure.state()+(focus==null?"":" "+focus.state()));
         registerModeDial();
         if(physicalDial){
             int position=CameraInputs.dialPosition();
@@ -1365,6 +1370,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         productHud.panelSelected=controls.selected();productHud.panelHint=controls.panelHint();
         productHud.afVisible=controls.afVisible();productHud.afEditing=controls.afEditing();
         productHud.afX=controls.afX();productHud.afY=controls.afY();
+        productHud.grid=controls.grid();
     }
     /** After a user change only: show the verified aperture/shutter before
      * telemetry reports it. Never on telemetry refreshes, which would put a
@@ -1398,6 +1404,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     /** Native settings stay on disk until a session restores them; see
      * {@link NativeSettings}. Written once the session has recorded them,
      * then what the app leaves in the camera follows every change. */
+    private static final String GRID="grid";
     private static final String NATIVE_EXPOSURE="native_exposure",LEFT_EXPOSURE="left_exposure",NATIVE_FOCUS="native_focus",LEFT_FOCUS="left_focus";
     private static final long LEFT_SAVE_DELAY_MS=1000;
     private CameraControlDriver controlDriver;
