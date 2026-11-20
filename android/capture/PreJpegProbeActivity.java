@@ -154,6 +154,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     /** LUT sessions: also store the developed original as its own JPEG. Off
      * in the product unless the user enables it (owner, 2026-11-20). */
     private boolean saveOriginal;
+    /** Experimental (2026-11-20): Sony's develop marks the RAW and the
+     * single graded store writes it beside the JPEG, like RAW+JPEG. */
+    private boolean saveRaw;
     // Store notifications queue on the same worker as grading. The original
     // remains the sole pending store until confirmed, even with overlap enabled.
     private boolean lutApplied;private Bitmap sourceReference;
@@ -195,6 +198,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private boolean lutSession(){return "lut".equals(phase);}
     /** A LUT session that also stores the original: RECORD_COUNT=2. */
     private boolean paired(){return lutSession()&&saveOriginal;}
+    /** A LUT session whose graded store also writes the camera RAW. It is
+     * one record (RECORD_COUNT=1): the ARW shares the JPEG's DCF number. */
+    private boolean rawPaired(){return lutSession()&&saveRaw&&!saveOriginal;}
     private boolean develops(){return "develop".equals(phase)||"develop-xfine".equals(phase)||lutSession();}
     private boolean managedJpegQuality(){return "develop-xfine".equals(phase)||lutSession();}
     private final Runnable hideReviewStatus=new Runnable(){public void run(){
@@ -355,6 +361,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         alternateOverlap=getIntent().getBooleanExtra("alternate_overlap",false);
         // Diagnostic entries keep the verified pair; the product passes the user's choice.
         saveOriginal=getIntent().getBooleanExtra("save_original",!productUi());
+        saveRaw=getIntent().getBooleanExtra("save_raw",false);
+        if(saveRaw&&(!lutSession()||saveOriginal)){
+            status=new TextView(this);status.setText("RAW 只能和成片一起保存，不能同时保存原片 JPEG。");setContentView(status);return;
+        }
         if(alternateOverlap&&(!continuous||!overlapOriginal)){
             status=new TextView(this);status.setText("交替测速需要开启连续保存重叠测试。");setContentView(status);return;
         }
@@ -428,7 +438,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             recoveryFence=CaptureRecoveryFence.local(getFilesDir());
             if(recoveryFence.blocked())throw new IOException("上一张照片仍在保存核验，请先返回 LUT 库");
         }
-        sd=Environment.getExternalStorageDirectory();run=productUi()?null:RunFiles.create(sd);event("prepare","phase="+phase+" save_original="+saveOriginal+" init_only="+initOnly+" init_stage="+initStage+" run="+run+" pid="+android.os.Process.myPid()+" fresh_session="+getIntent().getBooleanExtra("fresh_session",false)+" continuous="+continuous+" verify_payloads="+verifyPayloads+" overlap_original="+overlapOriginal+" source_reference="+sourceReferenceEnabled+" probe_token="+getIntent().getStringExtra("probe_token"));
+        sd=Environment.getExternalStorageDirectory();run=productUi()?null:RunFiles.create(sd);event("prepare","phase="+phase+" save_original="+saveOriginal+" save_raw="+saveRaw+" init_only="+initOnly+" init_stage="+initStage+" run="+run+" pid="+android.os.Process.myPid()+" fresh_session="+getIntent().getBooleanExtra("fresh_session",false)+" continuous="+continuous+" verify_payloads="+verifyPayloads+" overlap_original="+overlapOriginal+" source_reference="+sourceReferenceEnabled+" probe_token="+getIntent().getStringExtra("probe_token"));
         if(!initOnly)photoFiles=new PhotoFiles(sd,"handoff".equals(phase)?PhotoFiles.Format.ARW:PhotoFiles.Format.JPEG,!develops());
         Class<?> props=Class.forName("com.sony.scalar.sysutil.ScalarProperties");Method get=props.getMethod("getString",String.class);
         String memory=(String)get.invoke(null,"device.memory"),pixels=(String)get.invoke(null,"mem.rawimage.size.in.mega.pixel");
@@ -1042,9 +1052,17 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void process(Object raw){Object image=null;boolean rawTransferred=false,imageTransferred=false;
         try{
             if(develops()){
-                Object f=filter;event("develop_begin","release_source=true");long begin=SystemClock.elapsedRealtime();
+                Object f=filter;event("develop_begin","release_source=true raw_file_store="+rawPaired());long begin=SystemClock.elapsedRealtime();
                 f.getClass().getMethod("setSource",rawType,boolean.class).invoke(f,raw,true);
                 rawTransferred=true;
+                if(rawPaired()){
+                    // 2026-11-20 A6300: storeImage(RawData) after a develop that
+                    // kept the RAW never returned, and a develop with RAW file
+                    // store wrote nothing until a store. Mark the RAW here and
+                    // let the single graded store write it.
+                    f.getClass().getMethod("setRawFileStoreEnabled",boolean.class).invoke(f,true);
+                    event("raw_file_store","enabled="+f.getClass().getMethod("isRawFileStoreEnabled").invoke(f));
+                }
                 if(!((Boolean)f.getClass().getMethod("execute").invoke(f)).booleanValue())throw new IOException("develop returned false");
                 image=f.getClass().getMethod("getOutput").invoke(f);if(image==null)throw new IOException("develop returned no image");
                 event("develop_done","ms="+(SystemClock.elapsedRealtime()-begin)+" raw_valid="+rawType.getMethod("isValid").invoke(raw));
@@ -1071,7 +1089,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     retainedImage=image;applyRetainedLut("developed_no_original");retainedImage=null;
                     gate.saving();storeAt=SystemClock.elapsedRealtime();imageTransferred=true;
                     processing(CaptureProgress.Stage.SAVE,"正在保存成片");
-                    event("store_begin","type=YC role=graded release_source=true original=skipped");
+                    event("store_begin","type=YC role=graded release_source=true original=skipped raw_file_store="+rawPaired());
                     storeToCamera(imageType,image,true);
                 }else{
                     gate.saving();storeAt=SystemClock.elapsedRealtime();event("store_begin","type=YC release_source=true");imageTransferred=true;

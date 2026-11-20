@@ -237,7 +237,9 @@ public final class LibraryActivity extends Activity {
             mode="library";selection=indexOf(entry.id);render();startActivityForResult(new Intent(LibraryActivity.this,PhotoActivity.class).putExtra("lut_id",entry.id)
                     .putExtra("develop_animation",getIntent().getBooleanExtra("develop_animation",true))
                     .putExtra("develop_animation_alternate",getIntent().getBooleanExtra("develop_animation_alternate",false))
-                    .putExtra("save_original",saveOriginal()),CAPTURE_REQUEST);
+                    .putExtra("save_original",saveOriginal())
+                    // Experimental, adb launch only (2026-11-20): RAW with graded.
+                    .putExtra("save_raw",!saveOriginal()&&getIntent().getBooleanExtra("save_raw",false)),CAPTURE_REQUEST);
     }
     private int captureRestarts;
     /** The capture screen found its process left over from a session that auto

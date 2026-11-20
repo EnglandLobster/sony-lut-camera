@@ -11,7 +11,7 @@ python3 scripts/stage_capture_maps.py out/capture-pipeline/assets
     android/capture/CaptureStoreEvents.java android/capture/ShutterConfirmation.java android-tests/CaptureReceiptPipelineTest.java \
     android-tests/JpegTailTest.java android-tests/ShutterConfirmationTest.java \
     android-tests/CapturePipelineTest.java android-tests/CaptureMemoryMapTest.java android-tests/CaptureStoreRpcTest.java android-tests/IndexedStoreTest.java android-tests/CapturePairCompletionTest.java \
-    android-tests/LegacyDcfPredictionTest.java
+    android-tests/LegacyDcfPredictionTest.java android-tests/PhotoFilesTest.java
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CapturePipelineTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureStoreRpcTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.IndexedStoreTest
@@ -20,6 +20,7 @@ python3 scripts/stage_capture_maps.py out/capture-pipeline/assets
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureReceiptPipelineTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.JpegTailTest
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.ShutterConfirmationTest
+"$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.PhotoFilesTest
 python3 scripts/test_store_receipt_dispatch.py
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureStoreRpcTest --write-fence out/capture-pipeline/process-fence
 "$java_home/bin/java" -Xmx24m -cp out/capture-pipeline/classes io.github.englandlobster.lutcamera.CaptureStoreRpcTest --read-fence out/capture-pipeline/process-fence
