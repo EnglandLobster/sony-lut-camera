@@ -23,6 +23,8 @@ final class CameraControlDriver implements ManualExposure.Driver,FocusControls.D
 
     public void stepAperture(int direction)throws Exception{invoke(direction>0?"incrementAperture":"decrementAperture");}
     public void stepShutter(int direction)throws Exception{invoke(direction>0?"incrementShutterSpeed":"decrementShutterSpeed");}
+    public void pause(int ms)throws InterruptedException{Thread.sleep(ms);}
+    public long millis(){return android.os.SystemClock.uptimeMillis();}
     private void invoke(String name)throws Exception{
         try{cameraEx.getClass().getMethod(name).invoke(cameraEx);}
         catch(NoSuchMethodException e){throw new UnsupportedOperationException("CameraEx."+name+" unavailable",e);}
