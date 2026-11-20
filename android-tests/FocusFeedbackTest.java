@@ -33,6 +33,25 @@ public final class FocusFeedbackTest {
         f.areas("flex-spot",flex);f.done(FocusFeedback.LOCK,new int[]{1});
         check(f.state()==FocusFeedback.State.LOCKED&&f.lockedFrames().isEmpty(),"flex-spot: own AF box only, no outline");
         f.done(FocusFeedback.LOCK,new int[]{3});f.clear();check(f.state()==FocusFeedback.State.NONE&&f.lockedFrames().isEmpty(),"cleared");
-        System.out.println("FocusFeedbackTest passed: lock, AF-C, miss, release, frame-space filter");
+        // Recorded on the A6300 2026-11-20: a real AF run names its frames;
+        // a half-press on the same subject brings no start and two locks on
+        // the whole area. The frames stay, like Sony's own finder.
+        List<int[]> grid=new ArrayList<int[]>();
+        grid.add(new int[]{0,-784,-819,785,820});grid.add(new int[]{7,-468,-490,-160,-168});grid.add(new int[]{8,-153,-490,154,-168});
+        f.areas("multi",grid);
+        f.start();f.done(FocusFeedback.LOCK,new int[]{7,8});check(f.lockedFrames().size()==2,"real run frames");
+        f.done(FocusFeedback.CLEAR,new int[]{0});check(f.state()==FocusFeedback.State.NONE&&f.lockedFrames().isEmpty(),"release hides frames");
+        f.done(FocusFeedback.LOCK,new int[]{0});f.done(FocusFeedback.LOCK,new int[]{0});
+        check(f.lockedFrames().size()==2&&f.lockedFrames().get(0)[0]==-468,"already in focus keeps last frames");
+        f.done(FocusFeedback.CLEAR,new int[]{0});f.clear();
+        f.done(FocusFeedback.LOCK,new int[]{0});check(f.lockedFrames().size()==2,"kept across a shot");
+        f.done(FocusFeedback.CONTINUOUS,new int[]{0});check(f.lockedFrames().isEmpty(),"AF-C never reuses frames");
+        f.start();f.done(FocusFeedback.LOCK,new int[]{0});check(f.lockedFrames().isEmpty(),"a run that names no frame drops them");
+        f.done(FocusFeedback.LOCK,new int[]{0});check(f.lockedFrames().isEmpty(),"dropped frames stay dropped");
+        f.start();f.done(FocusFeedback.LOCK,new int[]{8});f.areas("multi",grid);
+        f.done(FocusFeedback.LOCK,new int[]{0});check(f.lockedFrames().isEmpty(),"new AF area forgets frames");
+        f.areas("flex-spot",flex);f.start();f.done(FocusFeedback.LOCK,new int[]{2});f.done(FocusFeedback.LOCK,new int[]{1});
+        check(f.lockedFrames().isEmpty(),"flex-spot never holds frames");
+        System.out.println("FocusFeedbackTest passed: lock, AF-C, miss, release, frame-space filter, held frames");
     }
 }

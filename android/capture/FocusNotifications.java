@@ -78,7 +78,11 @@ final class FocusNotifications {
         if(Looper.myLooper()==ui.getLooper())post.run();else ui.post(post);
     }
     /** CameraEx.FocusAreaInfos: focusAreaMode and rectInfos[] of
-     * {enable,index,rect}. Logged in full; enabled frames are kept. */
+     * {enable,index,rect}. Logged in full; enabled frames are kept.
+     * A6300 2026-11-20: getFocusAreaInfos(0/1) lists the same tables
+     * (multi = 5x5 zones, 15-point wide/local/semiwide, centre, spot,
+     * flex-spot, touch); nothing finer than the zones is exposed, so
+     * Sony's small phase-detect boxes cannot be reproduced. */
     private static List<int[]> frames(Object infos)throws Exception{
         List<int[]> out=new ArrayList<int[]>();
         if(infos==null){Log.i(TAG,"af_areas null");return out;}
@@ -92,7 +96,8 @@ final class FocusNotifications {
             boolean enable=info.getClass().getField("enable").getBoolean(info);
             int index=info.getClass().getField("index").getInt(info);
             Rect r=(Rect)info.getClass().getField("rect").get(info);
-            if(i<24)log.append(' ').append(index).append(enable?"+":"-").append(r==null?"null":r.toShortString());
+            if(log.length()>3000){Log.i(TAG,log.toString());log=new StringBuilder("af_areas+");}
+            log.append(' ').append(index).append(enable?"+":"-").append(r==null?"null":r.toShortString());
             if(enable&&r!=null)out.add(new int[]{index,r.left,r.top,r.right,r.bottom});
         }
         Log.i(TAG,log.toString());
