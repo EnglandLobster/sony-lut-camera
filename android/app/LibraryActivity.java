@@ -67,6 +67,16 @@ public final class LibraryActivity extends Activity {
     }
     private int indexOf(String id){for(int i=0;i<luts.size();i++)if(luts.get(i).id.equals(id))return i;return 0;}
     interface Task {void run()throws Exception;}
+    /** Owner decision 2026-11-20: most users want the graded JPEG only, so
+     * the original is saved only when the user turns it on. */
+    private static final String CAPTURE_OPTIONS="capture_options",SAVE_ORIGINAL="save_original";
+    private boolean saveOriginal(){return getSharedPreferences(CAPTURE_OPTIONS,0).getBoolean(SAVE_ORIGINAL,false);}
+    private void toggleSaveOriginal(){
+        boolean next=!saveOriginal();
+        if(!getSharedPreferences(CAPTURE_OPTIONS,0).edit().putBoolean(SAVE_ORIGINAL,next).commit()){showNotice("设置未保存","请检查后重试。");return;}
+        SupportDiagnostics.event("save_original","value="+next);
+        render();
+    }
     private void runTask(String label,final Task task,final Runnable complete){if(busy)return;busy=true;page.busy=true;page.previewMode=false;page.title=label;page.subtitle="";page.rows=new ArrayList<CameraPage.Row>();page.empty=label;page.note="";page.footer="处理中";page.invalidate();
         io.execute(new Runnable(){public void run(){try{task.run();ui.post(new Runnable(){public void run(){if(destroyed)return;busy=false;page.busy=false;complete.run();}});}
             catch(final Exception e){SupportDiagnostics.failure("library_operation",e);android.util.Log.e("LutLibrary","operation_failed",e);ui.post(new Runnable(){public void run(){if(destroyed)return;busy=false;page.busy=false;showNotice("操作未完成",explain(e));}});}}});
@@ -83,7 +93,7 @@ public final class LibraryActivity extends Activity {
     private void showNotice(String title,String detail){previous=mode.equals("notice")?previous:mode;mode="notice";selection=0;notice=detail;render();page.title=title;page.invalidate();}
     private void render(){if(destroyed||busy)return;List<CameraPage.Row> rows=new ArrayList<CameraPage.Row>();
         page.previewMode=mode.equals("library");page.section=mode.equals("library")?"LUT 库 · "+luts.size():"LUT CAMERA";page.title="选择你的色彩";page.subtitle="方向键 / 拨轮选择 · 中央键开始拍摄";page.empty="还没有 LUT";
-        page.note="全尺寸 · 本机最高 JPEG 画质 · 原片与成片分别保存";page.footer="↑↓ 选择   ● 拍摄   ← 相册   → 导入   MENU 更多";
+        page.note=saveOriginal()?"全尺寸 · 本机最高 JPEG 画质 · 原片与成片分别保存":"全尺寸 · 本机最高 JPEG 画质 · 保存 LUT 成片";page.footer="↑↓ 选择   ● 拍摄   ← 相册   → 导入   MENU 更多";
         page.emptyDetail="右键导入 · 中央键确认";
         if(mode.equals("library")){
             for(LutLibrary.Entry e:luts)rows.add(new CameraPage.Row(e.name,e.source+(e.id.equals(selectedId)?" · 当前":""),e.size+"³"));
@@ -98,10 +108,10 @@ public final class LibraryActivity extends Activity {
             for(int i=0;i<imports.size();i++){String result=importResults.get(i);boolean bad=result.startsWith("失败");rows.add(new CameraPage.Row(imports.get(i).getName(),result,bad?"查看原因":result.equals("等待导入")?"导入":"已处理",!bad));}
             page.note=importDone?"新增、重复和失败文件已分别核对":notice;page.footer="↑↓ 选择   ● 确认   → 重扫   MENU 返回";
         }else if(mode.equals("gallery")){
-            page.section="照片";page.title="拍过的色彩";page.subtitle="每一组都保留 LUT 成片与原片";page.empty="还没有照片";page.emptyDetail="拍下第一张照片后，在这里回看";
+            page.section="照片";page.title="拍过的色彩";page.subtitle="LUT 成片 · 打开「保存原片」时另有原片";page.empty="还没有照片";page.emptyDetail="拍下第一张照片后，在这里回看";
             SimpleDateFormat date=new SimpleDateFormat("MM.dd  HH:mm",Locale.CHINA);
             for(PhotoCatalog.Pair p:photos)rows.add(new CameraPage.Row(p.lut,(p.time>946684800000L?date.format(new Date(p.time)):"日期未设置")+" · "+p.graded.getName(),p.grid+"³"));
-            page.note=photos.size()+" 组照片 · 仅列出本应用拍摄的内容";page.footer="↑↓ 选择   ● 打开   MENU 返回";
+            page.note=photos.size()+" 张照片 · 仅列出本应用拍摄的内容";page.footer="↑↓ 选择   ● 打开   MENU 返回";
         }else if(mode.equals("options")){
             page.section="更多";page.title=diagnosticExport.length()==0?"拍摄之外":"日志包已导出";
             page.subtitle=diagnosticExport.length()==0?"LUT Camera · "+version():"SD 卡 / SONYLUT / DIAG / REPORT.ZIP";
@@ -111,6 +121,7 @@ public final class LibraryActivity extends Activity {
             rows.add(new CameraPage.Row("退出应用","回到相机原生拍摄界面","退出"));
             if(SonyAppPolicy.hasDebugHelper(this))rows.add(new CameraPage.Row("测试连接","打开已安装的相机调试工具","打开"));
             rows.add(new CameraPage.Row("当前 LUT 的取景","近似色彩或原色 · 每个 LUT 单独记忆","设置"));
+            rows.add(new CameraPage.Row("保存原片",saveOriginal()?"每次快门另存一张未调色的原片":"只存 LUT 成片，出片更快、更省空间",saveOriginal()?"开":"关"));
             LutLibrary.Entry current=luts.isEmpty()?null:luts.get(UiList.clamp(lastSelection,luts.size()));
             rows.add(new CameraPage.Row("删除当前 LUT",current==null?"LUT 库为空":builtinIds.contains(current.id)?current.name+" · 内置色彩不能删除":current.name,"删除"));
             rows.add(new CameraPage.Row("导出诊断日志","出问题后导出日志包，交给开发者分析","导出"));
@@ -144,8 +155,9 @@ public final class LibraryActivity extends Activity {
             page.section="使用说明";page.title="四步，把色彩带进照片";page.subtitle="选择 LUT → 半按对焦 → 全按拍摄 → 回看成片";
             rows.add(new CameraPage.Row("使用普通照片 LUT","输入是索尼显影后的 8 位图像；Log LUT 需先适配","输入"));
             rows.add(new CameraPage.Row("自动曝光与亮度","取景时左右键 / 拨轮调 EV，中央键归零","拍摄"));
-            rows.add(new CameraPage.Row("一次快门，两张 JPEG","原片和 LUT 成片都保存在 DCIM","保存"));
-            rows.add(new CameraPage.Row("快速对照与继续拍摄","左右翻图，中央键对照，半按返回取景","回看"));
+            rows.add(saveOriginal()?new CameraPage.Row("一次快门，两张 JPEG","原片和 LUT 成片都保存在 DCIM","保存")
+                :new CameraPage.Row("一次快门，一张 LUT 成片","需要原片时：MENU → 保存原片","保存"));
+            rows.add(new CameraPage.Row("快速对照与继续拍摄",saveOriginal()?"左右翻图，中央键对照，半按返回取景":"左右翻图，半按返回取景","回看"));
             page.note="效果参考图不是实时取景；成片保留本机全尺寸";page.footer="MENU 返回";
         }else{
             page.section="提示";page.title="请检查后重试";page.subtitle=notice;page.note="已有 LUT 和照片均已保留";
@@ -224,7 +236,8 @@ public final class LibraryActivity extends Activity {
             capturePending=true;captureAway=false;
             mode="library";selection=indexOf(entry.id);render();startActivityForResult(new Intent(LibraryActivity.this,PhotoActivity.class).putExtra("lut_id",entry.id)
                     .putExtra("develop_animation",getIntent().getBooleanExtra("develop_animation",true))
-                    .putExtra("develop_animation_alternate",getIntent().getBooleanExtra("develop_animation_alternate",false)),CAPTURE_REQUEST);
+                    .putExtra("develop_animation_alternate",getIntent().getBooleanExtra("develop_animation_alternate",false))
+                    .putExtra("save_original",saveOriginal()),CAPTURE_REQUEST);
     }
     private int captureRestarts;
     /** The capture screen found its process left over from a session that auto
@@ -292,7 +305,14 @@ public final class LibraryActivity extends Activity {
         }else if(mode.equals("files")){if(selection==0){if(importDone)finishImport();else if(!imports.isEmpty())importFiles(-1);else scan();}
             else if(importResults.get(selection-1).startsWith("失败"))showNotice("这个文件未能导入",importResults.get(selection-1));else if(!importDone)importFiles(selection-1);
         }else if(mode.equals("gallery")){if(!photos.isEmpty())openGallery(photos.get(selection).id);
-        }else if(mode.equals("options")){if(selection==0){mode="import";selection=0;}else if(selection==1){mode="help";selection=0;}else if(selection==2){libraryPage();return;}else if(selection==3){exitToCamera();return;}else if(selection==page.rows.size()-1){exportDiagnostics();return;}else if(selection==page.rows.size()-2){deleteRequest();return;}else if(selection==4&&SonyAppPolicy.hasDebugHelper(this)){openDebugHelper();return;}else{previewSettings();return;}render();
+        }else if(mode.equals("options")){
+            String row=page.rows.get(selection).title;
+            if(row.equals("导入 LUT")){mode="import";selection=0;}else if(row.equals("使用说明")){mode="help";selection=0;}
+            else if(row.equals("回到 LUT 库")){libraryPage();return;}else if(row.equals("退出应用")){exitToCamera();return;}
+            else if(row.equals("测试连接")){openDebugHelper();return;}else if(row.equals("当前 LUT 的取景")){previewSettings();return;}
+            else if(row.equals("保存原片")){toggleSaveOriginal();return;}else if(row.equals("删除当前 LUT")){deleteRequest();return;}
+            else if(row.equals("导出诊断日志")){exportDiagnostics();return;}
+            render();
         }else if(mode.equals("delete_confirm")){if(selection==1)deleteLut();else libraryPage();
         }else if(mode.equals("diagnostics")){if(selection==0)exportDiagnostics();else libraryPage();
         }else if(mode.equals("preview_options")||mode.equals("preview_warning")||mode.equals("preview_error")){

@@ -28,7 +28,7 @@ public final class GalleryActivity extends Activity {
         }catch(final Exception e){ui.post(new Runnable(){public void run(){error(e);}});}}});
     }
     private void error(Exception e){SupportDiagnostics.failure("gallery",e);if(destroyed)return;hud.mode="error";hud.detail=e.getMessage()==null?"照片读取失败":e.getMessage();hud.progress="";hud.footer="MENU 返回照片列表";hud.update();}
-    private File selectedFile(){PhotoCatalog.Pair p=photos.get(index);return original?p.original:p.graded;}
+    private File selectedFile(){PhotoCatalog.Pair p=photos.get(index);return original&&p.original!=null?p.original:p.graded;}
     private void load(){
         if(photos==null||photos.isEmpty()){hud.mode="error";hud.name="照片";hud.detail="还没有照片";hud.progress="拍下第一张照片后，在这里回看";hud.footer="MENU 返回";hud.update();return;}
         desiredKey=selectedFile().getPath();requestAt=SystemClock.elapsedRealtime();drawKey=null;failedPrefetch.remove(desiredKey);attempted.clear();
@@ -44,11 +44,12 @@ public final class GalleryActivity extends Activity {
         // Storage is newest-first; display positions follow capture order, oldest = 1.
         int ordinal=photos.size()-index;
         hud.setVisibility(infoVisible?View.VISIBLE:View.INVISIBLE);hud.mode="review";hud.name=pair.lut;hud.tag=ordinal+" / "+photos.size();hud.original=original;
-        hud.detail=selectedFile().getName();hud.footer="←→ / 拨轮翻图  ● 对照  ↑ 信息  半按拍摄";hud.update();
+        hud.hasOriginal=pair.original!=null;
+        hud.detail=selectedFile().getName();hud.footer=pair.original!=null?"←→ / 拨轮翻图  ● 对照  ↑ 信息  半按拍摄":"←→ / 拨轮翻图  ↑ 信息  半按拍摄 · 未保存原片";hud.update();
         android.util.Log.i("LutUI","gallery_selected file="+selectedFile().getName()+" ordinal="+ordinal+" total="+photos.size()+" cache_hit="+hit+" request_ms="+(SystemClock.elapsedRealtime()-requestAt));
     }
     private void addCandidate(List<File> files,int position,boolean source){
-        if(position>=0&&position<photos.size()){PhotoCatalog.Pair p=photos.get(position);files.add(source?p.original:p.graded);}
+        if(position>=0&&position<photos.size()){PhotoCatalog.Pair p=photos.get(position);File f=source?p.original:p.graded;if(f!=null)files.add(f);}
     }
     private List<File> plan(){
         List<File> files=new ArrayList<File>();addCandidate(files,index,original);
@@ -116,7 +117,7 @@ public final class GalleryActivity extends Activity {
         if(dial!=0){if(e.getAction()==KeyEvent.ACTION_DOWN)turnPage(-dial);return true;}
         if(k==UiKeys.NONE)return super.dispatchKeyEvent(e);if(e.getAction()!=KeyEvent.ACTION_DOWN||e.getRepeatCount()!=0)return true;
         if(k==UiKeys.BACK){leave(false);return true;}if(photos==null||photos.isEmpty())return true;
-        if(k==UiKeys.OK){original=!original;infoVisible=true;load();}
+        if(k==UiKeys.OK){if(photos.get(index).original==null)return true;original=!original;infoVisible=true;load();}
         else if(k==UiKeys.UP){infoVisible=!infoVisible;if(hud.mode.equals("review"))hud.setVisibility(infoVisible?View.VISIBLE:View.INVISIBLE);
             android.util.Log.i("LutUI","gallery_info visible="+infoVisible);}
         else if(k==UiKeys.LEFT||k==UiKeys.RIGHT)turnPage(k==UiKeys.LEFT?1:-1);

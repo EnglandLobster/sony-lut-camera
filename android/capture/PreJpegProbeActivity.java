@@ -151,6 +151,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private volatile boolean active,prepared,workerActive,destroyed;
     private boolean initOnly,preparePending;private volatile boolean closed;private String phase,mapPath,initStage,mapRevision;private File run,sd;
     private boolean normalizeZoom,continuous,verifyPayloads,overlapOriginal,sourceReferenceEnabled,alternateOverlap,overlapThisShot;
+    /** LUT sessions: also store the developed original as its own JPEG. Off
+     * in the product unless the user enables it (owner, 2026-11-20). */
+    private boolean saveOriginal;
     // Store notifications queue on the same worker as grading. The original
     // remains the sole pending store until confirmed, even with overlap enabled.
     private boolean lutApplied;private Bitmap sourceReference;
@@ -188,9 +191,12 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             android.util.Log.e("SonyPreJpeg","graphics_restore_failed",e);
         }
     }};
-    private boolean paired(){return "lut".equals(phase);}
-    private boolean develops(){return "develop".equals(phase)||"develop-xfine".equals(phase)||paired();}
-    private boolean managedJpegQuality(){return "develop-xfine".equals(phase)||paired();}
+    /** A LUT session: develop, grade and store the graded JPEG. */
+    private boolean lutSession(){return "lut".equals(phase);}
+    /** A LUT session that also stores the original: RECORD_COUNT=2. */
+    private boolean paired(){return lutSession()&&saveOriginal;}
+    private boolean develops(){return "develop".equals(phase)||"develop-xfine".equals(phase)||lutSession();}
+    private boolean managedJpegQuality(){return "develop-xfine".equals(phase)||lutSession();}
     private final Runnable hideReviewStatus=new Runnable(){public void run(){
         if(active&&review!=null&&review.getVisibility()==View.VISIBLE)status.setVisibility(View.INVISIBLE);
     }};
@@ -214,7 +220,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(awaitFirstFrame&&getDrawable()!=null){
                 awaitFirstFrame=false;final long shownAt=SystemClock.elapsedRealtime();
                 final long shot=gate.shot();displayedAt=shownAt;
-                savedStatus("成片 "+seconds(shownAt-pressAt)+" 秒"+(continuous?" · 正在准备下一张":" · 已保存原片 + LUT"));
+                savedStatus("成片 "+seconds(shownAt-pressAt)+" 秒"+(continuous?" · 正在准备下一张":paired()?" · 已保存原片 + LUT":" · 已保存 LUT 成片"));
                 work.post(new Runnable(){public void run(){
                     if(closed||shot!=gate.shot())return;
                     event("first_frame","shutter_to_displayed_ms="+(shownAt-pressAt)+" journal_write_ms="+journalWriteMs()+" journal_shot_ms="+(journalWriteMs()-journalAtPress)+" original="+originalFile+" graded="+gradedFile);
@@ -347,13 +353,15 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         overlapOriginal=getIntent().getBooleanExtra("overlap_original",false);
         sourceReferenceEnabled=getIntent().getBooleanExtra("source_reference",false);
         alternateOverlap=getIntent().getBooleanExtra("alternate_overlap",false);
+        // Diagnostic entries keep the verified pair; the product passes the user's choice.
+        saveOriginal=getIntent().getBooleanExtra("save_original",!productUi());
         if(alternateOverlap&&(!continuous||!overlapOriginal)){
             status=new TextView(this);status.setText("交替测速需要开启连续保存重叠测试。");setContentView(status);return;
         }
-        if((overlapOriginal&&!paired())||(sourceReferenceEnabled&&(!paired()||!verifyPayloads||continuous))){
+        if((overlapOriginal&&!lutSession())||(verifyPayloads&&lutSession()&&!paired())||(sourceReferenceEnabled&&(!paired()||!verifyPayloads||continuous))){
             status=new TextView(this);status.setText("原片对照仅用于单张诊断；保存重叠仅用于双文件 LUT 流程。");setContentView(status);return;
         }
-        if(continuous&&(!paired()||initOnly)){
+        if(continuous&&(!lutSession()||initOnly)){
             status=new TextView(this);status.setText("连续拍摄仅用于已验证的双文件 LUT 流程。");setContentView(status);return;
         }
         boolean freshEntry=!hasEnteredProbe;hasEnteredProbe=true;
@@ -420,7 +428,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             recoveryFence=CaptureRecoveryFence.local(getFilesDir());
             if(recoveryFence.blocked())throw new IOException("上一张照片仍在保存核验，请先返回 LUT 库");
         }
-        sd=Environment.getExternalStorageDirectory();run=productUi()?null:RunFiles.create(sd);event("prepare","phase="+phase+" init_only="+initOnly+" init_stage="+initStage+" run="+run+" pid="+android.os.Process.myPid()+" fresh_session="+getIntent().getBooleanExtra("fresh_session",false)+" continuous="+continuous+" verify_payloads="+verifyPayloads+" overlap_original="+overlapOriginal+" source_reference="+sourceReferenceEnabled+" probe_token="+getIntent().getStringExtra("probe_token"));
+        sd=Environment.getExternalStorageDirectory();run=productUi()?null:RunFiles.create(sd);event("prepare","phase="+phase+" save_original="+saveOriginal+" init_only="+initOnly+" init_stage="+initStage+" run="+run+" pid="+android.os.Process.myPid()+" fresh_session="+getIntent().getBooleanExtra("fresh_session",false)+" continuous="+continuous+" verify_payloads="+verifyPayloads+" overlap_original="+overlapOriginal+" source_reference="+sourceReferenceEnabled+" probe_token="+getIntent().getStringExtra("probe_token"));
         if(!initOnly)photoFiles=new PhotoFiles(sd,"handoff".equals(phase)?PhotoFiles.Format.ARW:PhotoFiles.Format.JPEG,!develops());
         Class<?> props=Class.forName("com.sony.scalar.sysutil.ScalarProperties");Method get=props.getMethod("getString",String.class);
         String memory=(String)get.invoke(null,"device.memory"),pixels=(String)get.invoke(null,"mem.rawimage.size.in.mega.pixel");
@@ -459,8 +467,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         cameraType=Class.forName("com.sony.scalar.hardware.CameraEx");sequenceType=Class.forName("com.sony.scalar.hardware.CameraSequence");
         rawType=Class.forName("com.sony.scalar.hardware.CameraSequence$RawData");imageType=Class.forName("com.sony.scalar.graphics.OptimizedImage");
         if(develops())checkPostCaptureApi();
-        if(paired()&&!initOnly)event("device_memory_api",Native.devicePreflight());
-        if(paired()&&!initOnly){
+        if(lutSession()&&!initOnly)event("device_memory_api",Native.devicePreflight());
+        if(lutSession()&&!initOnly){
             File custom=RunFiles.file(RunFiles.file(sd,"SONYLUT"),"CUSTOM.CUB");
             File lut;
             if(productUi()){
@@ -543,7 +551,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(size==null)throw new IOException("picture-size unavailable");
             captureGeometry.verify(size.width,size.height);
             if(photoFiles!=null)photoFiles.expect(captureGeometry);
-            if(paired()&&!initOnly){
+            if(lutSession()&&!initOnly){
                 lutReview=Bitmap.createBitmap(captureGeometry.reviewWidth(),captureGeometry.reviewHeight(),Bitmap.Config.ARGB_8888);
                 if(sourceReferenceEnabled||productUi())sourceReference=Bitmap.createBitmap(captureGeometry.reviewWidth(),captureGeometry.reviewHeight(),Bitmap.Config.ARGB_8888);
                 event("review_buffers_ready","geometry="+captureGeometry+" review="+captureGeometry.reviewWidth()+"x"+captureGeometry.reviewHeight());
@@ -896,7 +904,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     File file=receipt.file;
                     event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" confirmation="+(receipt.predicted?"dcf_prediction":receipt.recovered?"index_recovery":"named_receipt")+" "+storeCompletion.diagnostics());
                     long confirmedAt=SystemClock.elapsedRealtime();
-                    if(paired())verifyPairStore(file,confirmedAt);
+                    if(lutSession())verifyPairStore(file,confirmedAt);
                     else verifyStored("DCIM/"+file.getParentFile().getName()+"/",file.getName(),confirmedAt);
                 }});return;
             }
@@ -995,7 +1003,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // Bodies with the completed-store callback grade while the original is
         // being written: pixel-checked on ILCE-6300 2.01, and the A7R II port of
         // this engine has run the same way for all its users (ILCE-7RM2 4.01).
-        overlapThisShot=overlapOriginal&&storeEvents!=null&&storeEvents.hasNamedReceipt()
+        overlapThisShot=paired()&&overlapOriginal&&storeEvents!=null&&storeEvents.hasNamedReceipt()
                 &&(!alternateOverlap||shot%2==0);
         event("armed","origin="+origin+" lut_cache_reused="+(shot>1)+" overlap_original="+overlapThisShot);
         ui.post(new Runnable(){public void run(){if(shot==gate.shot()){clearOriginalReview();reviewing=false;review.setVisibility(View.INVISIBLE);review.setImageBitmap(null);}}});
@@ -1057,6 +1065,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     processing(CaptureProgress.Stage.GRADE,productUi()?"正在准备调色":"正在保存原片");
                     event("store_begin","type=YC role=original release_source=false");
                     storeToCamera(imageType,image,false);
+                }else if(lutSession()){
+                    // No original: grade the developed buffer in place, then
+                    // hand it to Sony as the session's single record.
+                    retainedImage=image;applyRetainedLut("developed_no_original");retainedImage=null;
+                    gate.saving();storeAt=SystemClock.elapsedRealtime();imageTransferred=true;
+                    processing(CaptureProgress.Stage.SAVE,"正在保存成片");
+                    event("store_begin","type=YC role=graded release_source=true original=skipped");
+                    storeToCamera(imageType,image,true);
                 }else{
                     gate.saving();storeAt=SystemClock.elapsedRealtime();event("store_begin","type=YC release_source=true");imageTransferred=true;
                     processing(CaptureProgress.Stage.SAVE,"正在保存原片");
@@ -1110,7 +1126,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             storeToCamera(imageType,image,true);
             event("store_accepted","role=graded call_ms="+(SystemClock.elapsedRealtime()-storeAt));
         }else{
-            if(originalFile==null||originalFile.equals(file))throw new IOException("graded save did not preserve distinct original");
+            if(paired()&&(originalFile==null||originalFile.equals(file)))throw new IOException("graded save did not preserve distinct original");
             gradedFile=file;gate.saved();event("pair_saved","shutter_to_saved_ms="+(confirmedAt-pressAt));
             ui.post(new Runnable(){public void run(){
                 if(stopAfterStore){recordPair();setResult(RESULT_OK);finish();return;}
@@ -1213,8 +1229,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(!active||destroyed||closed||!continuous)return;
         if(!gate.beginRearm(shot))return;
         try{
-            if(workerActive||retainedImage!=null||originalFile==null||gradedFile==null||originalFile.equals(gradedFile))
-                throw new IllegalStateException("cannot rearm before distinct pair completes and buffers transfer");
+            if(workerActive||retainedImage!=null||gradedFile==null||(paired()&&(originalFile==null||originalFile.equals(gradedFile))))
+                throw new IllegalStateException("cannot rearm before the declared records complete and buffers transfer");
             CaptureJpegQuality.verify(captureQuality,camera.getParameters().getJpegQuality());
             Camera.Size current=camera.getParameters().getPictureSize();
             if(current==null)throw new IOException("picture-size unavailable on rearm");
@@ -1470,12 +1486,12 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         event("review_compare","role="+(original?"original":"graded")+" switch_ms="+(SystemClock.elapsedRealtime()-begin)+" jpeg_decode=false");
     }
     private void recordPair(){
-        if(selectedLut==null||originalFile==null||gradedFile==null||recordedPairShot==gate.shot())return;
+        if(selectedLut==null||gradedFile==null||(paired()&&originalFile==null)||recordedPairShot==gate.shot())return;
         recordedPairShot=gate.shot();
         final File original=originalFile,graded=gradedFile;final long display=Math.max(0,displayedAt-pressAt),ready=Math.max(0,nextReadyAt-pressAt);
         final LutLibrary.Entry lut=selectedLut;pendingReceipts++;
         work.post(new Runnable(){public void run(){try{
-            new PhotoCatalog(ProductFiles.photos(),sd).save(original,graded,lut.name,lut.size,display,ready,ReviewLoader.capturedAt(original));
+            new PhotoCatalog(ProductFiles.photos(),sd).save(original,graded,lut.name,lut.size,display,ready,ReviewLoader.capturedAt(original!=null?original:graded));
             event("pair_catalogued","original="+original+" graded="+graded);
         }catch(final IOException e){event("catalog_failed",e.toString());ui.post(new Runnable(){public void run(){if(!destroyed&&productHud!=null){productHud.detail="照片已保存在 DCIM；回看记录保存失败";productHud.update();}}});}
         finally{ui.post(new Runnable(){public void run(){pendingReceipts--;maybeOpenGallery();exitProductProcess();}});}}});

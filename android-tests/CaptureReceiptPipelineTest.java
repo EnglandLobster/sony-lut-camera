@@ -74,9 +74,23 @@ public final class CaptureReceiptPipelineTest {
             check(number==10&&!completion.pending(),"five consecutive original/graded pairs complete");
             System.out.println("PASS verified native receipts: 5 pairs, first-check completion, nonzero and repeated IDs, duplicates, delayed DCIM creation");
 
+            // Graded only (RECORD_COUNT=1): each shot is one plain store; no
+            // continuation is required between consecutive shots.
+            for(int id:new int[]{3,4,0}){
+                sink.token=completion.begin(0);completion.rpcStarted(sink.token);
+                File file=new File(dcim,"100MSDCF/"+String.format(Locale.US,"DSC%05d.JPG",++number));
+                CapturePipelineTest.write(file,CapturePipelineTest.jpeg(6000,4000,true));
+                camera.saved(id,file);completion.rpcReturned(sink.token);
+                CaptureStoreCompletion.Receipt receipt=completion.poll(sink.token,41000);
+                check(receipt!=null&&!receipt.recovered&&receipt.file.equals(file.getCanonicalFile()),"graded-only shot "+id);
+                files.accepted(receipt.file);
+            }
+            check(number==13&&!completion.pending(),"three consecutive graded-only shots complete");
+            System.out.println("PASS graded-only receipts: consecutive single-record shots without a final-store continuation");
+
             sink.token=completion.begin(0);
             completion.rpcStarted(sink.token);
-            File wrongSize=new File(dcim,"100MSDCF/DSC00011.JPG");
+            File wrongSize=new File(dcim,"100MSDCF/"+String.format(Locale.US,"DSC%05d.JPG",++number));
             camera.saved(41,wrongSize);
             completion.rpcReturned(sink.token);
             check(completion.poll(sink.token,1000)==null,"named file must be visible");

@@ -68,6 +68,8 @@ final class PhotoHud extends View {
         fullFramePending=false;imageDirty=false;wasMoving=moving;
         if(moving)requestDevelopFrame();
     }};
+    /** Review: whether an original exists to compare against. */
+    boolean hasOriginal=true;
     boolean original;float pixelAspect=1;private final Paint p=new Paint(3);
     PhotoHud(Context context){super(context);p.setTypeface(UiFont.get(context));}
     void update(){
@@ -256,7 +258,7 @@ final class PhotoHud extends View {
             if(hasTag)right(c,fit(tag,180,18),w-24,41,18,CameraPage.ACCENT);
             if(hasDetail)text(c,fit(detail,w-48,18),24,424,18,CameraPage.TEXT);
             text(c,fit(footer,w-48,15),24,hasDetail?456:463,15,CameraPage.MUTED);
-            if(mode.equals("review")){
+            if(mode.equals("review")&&hasOriginal){
                 float x=24,y=78,bw=184,bh=35;
                 p.setColor(0xe0181e22);c.drawRoundRect(new RectF(x,y,x+bw,y+bh),6,6,p);
                 p.setColor(original?0xff4a5155:0x00000000);c.drawRoundRect(new RectF(x,y,x+bw/2,y+bh),6,6,p);

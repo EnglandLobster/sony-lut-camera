@@ -46,7 +46,14 @@ public final class ProductStorageTest {
             rejected=false;try{catalog.save(same,graded,"x",33,1,2);}catch(IOException e){rejected=true;}require(rejected,"DCIM boundary required");
             graded.delete();require(catalog.list().size()==1&&original.isFile(),"missing image keeps receipt and original");
             require(new String(Files.readAllBytes(original.toPath()),"UTF-8").equals("original"),"never changes photo payload");
-            System.out.println("PASS product storage: exact-byte import, title/grid, dedup, failed/interrupted imports, source containment, independent pair history, missing-file recovery");
+            // Graded only (original not saved): no original key; old pair receipts still read.
+            File solo=new File(dcim,"DSC00003.JPG");write(solo,"graded only");
+            catalog.save(null,solo,"直出",25,3000,3100,1000L);
+            List<PhotoCatalog.Pair> mixed=catalog.list();
+            require(mixed.size()==2&&mixed.get(0).graded.equals(solo.getCanonicalFile())&&mixed.get(0).original==null
+                &&mixed.get(1).original.equals(original.getCanonicalFile()),"graded-only receipt beside a pair");
+            rejected=false;try{catalog.save(null,same,"x",25,1,2);}catch(IOException e){rejected=true;}require(rejected,"graded-only DCIM boundary required");
+            System.out.println("PASS product storage: exact-byte import, title/grid, dedup, failed/interrupted imports, source containment, independent pair and graded-only history, missing-file recovery");
         }finally{delete(root);}
     }
     private static void delete(File f){if(!Files.isSymbolicLink(f.toPath())){File[] files=f.listFiles();if(files!=null)for(File child:files)delete(child);}f.delete();}
