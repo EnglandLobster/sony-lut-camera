@@ -14,6 +14,8 @@ final class PhotoHud extends View {
     String liveExposure="",liveCompensation="+0.0 EV",qualityLabel="",liveMode="P",liveIso="",liveWhiteBalance="";
     /** Viewfinder list: ISO/WB choices or focus settings. Null when closed. */
     String panelTitle;String[] panelRows,panelValues;int panelSelected;String panelHint="";
+    /** Gallery only: the panel also draws outside live view (delete confirmation). */
+    boolean reviewPanel;
     /** Flexible-spot AF point in Sony's -1000..1000 frame coordinates. */
     boolean afVisible,afEditing;int afX,afY;
     /** Composition guides over the capture frame, in both DISP states. */
@@ -223,6 +225,7 @@ final class PhotoHud extends View {
                 if(!mode.equals("error"))text(c,fit(name,w-72,17),36,286,17,CameraPage.MUTED);
                 text(c,fit(footer,w-72,17),36,443,17,CameraPage.MUTED);
             }
+            if(reviewPanel&&panelRows!=null&&!mode.equals("processing"))panel(c,w);
         }else if(mode.equals("live")){ 
             // Camera-style edge readouts, with outlined text instead of
             // full-width bars. The native preview geometry is unchanged.
@@ -266,6 +269,7 @@ final class PhotoHud extends View {
                 center(c,"原片",x+bw/4,y+24,16,original?CameraPage.TEXT:CameraPage.MUTED);
                 center(c,"LUT 成片",x+bw*3/4,y+24,16,original?CameraPage.MUTED:CameraPage.BG);
             }
+            if(reviewPanel&&panelRows!=null)panel(c,w);
         }
         c.restore();
     }

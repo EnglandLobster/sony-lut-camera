@@ -44,8 +44,19 @@ public final class ProductStorageTest {
             List<PhotoCatalog.Pair> pairs=catalog.list();require(pairs.size()==1&&pairs.get(0).original.equals(original.getCanonicalFile())&&pairs.get(0).grid==33,"pair roundtrip");
             rejected=false;try{catalog.save(original,original,"x",33,1,2);}catch(IOException e){rejected=true;}require(rejected,"distinct original required");
             rejected=false;try{catalog.save(same,graded,"x",33,1,2);}catch(IOException e){rejected=true;}require(rejected,"DCIM boundary required");
-            graded.delete();require(catalog.list().size()==1&&original.isFile(),"missing image keeps receipt and original");
+            File history=new File(root,"history");
+            // Original deleted elsewhere: the pair stays, without comparison.
+            File keep=new File(root,"keep.jpg");Files.copy(original.toPath(),keep.toPath());original.delete();
+            pairs=catalog.list();require(pairs.size()==1&&pairs.get(0).original==null&&catalog.pruned==0,"missing original drops only the comparison");
+            Files.copy(keep.toPath(),original.toPath());
+            // Card trouble (DCIM unreadable) hides the pair but never deletes its receipt.
+            File dcimRoot=new File(sd,"DCIM"),parked=new File(sd,"PARKED");require(dcimRoot.renameTo(parked),"park DCIM");
+            require(catalog.list().isEmpty()&&catalog.pruned==0&&history.list().length==2,"unreadable DCIM keeps receipts");
+            require(parked.renameTo(dcimRoot),"restore DCIM");
+            // Graded deleted in Sony playback or on a computer: receipt dropped, original untouched.
+            graded.delete();require(catalog.list().isEmpty()&&catalog.pruned==1&&original.isFile()&&history.list().length==1,"missing graded drops receipt, keeps original");
             require(new String(Files.readAllBytes(original.toPath()),"UTF-8").equals("original"),"never changes photo payload");
+            write(graded,"graded");catalog.save(original,graded,"暖色 测试",33,4000,4200);
             // Graded only (original not saved): no original key; old pair receipts still read.
             File solo=new File(dcim,"DSC00003.JPG");write(solo,"graded only");
             catalog.save(null,solo,"直出",25,3000,3100,1000L);
@@ -53,7 +64,9 @@ public final class ProductStorageTest {
             require(mixed.size()==2&&mixed.get(0).graded.equals(solo.getCanonicalFile())&&mixed.get(0).original==null
                 &&mixed.get(1).original.equals(original.getCanonicalFile()),"graded-only receipt beside a pair");
             rejected=false;try{catalog.save(null,same,"x",25,1,2);}catch(IOException e){rejected=true;}require(rejected,"graded-only DCIM boundary required");
-            System.out.println("PASS product storage: exact-byte import, title/grid, dedup, failed/interrupted imports, source containment, independent pair and graded-only history, missing-file recovery");
+            catalog.remove(mixed.get(0));require(catalog.list().size()==1&&solo.isFile(),"remove drops only the receipt");
+            rejected=false;try{catalog.remove(new PhotoCatalog.Pair("../x",null,0,0,0,0,null,solo));}catch(IOException e){rejected=true;}require(rejected,"remove rejects foreign names");
+            System.out.println("PASS product storage: exact-byte import, title/grid, dedup, failed/interrupted imports, source containment, independent pair and graded-only history, missing-photo pruning, receipt removal");
         }finally{delete(root);}
     }
     private static void delete(File f){if(!Files.isSymbolicLink(f.toPath())){File[] files=f.listFiles();if(files!=null)for(File child:files)delete(child);}f.delete();}

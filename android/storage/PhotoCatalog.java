@@ -3,8 +3,10 @@ package io.github.englandlobster.lutcamera;
 import java.io.*;
 import java.util.*;
 
-/** Small append-only photo receipts: the graded JPEG, plus the original when
- * one was saved. Never renames, overwrites or deletes DCIM photos. */
+/** Small photo receipts: the graded JPEG, plus the original when one was
+ * saved. Never renames, overwrites or deletes DCIM photos itself; a receipt
+ * whose graded photo is gone (deleted in Sony playback, on a computer or by
+ * PhotoDelete) is dropped when the history is listed. */
 final class PhotoCatalog {
     static final class Pair {
         final String id,lut;final int grid;final long time,displayMs,readyMs;final File graded;
@@ -34,15 +36,28 @@ final class PhotoCatalog {
         try{LutLibrary.writeProperties(temp,p);if(!temp.renameTo(dest))throw new IOException("照片记录保存失败");}finally{temp.delete();}
         return new Pair(id,lut,grid,time,displayMs,readyMs,original,graded);
     }
-    synchronized List<Pair> list()throws IOException {
+    /** Receipts dropped by the last list() because their graded photo is gone. */
+    int pruned;
+    synchronized List<Pair> list()throws IOException {pruned=0;
         File[] files=root.listFiles();if(files==null)throw new IOException("无法读取照片记录");List<Pair> pairs=new ArrayList<Pair>();
+        // Only trust a missing photo when DCIM itself is readable; an unmounted
+        // or failing card must never cost the user their history.
+        boolean dcimReadable=dcim.isDirectory()&&dcim.list()!=null;
         for(File file:files){if(!file.getName().matches("P[0-9A-F]{7}\\.JSN"))continue;
-            Properties p=LutLibrary.readProperties(file);
-            try{pairs.add(new Pair(file.getName(),p.getProperty("lut","LUT"),Integer.parseInt(p.getProperty("grid")),Long.parseLong(p.getProperty("time")),
-                Long.parseLong(p.getProperty("display")),Long.parseLong(p.getProperty("ready")),
-                p.getProperty("original")==null?null:photo(p.getProperty("original")),photo(p.getProperty("graded"))));}
+            Properties p=LutLibrary.readProperties(file);File original,graded;Pair pair;
+            try{original=p.getProperty("original")==null?null:photo(p.getProperty("original"));graded=photo(p.getProperty("graded"));
+                if(!graded.isFile()){if(dcimReadable&&file.delete())pruned++;continue;}
+                if(original!=null&&!original.isFile())original=null;
+                pair=new Pair(file.getName(),p.getProperty("lut","LUT"),Integer.parseInt(p.getProperty("grid")),Long.parseLong(p.getProperty("time")),
+                Long.parseLong(p.getProperty("display")),Long.parseLong(p.getProperty("ready")),original,graded);}
             catch(RuntimeException e){throw new IOException("照片记录损坏："+file.getName());}
+            pairs.add(pair);
         }
         Collections.sort(pairs,new Comparator<Pair>(){public int compare(Pair a,Pair b){return b.graded.getPath().compareTo(a.graded.getPath());}});return pairs;
+    }
+    /** Drops one receipt after its photos were deleted. */
+    synchronized void remove(Pair pair)throws IOException {
+        if(!pair.id.matches("P[0-9A-F]{7}\\.JSN"))throw new IOException("照片记录无效");
+        File f=new File(root,pair.id);if(f.exists()&&!f.delete())throw new IOException("照片记录删除失败");
     }
 }

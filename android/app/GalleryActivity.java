@@ -13,16 +13,18 @@ public final class GalleryActivity extends Activity {
     private final Handler ui=new Handler();private final ExecutorService io=Executors.newSingleThreadExecutor();
     private SonyReviewView image;private PhotoHud hud;private List<PhotoCatalog.Pair> photos;
     private SonyPhotoPreview loader;private int index,direction=1;private boolean original,destroyed,reading,active,leaving,infoVisible=true;
+    private PhotoCatalog catalog;private PhotoDelete remover;private boolean confirming,deleting;
     private String desiredKey,displayedKey,drawKey;private long requestAt,drawAt;private boolean drawHit;
     private final Set<String> failedPrefetch=new HashSet<String>();
     private final Set<String> attempted=new HashSet<String>();
     private final PreviewCache<Bitmap> cache=new PreviewCache<Bitmap>(8L*1024*1024,new PreviewCache.Disposal<Bitmap>(){public void release(Bitmap bitmap){bitmap.recycle();}});
     @Override public void onCreate(Bundle saved){super.onCreate(saved);FrameLayout frame=new FrameLayout(this);frame.setBackgroundColor(Color.BLACK);
-        hud=new PhotoHud(this);image=new SonyReviewView(this){@Override protected void pixelAspectChanged(float value){hud.pixelAspect=value;hud.update();}
+        hud=new PhotoHud(this);hud.reviewPanel=true;image=new SonyReviewView(this){@Override protected void pixelAspectChanged(float value){hud.pixelAspect=value;hud.update();}
             @Override protected void onDraw(Canvas c){super.onDraw(c);if(drawKey!=null&&drawKey.equals(displayedKey)){android.util.Log.i("LutUI","gallery_frame file="+new File(drawKey).getName()+" request_to_draw_ms="+(SystemClock.elapsedRealtime()-drawAt)+" cache_hit="+drawHit+" cache_bytes="+cache.bytes());drawKey=null;}}};
         frame.addView(image,new FrameLayout.LayoutParams(-1,-1));frame.addView(hud,new FrameLayout.LayoutParams(-1,-1));setContentView(frame);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);hud.detail="正在打开照片";
-        io.execute(new Runnable(){public void run(){try{loader=new SonyPhotoPreview(GalleryActivity.this);final List<PhotoCatalog.Pair> loaded=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory()).list();
+        io.execute(new Runnable(){public void run(){try{loader=new SonyPhotoPreview(GalleryActivity.this);catalog=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory());final List<PhotoCatalog.Pair> loaded=catalog.list();
+            if(catalog.pruned>0)SupportDiagnostics.event("gallery_pruned","count="+catalog.pruned);
             ui.post(new Runnable(){public void run(){if(destroyed)return;photos=loaded;String id=getIntent().getStringExtra("pair_id");for(int i=0;i<photos.size();i++)if(photos.get(i).id.equals(id)){index=i;break;}
                 index=Math.max(0,Math.min(Math.max(0,photos.size()-1),index+getIntent().getIntExtra("page_offset",0)));load();}});
         }catch(final Exception e){ui.post(new Runnable(){public void run(){error(e);}});}}});
@@ -45,7 +47,7 @@ public final class GalleryActivity extends Activity {
         int ordinal=photos.size()-index;
         hud.setVisibility(infoVisible?View.VISIBLE:View.INVISIBLE);hud.mode="review";hud.name=pair.lut;hud.tag=ordinal+" / "+photos.size();hud.original=original;
         hud.hasOriginal=pair.original!=null;
-        hud.detail=selectedFile().getName();hud.footer=pair.original!=null?"←→ / 拨轮翻图  ● 对照  ↑ 信息  半按拍摄":"←→ / 拨轮翻图  ↑ 信息  半按拍摄 · 未保存原片";hud.update();
+        hud.detail=selectedFile().getName();hud.footer=pair.original!=null?"←→ / 拨轮翻图  ● 对照  ↑ 信息  ↓ 删除  半按拍摄":"←→ / 拨轮翻图  ↑ 信息  ↓ 删除  半按拍摄 · 未保存原片";hud.update();
         android.util.Log.i("LutUI","gallery_selected file="+selectedFile().getName()+" ordinal="+ordinal+" total="+photos.size()+" cache_hit="+hit+" request_ms="+(SystemClock.elapsedRealtime()-requestAt));
     }
     private void addCandidate(List<File> files,int position,boolean source){
@@ -108,7 +110,18 @@ public final class GalleryActivity extends Activity {
     }
     @Override public boolean dispatchKeyEvent(KeyEvent e){if(UiKeys.modeDial(e))return true; // Sony owns the PASM dial; never let it close the app.
         int k=UiKeys.key(e),dial=UiKeys.dial(e);
-        if(leaving)return true;
+        if(leaving||deleting)return true;
+        if(confirming){
+            if(k==UiKeys.PLAY||UiKeys.shutter(e))closeConfirm();
+            else{
+                if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0){
+                    if(k==UiKeys.UP||k==UiKeys.DOWN||dial!=0){hud.panelSelected=1-hud.panelSelected;hud.update();}
+                    else if(k==UiKeys.OK){if(hud.panelSelected==1)deleteSelected();else closeConfirm();}
+                    else if(k==UiKeys.BACK)closeConfirm();
+                }
+                return k!=UiKeys.NONE||dial!=0||super.dispatchKeyEvent(e);
+            }
+        }
         if(k==UiKeys.PLAY||UiKeys.shutter(e)){
             if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)leave(true);
             return true;
@@ -121,7 +134,42 @@ public final class GalleryActivity extends Activity {
         else if(k==UiKeys.UP){infoVisible=!infoVisible;if(hud.mode.equals("review"))hud.setVisibility(infoVisible?View.VISIBLE:View.INVISIBLE);
             android.util.Log.i("LutUI","gallery_info visible="+infoVisible);}
         else if(k==UiKeys.LEFT||k==UiKeys.RIGHT)turnPage(k==UiKeys.LEFT?1:-1);
+        else if(k==UiKeys.DOWN)confirmDelete();
         return true;
+    }
+    // Sony playback style: the confirmation defaults to 取消, so a stray
+    // centre press never deletes. RAW and original go with the graded photo.
+    private void confirmDelete(){
+        PhotoCatalog.Pair p=photos.get(index);
+        hud.panelTitle="删除这张照片？";hud.panelRows=new String[]{"取消","删除"};hud.panelValues=null;hud.panelSelected=0;
+        hud.panelHint=p.original!=null?"成片与原片一起删除，不能恢复":PhotoDelete.raw(p.graded)!=null?"成片与同编号 RAW 一起删除，不能恢复":"删除后不能恢复";
+        confirming=true;hud.setVisibility(View.VISIBLE);hud.update();
+        android.util.Log.i("LutUI","gallery_delete_confirm file="+p.graded.getName());
+    }
+    private void closeConfirm(){confirming=false;hud.panelRows=null;hud.panelHint="";
+        if(hud.mode.equals("review"))hud.setVisibility(infoVisible?View.VISIBLE:View.INVISIBLE);hud.update();}
+    private void deleteSelected(){
+        final PhotoCatalog.Pair p=photos.get(index);closeConfirm();deleting=true;
+        hud.setVisibility(View.VISIBLE);hud.detail="正在删除 "+p.graded.getName();hud.footer="请稍候，不要关机";hud.update();
+        io.execute(new Runnable(){public void run(){
+            Exception failure=null;List<PhotoCatalog.Pair> reloaded=null;
+            try{if(remover==null)remover=new PhotoDelete(GalleryActivity.this);
+                if(p.original!=null)remover.delete(p.original);
+                remover.delete(p.graded);catalog.remove(p);}
+            catch(Exception e){failure=e;}
+            // Re-read even after a failure: a pair may be half deleted.
+            try{reloaded=catalog.list();}catch(Exception e){if(failure==null)failure=e;}
+            final Exception error=failure;final List<PhotoCatalog.Pair> loaded=reloaded;
+            if(error==null)SupportDiagnostics.event("photo_delete","graded="+p.graded.getName()+" original="+(p.original!=null));
+            else SupportDiagnostics.failure("photo_delete",error);
+            ui.post(new Runnable(){public void run(){deleting=false;
+                if(destroyed)return;if(leaving){finish();return;}
+                if(loaded!=null){photos=loaded;index=Math.max(0,Math.min(photos.size()-1,index));original=false;
+                    // Never leave the deleted photograph on screen while the next one loads.
+                    displayedKey=null;image.setImageBitmap(null);load();}
+                if(error!=null){hud.setVisibility(View.VISIBLE);hud.detail="删除失败："+(error.getMessage()==null?"请重试":error.getMessage());hud.update();}
+            }});
+        }});
     }
     @Override protected void onResume(){super.onResume();active=true;SonyAppPolicy.register(this);try{image.startDisplayTracking();schedule();}catch(Exception e){error(e);}}
     @Override protected void onPause(){SupportDiagnostics.lifecycle(this,"pause");active=false;image.stopDisplayTracking();super.onPause();}
