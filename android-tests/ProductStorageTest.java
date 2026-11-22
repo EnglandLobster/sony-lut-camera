@@ -68,20 +68,36 @@ public final class ProductStorageTest {
             rejected=false;try{catalog.remove(new PhotoCatalog.Pair("../x",null,0,0,0,0,null,solo));}catch(IOException e){rejected=true;}require(rejected,"remove rejects foreign names");
             // Derived index: second open parses nothing, new receipts parse alone, damage rebuilds.
             File cache=new File(history,"INDEX.CAC");
-            List<PhotoCatalog.Pair> indexed=catalog.list();require(cache.isFile(),"index written");
+            List<PhotoCatalog.Pair> indexed=catalog.list();require(cache.isFile()||new File(history,"INDEX.LOG").isFile(),"index or journal written");
             List<PhotoCatalog.Pair> again=catalog.list();
             require(catalog.timing.contains("parsed=0")&&catalog.timing.contains("cache_written=false")&&again.size()==indexed.size()
                 &&again.get(0).graded.equals(indexed.get(0).graded)&&again.get(0).lut.equals(indexed.get(0).lut)&&again.get(0).grid==indexed.get(0).grid
                 &&(again.get(0).original==null)==(indexed.get(0).original==null),"index reused without reparsing");
             File fresh=new File(dcim,"DSC00004.JPG");write(fresh,"new");catalog.save(null,fresh,"新 LUT=暖\n色",17,1,2);
             List<PhotoCatalog.Pair> grown=catalog.list();
-            require(catalog.timing.contains("parsed=1")&&grown.size()==indexed.size()+1&&grown.get(0).lut.equals("新 LUT=暖\n色"),"new receipt parsed alone, odd LUT names survive the index");
+            File journal=new File(history,"INDEX.LOG");
+            require(catalog.timing.contains("parsed=0")&&!catalog.timing.contains("journal=0")&&catalog.timing.contains("cache_written=false")
+                &&journal.isFile()&&grown.size()==indexed.size()+1&&grown.get(0).lut.equals("新 LUT=暖\n色")&&grown.get(0).grid==17,"saved receipt read from the journal, odd LUT names survive");
+            // A torn or altered journal line fails its checksum: that receipt is parsed and the journal folded away.
+            String line=new String(Files.readAllBytes(journal.toPath()),"ISO-8859-1");
+            write(journal,line.replaceFirst("\\|17\\|","|18|"));
+            List<PhotoCatalog.Pair> reread=catalog.list();
+            require(catalog.timing.contains("parsed=1")&&reread.get(0).grid==17&&!journal.exists()&&catalog.timing.contains("cache_written=true"),"bad journal line ignored, receipt parsed");
+            write(journal,line.substring(0,line.length()-9));
+            require(catalog.list().get(0).grid==17&&catalog.timing.contains("parsed=0"),"truncated journal line ignored");
             require(catalog.list().get(0).lut.equals("新 LUT=暖\n色")&&catalog.timing.contains("parsed=0"),"index round-trips names");
+            // The journal is folded into the index once it is long.
+            File[] many=new File[PhotoCatalog.COMPACT_AT];
+            for(int i=0;i<many.length;i++){many[i]=new File(dcim,String.format("DSC%05d.JPG",100+i));write(many[i],"m");catalog.save(null,many[i],"批量",25,1,2);}
+            List<PhotoCatalog.Pair> bulk=catalog.list();
+            require(bulk.size()==grown.size()+many.length&&catalog.timing.contains("parsed=0")&&catalog.timing.contains("cache_written=true")&&!journal.exists(),"long journal compacted");
+            require(catalog.list().size()==bulk.size()&&catalog.timing.contains("journal=0")&&catalog.timing.contains("cache_written=false"),"compacted index reused");
+            for(File m:many){m.delete();}catalog.list();require(catalog.pruned==many.length,"bulk deletions pruned");
             write(cache,"format=1\ncount=zz\n");require(catalog.list().size()==grown.size()&&!catalog.timing.contains("parsed=0"),"corrupt index rebuilt");
             write(cache,"format=1\ndcim="+new File(sd,"DCIM").getCanonicalPath()+"\ncount=1\n0.id=PAAAAAAA.JSN\n0.grid=1\n0.time=1\n0.display=1\n0.ready=1\n0.graded="+same.getCanonicalPath()+"\n");
             require(catalog.list().size()==grown.size(),"index with a path outside DCIM ignored");
             fresh.delete();require(catalog.list().size()==indexed.size()&&catalog.pruned==1,"photo deleted after indexing is dropped");
-            System.out.println("PASS product storage: exact-byte import, title/grid, dedup, failed/interrupted imports, source containment, independent pair and graded-only history, missing-photo pruning, receipt removal, derived index");
+            System.out.println("PASS product storage: exact-byte import, title/grid, dedup, failed/interrupted imports, source containment, independent pair and graded-only history, missing-photo pruning, receipt removal, derived index, checksummed journal");
         }finally{delete(root);}
     }
     private static int receipts(File dir){int n=0;for(String name:dir.list())if(name.endsWith(".JSN"))n++;return n;}

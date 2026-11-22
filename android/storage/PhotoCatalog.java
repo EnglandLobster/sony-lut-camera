@@ -34,7 +34,40 @@ final class PhotoCatalog {
         File temp=new File(root,id+".TMP"),dest=new File(root,id+".JSN");
         if(temp.exists()||dest.exists())throw new IOException("照片记录文件重名，请重试");
         try{LutLibrary.writeProperties(temp,p);if(!temp.renameTo(dest))throw new IOException("照片记录保存失败");}finally{temp.delete();}
-        return new Pair(id,lut,grid,time,displayMs,readyMs,original,graded);
+        Pair pair=new Pair(id+".JSN",lut,grid,time,displayMs,readyMs,original,graded);
+        // The receipt is saved; a failed journal line only costs one parse.
+        try{appendJournal(pair);}catch(IOException e){}
+        return pair;
+    }
+    static final String JOURNAL="INDEX.LOG";
+    /** Journal lines before list() folds them into INDEX.CAC. */
+    static final int COMPACT_AT=50;
+    /** One appended line per saved receipt, so the index stays current without
+     * rewriting it during capture. A torn line fails its checksum and the
+     * receipt is parsed instead. */
+    private void appendJournal(Pair pair)throws IOException {
+        String body="1|"+pair.grid+"|"+pair.time+"|"+pair.displayMs+"|"+pair.readyMs+"|"+(pair.original==null?"":pair.original.getPath())+"|"+pair.graded.getPath()+"|"+pair.lut;
+        Properties p=new Properties();p.setProperty(pair.id,checksum(body)+"|"+body);
+        OutputStream out=new FileOutputStream(new File(root,JOURNAL),true);
+        try{p.store(out,null);out.flush();}finally{out.close();}
+    }
+    private static String checksum(String body)throws IOException {
+        java.util.zip.CRC32 crc=new java.util.zip.CRC32();crc.update(body.getBytes("UTF-8"));
+        return Long.toHexString(crc.getValue());
+    }
+    private Map<String,Pair> readJournal(){
+        Map<String,Pair> out=new HashMap<String,Pair>();File f=new File(root,JOURNAL);if(!f.isFile())return out;
+        Properties p;try{p=LutLibrary.readProperties(f);}catch(Exception e){return out;}
+        for(String id:p.stringPropertyNames()){
+            try{if(!id.matches("P[0-9A-F]{7}\\.JSN"))continue;
+                String value=p.getProperty(id);int bar=value.indexOf('|');if(bar<0)continue;
+                String body=value.substring(bar+1);if(!value.substring(0,bar).equals(checksum(body)))continue;
+                String[] v=body.split("\\|",8);if(v.length!=8||!v[0].equals("1"))continue;
+                out.put(id,new Pair(id,v[7],Integer.parseInt(v[1]),Long.parseLong(v[2]),Long.parseLong(v[3]),Long.parseLong(v[4]),
+                    v[5].length()==0?null:cachedPhoto(v[5]),cachedPhoto(v[6])));
+            }catch(Exception e){/* this receipt is parsed instead */}
+        }
+        return out;
     }
     /** Receipts dropped by the last list() because their graded photo is gone. */
     int pruned;
@@ -47,7 +80,9 @@ final class PhotoCatalog {
     synchronized List<Pair> list()throws IOException {pruned=0;long t0=System.currentTimeMillis();
         File[] files=root.listFiles();if(files==null)throw new IOException("无法读取照片记录");
         long t1=System.currentTimeMillis();
-        Map<String,Pair> cached=readCache();long t2=System.currentTimeMillis();
+        Map<String,Pair> cached=readCache();int indexed=cached.size();
+        Map<String,Pair> journal=readJournal();cached.putAll(journal);
+        boolean journalFile=new File(root,JOURNAL).exists();long t2=System.currentTimeMillis(),parseMs=0;
         // Only trust a missing photo when DCIM itself is readable; an unmounted
         // or failing card must never cost the user their history.
         boolean dcimReadable=dcim.isDirectory()&&dcim.list()!=null;
@@ -55,7 +90,7 @@ final class PhotoCatalog {
         List<Pair> pairs=new ArrayList<Pair>();Map<String,Pair> keep=new HashMap<String,Pair>();int parsed=0;
         for(File file:files){String name=file.getName();if(!name.matches("P[0-9A-F]{7}\\.JSN"))continue;
             Pair pair=cached.get(name);
-            if(pair==null){pair=parse(file);parsed++;}
+            if(pair==null){long b=System.currentTimeMillis();pair=parse(file);parsed++;parseMs+=System.currentTimeMillis()-b;}
             keep.put(name,pair);
             if(!exists(folders,pair.graded)){keep.remove(name);if(dcimReadable&&file.delete())pruned++;continue;}
             if(pair.original!=null&&!exists(folders,pair.original))
@@ -63,11 +98,14 @@ final class PhotoCatalog {
             pairs.add(pair);
         }
         long t3=System.currentTimeMillis();boolean wrote=false;
-        if(parsed>0||!keep.keySet().equals(cached.keySet())){
-            try{writeCache(keep);wrote=true;}catch(IOException e){new File(root,CACHE).delete();}
+        // Stale entries (receipts deleted since) are harmless: only listed
+        // receipts are shown. Rewrite when it saves later work.
+        if(parsed>0||journal.size()>=COMPACT_AT||cached.size()-keep.size()>=COMPACT_AT||(journalFile&&journal.isEmpty())){
+            try{writeCache(keep);wrote=true;new File(root,JOURNAL).delete();}catch(IOException e){new File(root,CACHE).delete();}
         }
         Collections.sort(pairs,new Comparator<Pair>(){public int compare(Pair a,Pair b){return b.graded.getPath().compareTo(a.graded.getPath());}});
-        timing="receipts="+keep.size()+" parsed="+parsed+" list_ms="+(t1-t0)+" cache_ms="+(t2-t1)+" check_ms="+(t3-t2)+" write_ms="+(System.currentTimeMillis()-t3)+" cache_written="+wrote;
+        timing="receipts="+keep.size()+" indexed="+indexed+" journal="+journal.size()+" parsed="+parsed+" list_ms="+(t1-t0)+" cache_ms="+(t2-t1)
+            +" parse_ms="+parseMs+" check_ms="+(t3-t2-parseMs)+" folders="+folders.size()+" write_ms="+(System.currentTimeMillis()-t3)+" cache_written="+wrote;
         return pairs;
     }
     private Pair parse(File file)throws IOException {

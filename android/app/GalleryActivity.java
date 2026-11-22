@@ -24,8 +24,14 @@ public final class GalleryActivity extends Activity {
         frame.addView(image,new FrameLayout.LayoutParams(-1,-1));frame.addView(hud,new FrameLayout.LayoutParams(-1,-1));setContentView(frame);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);hud.detail="正在打开照片";
         io.execute(new Runnable(){public void run(){try{long begin=SystemClock.elapsedRealtime();loader=new SonyPhotoPreview(GalleryActivity.this);long ready=SystemClock.elapsedRealtime();
-            catalog=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory());final List<PhotoCatalog.Pair> loaded=catalog.list();
-            android.util.Log.i("LutUI","gallery_list photos="+loaded.size()+" loader_ms="+(ready-begin)+" total_ms="+(SystemClock.elapsedRealtime()-begin)+" "+catalog.timing);
+            File photosDir=ProductFiles.photos();
+            catalog=new PhotoCatalog(photosDir,Environment.getExternalStorageDirectory());
+            // First open after an update: every receipt is read once (~45 ms each).
+            if(!new File(photosDir,PhotoCatalog.CACHE).exists()&&!new File(photosDir,PhotoCatalog.JOURNAL).exists())
+                ui.post(new Runnable(){public void run(){if(destroyed||photos!=null)return;hud.detail="正在建立相册索引";hud.progress="只在第一次需要，照片多时要十几秒";hud.update();}});
+            final List<PhotoCatalog.Pair> loaded=catalog.list();
+            String timing="photos="+loaded.size()+" loader_ms="+(ready-begin)+" total_ms="+(SystemClock.elapsedRealtime()-begin)+" "+catalog.timing;
+            android.util.Log.i("LutUI","gallery_list "+timing);SupportDiagnostics.event("gallery_list",timing);
             if(catalog.pruned>0)SupportDiagnostics.event("gallery_pruned","count="+catalog.pruned);
             ui.post(new Runnable(){public void run(){if(destroyed)return;photos=loaded;String id=getIntent().getStringExtra("pair_id");for(int i=0;i<photos.size();i++)if(photos.get(i).id.equals(id)){index=i;break;}
                 index=Math.max(0,Math.min(Math.max(0,photos.size()-1),index+getIntent().getIntExtra("page_offset",0)));load();}});
