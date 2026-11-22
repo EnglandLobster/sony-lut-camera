@@ -205,7 +205,7 @@ final class LutLibrary {
         }}finally{reader.close();}
         return label(stem(fallback));
     }
-    static Properties readProperties(File file)throws IOException {Properties p=new Properties();InputStream in=new FileInputStream(file);try{p.load(in);}finally{in.close();}return p;}
+    static Properties readProperties(File file)throws IOException {Properties p=new Properties();InputStream in=new BufferedInputStream(new FileInputStream(file),8192);try{p.load(in);}finally{in.close();}return p;}
     static void writeProperties(File file,Properties p)throws IOException {OutputStream out=new FileOutputStream(file);try{p.store(out,null);out.flush();}finally{out.close();}}
     static String hex(byte[] bytes){StringBuilder s=new StringBuilder();for(byte b:bytes)s.append(String.format(Locale.US,"%02x",b&255));return s.toString();}
     private static void removeStage(File stage){if(!stage.exists())return;File[] files=stage.listFiles();if(files!=null)for(File f:files)f.delete();stage.delete();}

@@ -175,6 +175,16 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private volatile QueuedShot queued;
     private final Object storeTurn=new Object();
     private boolean exitAfterWrites;
+    /** Owner decision 2026-11-22: PLAY shows the history over this open camera
+     * instead of releasing it, so half-press returns to shooting at once (the
+     * release, library hop and reopen took ~6 s on the A6300 2.01). Opens only
+     * when every write and record is done and the shutter cannot fire. */
+    private GalleryBrowser gallery;private FrameLayout page;private long galleryOpenedAt;
+    private static final long GALLERY_CACHE_BYTES=6L*1024*1024;
+    private static final int SHUTTER_LIVE=0,SHUTTER_STOPPING=1,SHUTTER_HELD=2;
+    /** Original-colour sessions only: DirectShutter state while the history is up. */
+    private int galleryShutter=SHUTTER_LIVE;private boolean galleryShutterResume;
+    private final GalleryBrowser.Host galleryHost=new GalleryBrowser.Host(){public void left(boolean capture){galleryLeft(capture);}};
     // Store notifications queue on the same worker as grading. The original
     // remains the sole pending store until confirmed, even with overlap enabled.
     private boolean lutApplied;private Bitmap sourceReference;
@@ -234,7 +244,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     private final class ReviewView extends SonyReviewView {
         ReviewView(){super(PreJpegProbeActivity.this);}
-        @Override protected void pixelAspectChanged(float value){if(productHud!=null){productHud.pixelAspect=value;productHud.update();}}
+        @Override protected void pixelAspectChanged(float value){if(productHud!=null){productHud.pixelAspect=value;productHud.update();}if(gallery!=null)gallery.pixelAspect(value);}
         @Override protected void displayFailed(Exception e){failure("display_geometry",e);}
         @Override protected void onDraw(Canvas canvas){
             super.onDraw(canvas);
@@ -332,8 +342,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 if(sequence!=null)try{sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,true);}
                 catch(Exception lockError){event("failure_lock_error",cause(lockError).toString());}
             }
-            endProcessing();
-            if(productHud!=null){status.setVisibility(View.GONE);productHud.mode="error";productHud.detail=startupFailure!=null?friendly.title:"拍摄未完成";
+            endProcessing();closeGallery();
+            if(productHud!=null){status.setVisibility(View.GONE);productHud.setVisibility(View.VISIBLE);productHud.mode="error";productHud.detail=startupFailure!=null?friendly.title:"拍摄未完成";
                 productHud.progress=startupFailure!=null?friendly.message():originalFile!=null?"原片已保存":"请返回 LUT 库重新进入拍摄";
                 productHud.footer=startupFailure!=null?"MENU 返回 → 更多 → 导出诊断日志":"MENU 返回 LUT 库后重试";
                 if(startupFailure!=null)setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("startup_failure",friendly.message()).putExtra("startup_title",friendly.title).putExtra("startup_diagnostic",true));productHud.update();}
@@ -428,7 +438,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         status.setBackgroundColor(0xb0000000);status.setPadding(8,3,8,3);status.setText("检测相机拍摄接口…");
         frame.addView(status,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
         if(productUi()){productHud=new PhotoHud(this);frame.addView(productHud,new FrameLayout.LayoutParams(-1,-1));status.setVisibility(View.GONE);}
-        setContentView(frame);
+        page=frame;setContentView(frame);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         thread=new HandlerThread("prejpeg-probe");thread.start();work=new Handler(thread.getLooper());
         storeObserverThread=new HandlerThread("store-confirmation");storeObserverThread.start();storeObserver=new Handler(storeObserverThread.getLooper());
@@ -1585,11 +1595,74 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void clearOriginalReview(){showingOriginal=false;}
     private void maybeOpenGallery(){
         writingChanged();
-        if(!playbackRequested||!productUi()||!active||closed||workerActive||pendingReceipts!=0||writing()||queued!=null||gate.state()!=PreJpegGate.State.READY)return;
+        if(!playbackRequested||!productUi()||!active||closed||workerActive||pendingReceipts!=0||writing()||queued!=null||gate.state()!=PreJpegGate.State.READY
+                ||gallery!=null||(autoPreview!=null&&(autoPreview.state()!=AutoPreviewGate.State.PREVIEW||autoPreview.held())))return;
         playbackRequested=false;
-        event("playback_handoff","all_saves_complete=true receipt_writes=0");
-        close(); // Complete vendor release before asking the library to open history.
-        setResult(RESULT_OK,new android.content.Intent().putExtra("open_gallery",true).putExtra("page_offset",playbackOffset));finish();
+        openGallery();
+    }
+    /** UI thread, READY with nothing left to write. The coloured preview has
+     * already locked the release and stopped DirectShutter; an original-colour
+     * session does the same here. Live view keeps running under the history. */
+    private void openGallery(){
+        try{if(autoPreview==null)holdShutter();}catch(Throwable e){failure("gallery_shutter",e);return;}
+        galleryOpenedAt=SystemClock.elapsedRealtime();ui.removeCallbacks(unfiredPress);
+        if(controls!=null&&controls.panelOpen())controls.closePanel();
+        reviewing=false;clearOriginalReview();review.setVisibility(View.INVISIBLE);review.setImageBitmap(null);
+        if(productHud!=null){productHud.hideLiveHint();productHud.setVisibility(View.INVISIBLE);}
+        gallery=new GalleryBrowser(this,galleryHost,GALLERY_CACHE_BYTES,false,"MENU 返回 LUT 库");
+        page.addView(gallery.view(),new FrameLayout.LayoutParams(-1,-1));
+        if(productHud!=null)gallery.pixelAspect(productHud.pixelAspect);
+        gallery.resume(false);gallery.open(null,playbackOffset);
+        Runtime heap=Runtime.getRuntime();
+        event("gallery_open","offset="+playbackOffset+" camera_open=true preview="+(autoPreview==null?"original:"+galleryShutter:autoPreview.state().toString())
+            +" heap_used="+(heap.totalMemory()-heap.freeMemory())+" heap_max="+heap.maxMemory());
+    }
+    /** Half-press/PLAY: back to the viewfinder. MENU: leave for the library,
+     * history still on screen while the camera is released. */
+    private void galleryLeft(boolean capture){
+        GalleryBrowser g=gallery;if(g==null)return;
+        event("gallery_left","capture="+capture+" read_in_flight="+g.reading()+" shown_ms="+(SystemClock.elapsedRealtime()-galleryOpenedAt));
+        if(!capture){onBackPressed();return;}
+        closeGallery();
+        if(closed||gate.state()!=PreJpegGate.State.READY)return;
+        try{resumeShutter();}catch(Throwable e){failure("gallery_shutter",e);return;}
+        if(productHud!=null){productHud.setVisibility(View.VISIBLE);productLive();}
+    }
+    private void closeGallery(){
+        GalleryBrowser g=gallery;if(g==null)return;
+        gallery=null;page.removeView(g.view());g.destroy();
+    }
+    /** Original-colour sessions run DirectShutter in READY. Browsing must not
+     * expose a frame: lock the release and stop DirectShutter, as the coloured
+     * preview does (AutoPreviewGate), and restart both on return. */
+    private void holdShutter()throws Exception{
+        sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,true);
+        galleryShutterResume=false;
+        if(!directShutterRunning){galleryShutter=SHUTTER_HELD;event("gallery_shutter_held","direct_shutter=false");return;}
+        galleryShutter=SHUTTER_STOPPING;final Object owner=cameraEx;
+        final String type="com.sony.scalar.hardware.CameraEx$DirectShutterStoppedCallback";
+        Object callback=listener(type,new InvocationHandler(){public Object invoke(Object p,Method m,Object[] args){
+            if(m.getDeclaringClass()==Object.class)return objectMethod(p,m,args);
+            directShutterRunning=false;
+            ui.post(new Runnable(){public void run(){
+                if(closed||cameraEx!=owner||galleryShutter!=SHUTTER_STOPPING)return;
+                galleryShutter=SHUTTER_HELD;event("gallery_shutter_held","direct_shutter=stopped");
+                if(galleryShutterResume)try{resumeShutter();}catch(Throwable e){failure("gallery_shutter",e);}
+            }});return null;
+        }});
+        cameraType.getMethod("stopDirectShutter",Class.forName(type)).invoke(cameraEx,callback);
+        ui.postDelayed(new Runnable(){public void run(){
+            if(!closed&&cameraEx==owner&&galleryShutter==SHUTTER_STOPPING)failure("gallery_shutter",new IOException("DirectShutter did not report stopped"));
+        }},5000);
+    }
+    private void resumeShutter()throws Exception{
+        // Still stopping: restart once the stop is acknowledged.
+        if(galleryShutter==SHUTTER_STOPPING){galleryShutterResume=true;return;}
+        if(galleryShutter!=SHUTTER_HELD)return;
+        galleryShutter=SHUTTER_LIVE;galleryShutterResume=false;
+        if(!directShutterRunning){cameraType.getMethod("startDirectShutter").invoke(cameraEx);directShutterRunning=true;}
+        sequenceType.getMethod("setReleaseLock",boolean.class).invoke(sequence,false);
+        event("gallery_shutter_live","direct_shutter=true release_unlocked=true");
     }
     private void compareOriginal(boolean original){
         if(!reviewing||gate.state()!=PreJpegGate.State.READY||productHud==null)return;
@@ -1768,8 +1841,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(productUi()&&storeCompletion!=null&&storeCompletion.pending()){
             storeCompletion.requestStop();stopAfterStore=true;recoveryDetached=true;
         }
+        if(gallery!=null)gallery.pause();
         active=false;ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;ui.removeCallbacks(hideReviewStatus);ui.removeCallbacks(processingTick);ui.removeCallbacks(restoreGraphics);if(review!=null&&!recoveryDetached)review.stopDisplayTracking();close();super.onPause();}
-    @Override protected void onDestroy(){if(productUi())lifecycle("destroy");destroyed=true;close();if(closed&&thread!=null&&pendingReceipts==0)thread.quit();
+    @Override protected void onDestroy(){if(productUi())lifecycle("destroy");destroyed=true;closeGallery();close();if(closed&&thread!=null&&pendingReceipts==0)thread.quit();
         if(Thread.getDefaultUncaughtExceptionHandler()==exceptionHandler)Thread.setDefaultUncaughtExceptionHandler(previousExceptionHandler);
         super.onDestroy();exitProductProcess();}
     @Override public void onBackPressed(){
@@ -1827,6 +1901,17 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(productUi()&&closed&&isFinishing()){
             if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)event("key_after_close","key="+key+" scan="+scan);
             return true;
+        }
+        if(productUi()&&gallery!=null){
+            boolean press=e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0&&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS);
+            if(!press||gallery.deleting())return gallery.dispatchKey(e)||super.dispatchKeyEvent(e);
+            // A half or full press leaves the history, then counts as that
+            // press below: the coloured preview restores capture colours, as
+            // from a shot's review. Original colour: DirectShutter restarts
+            // now, so this press itself is not a shot.
+            event("gallery_shutter_key","key="+key+" scan="+scan+" read_in_flight="+gallery.reading());
+            gallery.leave(true);
+            if(gallery!=null||autoPreview==null)return true;
         }
         if(productUi()&&controls!=null&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0
                 &&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS)&&controls.panelOpen())controls.shutter();

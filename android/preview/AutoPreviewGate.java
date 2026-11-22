@@ -26,6 +26,8 @@ final class AutoPreviewGate {
     State state(){return state;}
     long generation(){return generation;}
     boolean ready(){return state==State.READY;}
+    /** A half-press is held: a coloured state moves straight on to capture colours. */
+    boolean held(){return held;}
     void start(){if(state!=State.NEW)return;try{driver.lock();colored();}catch(Exception e){fail(e);}}
     private void colored() throws Exception {
         driver.apply();state=State.PREVIEW;generation++;listener.colored();

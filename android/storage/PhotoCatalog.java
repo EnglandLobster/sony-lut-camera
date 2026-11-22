@@ -16,12 +16,16 @@ final class PhotoCatalog {
             this.id=id;this.lut=lut;this.grid=grid;this.time=time;this.displayMs=displayMs;this.readyMs=readyMs;this.original=original;this.graded=graded;
         }
     }
+    /** Compiled once; String.matches compiles a pattern on every call. Reading
+     * the index of 192 receipts took 0.7 s on the A6300 2.01 (2026-11-22). */
+    private static final java.util.regex.Pattern RECEIPT=java.util.regex.Pattern.compile("P[0-9A-F]{7}\\.JSN"),
+        PHOTO=java.util.regex.Pattern.compile("[A-Z0-9_]{1,8}\\.JPG");
     private final File root,dcim;
     PhotoCatalog(File root,File sd)throws IOException {this.root=root;dcim=new File(sd,"DCIM").getCanonicalFile();
         // Sony FuFsys reports an empty directory as an enumeration error.
         LutLibrary.directoryNote(root,"FORMAT.INI","format=1\ncontent=LUT Camera photo-pair receipts; photographs remain in DCIM\n");
     }
-    private File photo(String path)throws IOException {File f=new File(path).getCanonicalFile();if(!f.getPath().startsWith(dcim.getPath()+File.separator)||!f.getName().matches("[A-Z0-9_]{1,8}\\.JPG"))throw new IOException("照片路径无效");return f;}
+    private File photo(String path)throws IOException {File f=new File(path).getCanonicalFile();if(!f.getPath().startsWith(dcim.getPath()+File.separator)||!PHOTO.matcher(f.getName()).matches())throw new IOException("照片路径无效");return f;}
     synchronized Pair save(File original,File graded,String lut,int grid,long displayMs,long readyMs)throws IOException {
         return save(original,graded,lut,grid,displayMs,readyMs,System.currentTimeMillis());
     }
@@ -59,7 +63,7 @@ final class PhotoCatalog {
         Map<String,Pair> out=new HashMap<String,Pair>();File f=new File(root,JOURNAL);if(!f.isFile())return out;
         Properties p;try{p=LutLibrary.readProperties(f);}catch(Exception e){return out;}
         for(String id:p.stringPropertyNames()){
-            try{if(!id.matches("P[0-9A-F]{7}\\.JSN"))continue;
+            try{if(!RECEIPT.matcher(id).matches())continue;
                 String value=p.getProperty(id);int bar=value.indexOf('|');if(bar<0)continue;
                 String body=value.substring(bar+1);if(!value.substring(0,bar).equals(checksum(body)))continue;
                 String[] v=body.split("\\|",8);if(v.length!=8||!v[0].equals("1"))continue;
@@ -88,7 +92,7 @@ final class PhotoCatalog {
         boolean dcimReadable=dcim.isDirectory()&&dcim.list()!=null;
         Map<String,Set<String>> folders=new HashMap<String,Set<String>>();
         List<Pair> pairs=new ArrayList<Pair>();Map<String,Pair> keep=new HashMap<String,Pair>();int parsed=0;
-        for(File file:files){String name=file.getName();if(!name.matches("P[0-9A-F]{7}\\.JSN"))continue;
+        for(File file:files){String name=file.getName();if(!RECEIPT.matcher(name).matches())continue;
             Pair pair=cached.get(name);
             if(pair==null){long b=System.currentTimeMillis();pair=parse(file);parsed++;parseMs+=System.currentTimeMillis()-b;}
             keep.put(name,pair);
@@ -131,7 +135,7 @@ final class PhotoCatalog {
             if(!"1".equals(p.getProperty("format"))||!dcim.getPath().equals(p.getProperty("dcim")))return out;
             int n=Integer.parseInt(p.getProperty("count"));
             for(int i=0;i<n;i++){String k=i+".";String id=p.getProperty(k+"id"),o=p.getProperty(k+"original");
-                if(id==null||!id.matches("P[0-9A-F]{7}\\.JSN"))return new HashMap<String,Pair>();
+                if(id==null||!RECEIPT.matcher(id).matches())return new HashMap<String,Pair>();
                 out.put(id,new Pair(id,p.getProperty(k+"lut","LUT"),Integer.parseInt(p.getProperty(k+"grid")),Long.parseLong(p.getProperty(k+"time")),
                     Long.parseLong(p.getProperty(k+"display")),Long.parseLong(p.getProperty(k+"ready")),
                     o==null?null:cachedPhoto(o),cachedPhoto(p.getProperty(k+"graded"))));}
@@ -142,7 +146,7 @@ final class PhotoCatalog {
      * re-resolving every path component. */
     private File cachedPhoto(String path)throws IOException {
         File f=new File(path);
-        if(!path.startsWith(dcim.getPath()+File.separator)||path.contains("/../")||!f.getName().matches("[A-Z0-9_]{1,8}\\.JPG"))throw new IOException("照片路径无效");
+        if(!path.startsWith(dcim.getPath()+File.separator)||path.contains("/../")||!PHOTO.matcher(f.getName()).matches())throw new IOException("照片路径无效");
         return f;
     }
     private void writeCache(Map<String,Pair> pairs)throws IOException {
@@ -159,7 +163,7 @@ final class PhotoCatalog {
     }
     /** Drops one receipt after its photos were deleted. */
     synchronized void remove(Pair pair)throws IOException {
-        if(!pair.id.matches("P[0-9A-F]{7}\\.JSN"))throw new IOException("照片记录无效");
+        if(!RECEIPT.matcher(pair.id).matches())throw new IOException("照片记录无效");
         File f=new File(root,pair.id);if(f.exists()&&!f.delete())throw new IOException("照片记录删除失败");
     }
 }

@@ -65,6 +65,14 @@ class SonyReviewView extends ImageView {
         fit();
     }
 
+    /** For a view stacked over one that already tracks the display: take its
+     * pixel aspect instead of opening a second DisplayManager and graphics
+     * precision owner. */
+    void assumePixelAspect(float value){
+        if(!(value>0))return;
+        pixelAspect=value;displayKnown=true;pixelAspectChanged(value);fit();
+    }
+
     protected void displayFailed(Exception e){Log.e("SonyReview","display_changed_failed",e);}
     protected void pixelAspectChanged(float value){}
 
