@@ -33,7 +33,7 @@ final class PhotoDelete {
     /** Deletes the photo with this JPEG's DCF number (and its RAW, if any).
      * A photo already gone from both index and card counts as deleted. */
     void delete(File jpeg)throws Exception{
-        int[] n=dcf(jpeg);File raw=raw(jpeg);
+        long begin=android.os.SystemClock.elapsedRealtime();int[] n=dcf(jpeg);File raw=raw(jpeg);
         Cursor cursor=resolver.query(external,new String[]{"_id"},"dcf_folder_number="+n[0]+" AND dcf_file_number="+n[1],null,null);
         if(cursor==null)throw new IOException("相机照片索引不可用");
         long id=-1;int rows=0;
@@ -43,9 +43,11 @@ final class PhotoDelete {
             if(jpeg.exists()||raw!=null)throw new IOException("相机照片索引里找不到 "+jpeg.getName());
             android.util.Log.i("LutUI","photo_delete file="+jpeg.getName()+" already_gone=true");return;
         }
+        long queried=android.os.SystemClock.elapsedRealtime();
         if(!((Boolean)deleteImage.invoke(null,resolver,external,id)).booleanValue())throw new IOException("相机拒绝删除 "+jpeg.getName());
         boolean jpegGone=!jpeg.exists(),rawGone=raw==null||!raw.exists();
-        android.util.Log.i("LutUI","photo_delete file="+jpeg.getName()+" id="+id+" raw="+(raw!=null)+" jpeg_gone="+jpegGone+" raw_gone="+rawGone);
+        android.util.Log.i("LutUI","photo_delete file="+jpeg.getName()+" id="+id+" raw="+(raw!=null)+" jpeg_gone="+jpegGone+" raw_gone="+rawGone
+            +" query_ms="+(queried-begin)+" delete_ms="+(android.os.SystemClock.elapsedRealtime()-queried));
         if(!jpegGone)throw new IOException(jpeg.getName()+" 删除后仍在卡上");
         if(!rawGone)throw new IOException(raw.getName()+" 删除后仍在卡上");
     }
