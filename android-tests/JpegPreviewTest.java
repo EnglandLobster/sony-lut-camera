@@ -15,6 +15,7 @@ public final class JpegPreviewTest {
             JpegPreview.Found found=JpegPreview.read(f);
             check(found.jpeg!=null&&Arrays.equals(found.jpeg,preview),"preview bytes "+(little?"II":"MM"));
             check(found.orientation==6,"orientation "+found.orientation);
+            check(JpegPreview.orientation(f)==6,"orientation only");
         }
         File plain=new File(dir,"PLAIN.JPG");write(plain,photo(true,8,preview,0x010002,false));
         JpegPreview.Found none=JpegPreview.read(plain);

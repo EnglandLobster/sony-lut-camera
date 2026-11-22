@@ -39,9 +39,10 @@ public final class LibraryActivity extends Activity {
             showExitFailure("相机未响应退出请求，可重试或打开测试连接。");
         }
     }};
-    @Override public void onCreate(Bundle state){super.onCreate(state);
+    private long createdAt,fontMs;
+    @Override public void onCreate(Bundle state){super.onCreate(state);createdAt=SystemClock.elapsedRealtime();
         if(state!=null){capturePending=state.getBoolean("capture_pending");captureAway=state.getBoolean("capture_away");}
-        try{UiFont.get(this);}catch(RuntimeException e){android.util.Log.e("LutLibrary","font_failed",e);android.widget.TextView error=new android.widget.TextView(this);error.setText("Font could not load. Please update LUT Camera.\nMENU: Exit");setContentView(error);return;}
+        try{UiFont.get(this);fontMs=SystemClock.elapsedRealtime()-createdAt;}catch(RuntimeException e){android.util.Log.e("LutLibrary","font_failed",e);android.widget.TextView error=new android.widget.TextView(this);error.setText("Font could not load. Please update LUT Camera.\nMENU: Exit");setContentView(error);return;}
         page=new CameraPage(this);setContentView(page);
         page.tap=new CameraPage.Tap(){public void select(int row){selection=row;render();action();}};
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);initializeLibrary();
@@ -49,12 +50,19 @@ public final class LibraryActivity extends Activity {
     private void initializeLibrary(){
         previewRequests.next();previewId="";if(page!=null)page.preview=null;if(previews!=null){previews.clear();previews=null;}
         mode="loading";runTask("正在打开 LUT 库",new Task(){public void run()throws Exception{
-            previews=new LutPreview(LibraryActivity.this);library=new LutLibrary(ProductFiles.library());catalog=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory());
-            library.retireBuiltinSamples(ProductFiles.builtins());
+            long t0=SystemClock.elapsedRealtime();
+            previews=new LutPreview(LibraryActivity.this);long t1=SystemClock.elapsedRealtime();
+            library=new LutLibrary(ProductFiles.library());catalog=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory());long t2=SystemClock.elapsedRealtime();
+            library.retireBuiltinSamples(ProductFiles.builtins());long t3=SystemClock.elapsedRealtime();
             try{library.purgeDeleted();}catch(IOException e){android.util.Log.w("LutLibrary","deleted_entry_cleanup_pending",e);}
+            long t4=SystemClock.elapsedRealtime();
             builtinIds.clear();defaultId=null;
             for(BuiltinLuts.Entry entry:BuiltinLuts.read(getAssets().open("CATALOG.JSN"))){String id=installBuiltin(entry);builtinIds.add(id);if(entry.selected)defaultId=id;}
+            long t5=SystemClock.elapsedRealtime();
             selectedId=library.selectedId();if(library.find(selectedId)==null)selectedId=defaultId;luts=library.entries();
+            long t6=SystemClock.elapsedRealtime();
+            SupportDiagnostics.event("library_open","luts="+luts.size()+" since_create_ms="+(t0-createdAt)+" font_ms="+fontMs+" reference_ms="+(t1-t0)+" open_ms="+(t2-t1)
+                +" retire_ms="+(t3-t2)+" purge_ms="+(t4-t3)+" builtins_ms="+(t5-t4)+" select_ms="+(t6-t5)+" total_ms="+(t6-t0));
         }},new Runnable(){public void run(){mode="library";selection=indexOf(selectedId);render();requestPreview();if(showingCaptureRecovery)requireReleasedCapture();}});
     }
     private String installBuiltin(BuiltinLuts.Entry item)throws Exception{
@@ -244,7 +252,7 @@ public final class LibraryActivity extends Activity {
     private void launchCapture(LutLibrary.Entry entry){
         if(!requireReleasedCapture())return;
             capturePending=true;captureAway=false;
-            mode="library";selection=indexOf(entry.id);render();startActivityForResult(new Intent(LibraryActivity.this,PhotoActivity.class).putExtra("lut_id",entry.id)
+            mode="library";selection=indexOf(entry.id);render();startActivityForResult(new Intent(LibraryActivity.this,PhotoActivity.class).putExtra("lut_id",entry.id).putExtra("lut_dir",entry.file.getParent())
                     .putExtra("develop_animation",getIntent().getBooleanExtra("develop_animation",true))
                     .putExtra("develop_animation_alternate",getIntent().getBooleanExtra("develop_animation_alternate",false))
                     .putExtra("save_original",saveOriginal())

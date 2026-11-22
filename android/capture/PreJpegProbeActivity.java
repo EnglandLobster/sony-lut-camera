@@ -181,6 +181,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
      * when every write and record is done and the shutter cannot fire. */
     private GalleryBrowser gallery;private FrameLayout page;private long galleryOpenedAt;
     private static final long GALLERY_CACHE_BYTES=6L*1024*1024;
+    /** This session's history once listed, kept current with each record
+     * written here and each delete in the browser: nothing else can change
+     * the card while this camera session runs. */
+    private java.util.List<PhotoCatalog.Pair> galleryPhotos;
+    /** The newest recorded shot; lutReview still holds its graded review
+     * whenever the history can open (every write done, no shot in progress). */
+    private File lastShotFile;private String lastShotLut;
     private static final int SHUTTER_LIVE=0,SHUTTER_STOPPING=1,SHUTTER_HELD=2;
     /** Original-colour sessions only: DirectShutter state while the history is up. */
     private int galleryShutter=SHUTTER_LIVE;private boolean galleryShutterResume;
@@ -510,7 +517,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             File custom=RunFiles.file(RunFiles.file(sd,"SONYLUT"),"CUSTOM.CUB");
             File lut;
             if(productUi()){
-                selectedLut=new LutLibrary(ProductFiles.library()).find(getIntent().getStringExtra("lut_id"));
+                long findAt=SystemClock.elapsedRealtime();
+                selectedLut=new LutLibrary(ProductFiles.library()).find(getIntent().getStringExtra("lut_id"),getIntent().getStringExtra("lut_dir"));
+                event("lut_found","ms="+(SystemClock.elapsedRealtime()-findAt)+" by_directory="+(getIntent().getStringExtra("lut_dir")!=null));
                 if(selectedLut==null)throw new IOException("selected LUT is unavailable");
                 lut=selectedLut.file;
                 ui.post(new Runnable(){public void run(){if(!destroyed&&productHud!=null){productHud.name=selectedLut.name;productHud.tag="";productHud.update();}}});
@@ -1612,9 +1621,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         gallery=new GalleryBrowser(this,galleryHost,GALLERY_CACHE_BYTES,false,"MENU 返回 LUT 库");
         page.addView(gallery.view(),new FrameLayout.LayoutParams(-1,-1));
         if(productHud!=null)gallery.pixelAspect(productHud.pixelAspect);
-        gallery.resume(false);gallery.open(null,playbackOffset);
+        GalleryBrowser.Seed seed=null;
+        if(playbackOffset==0&&lastShotFile!=null&&lutReview!=null&&!lutReview.isRecycled())try{
+            Bitmap copy=lutReview.copy(Bitmap.Config.ARGB_8888,false);if(copy!=null)seed=new GalleryBrowser.Seed(lastShotFile,copy,lastShotLut);
+        }catch(OutOfMemoryError e){event("gallery_seed_skipped",e.toString());}
+        gallery.resume(false);gallery.open(null,playbackOffset,galleryPhotos,seed);
         Runtime heap=Runtime.getRuntime();
-        event("gallery_open","offset="+playbackOffset+" camera_open=true preview="+(autoPreview==null?"original:"+galleryShutter:autoPreview.state().toString())
+        event("gallery_open","offset="+playbackOffset+" kept="+(galleryPhotos!=null)+" seed="+(seed!=null)+" camera_open=true preview="+(autoPreview==null?"original:"+galleryShutter:autoPreview.state().toString())
             +" heap_used="+(heap.totalMemory()-heap.freeMemory())+" heap_max="+heap.maxMemory());
     }
     /** Half-press/PLAY: back to the viewfinder. MENU: leave for the library,
@@ -1622,11 +1635,21 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void galleryLeft(boolean capture){
         GalleryBrowser g=gallery;if(g==null)return;
         event("gallery_left","capture="+capture+" read_in_flight="+g.reading()+" shown_ms="+(SystemClock.elapsedRealtime()-galleryOpenedAt));
+        java.util.List<PhotoCatalog.Pair> listed=g.photos();if(listed!=null)galleryPhotos=listed;
         if(!capture){onBackPressed();return;}
         closeGallery();
         if(closed||gate.state()!=PreJpegGate.State.READY)return;
         try{resumeShutter();}catch(Throwable e){failure("gallery_shutter",e);return;}
         if(productHud!=null){productHud.setVisibility(View.VISIBLE);productLive();}
+    }
+    /** UI thread, in record order. */
+    private void shotCatalogued(PhotoCatalog.Pair pair){
+        lastShotFile=pair.graded;lastShotLut=pair.lut;
+        if(galleryPhotos==null)return;
+        // Same order as PhotoCatalog.list(): newest-first by photo path.
+        int at=0;String path=pair.graded.getPath();
+        while(at<galleryPhotos.size()&&galleryPhotos.get(at).graded.getPath().compareTo(path)>0)at++;
+        galleryPhotos.add(at,pair);
     }
     private void closeGallery(){
         GalleryBrowser g=gallery;if(g==null)return;
@@ -1681,9 +1704,10 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void writeReceipt(final File original,final File graded,final LutLibrary.Entry lut,final long display,final long ready){
         pendingReceipts++;
         work.post(new Runnable(){public void run(){try{
-            new PhotoCatalog(ProductFiles.photos(),sd).save(original,graded,lut.name,lut.size,display,ready,ReviewLoader.capturedAt(original!=null?original:graded));
+            final PhotoCatalog.Pair pair=new PhotoCatalog(ProductFiles.photos(),sd).save(original,graded,lut.name,lut.size,display,ready,ReviewLoader.capturedAt(original!=null?original:graded));
             event("pair_catalogued","original="+original+" graded="+graded);
-        }catch(final IOException e){event("catalog_failed",e.toString());ui.post(new Runnable(){public void run(){if(!destroyed&&productHud!=null){productHud.detail="照片已保存在 DCIM；回看记录保存失败";productHud.update();}}});}
+            ui.post(new Runnable(){public void run(){shotCatalogued(pair);}});
+        }catch(final IOException e){event("catalog_failed",e.toString());ui.post(new Runnable(){public void run(){lastShotFile=null;if(!destroyed&&productHud!=null){productHud.detail="照片已保存在 DCIM；回看记录保存失败";productHud.update();}}});}
         finally{ui.post(new Runnable(){public void run(){pendingReceipts--;maybeOpenGallery();if(stopAfterStore||exitAfterWrites)finishAfterWrites();exitProductProcess();}});}}});
     }
     /** Set once a session in this process has released the camera and every receipt. */

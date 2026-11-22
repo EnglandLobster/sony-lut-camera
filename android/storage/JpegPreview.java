@@ -17,7 +17,10 @@ final class JpegPreview {
     static final int MAX_PREVIEW_BYTES=4*1024*1024;
     private static final int LARGE_THUMBNAIL_VGA=0x010001,LARGE_THUMBNAIL_HD=0x010002,LARGE_THUMBNAIL_4K=0x010003;
 
-    static Found read(File file)throws IOException{
+    static Found read(File file)throws IOException{return read(file,true);}
+    /** EXIF orientation only (1 when absent); reads the header, not the preview. */
+    static int orientation(File file)throws IOException{return read(file,false).orientation;}
+    private static Found read(File file,boolean preview)throws IOException{
         RandomAccessFile in=new RandomAccessFile(file,"r");
         try{
             long length=in.length();
@@ -38,7 +41,7 @@ final class JpegPreview {
                 }
                 at=end;
             }
-            if(previewAt<0)return new Found(null,orientation,-1);
+            if(previewAt<0||!preview)return new Found(null,orientation,-1);
             if(previewSize<4||previewSize>MAX_PREVIEW_BYTES||previewAt+previewSize>length)throw new IOException("照片预览位置无效");
             byte[] jpeg=new byte[previewSize];in.seek(previewAt);in.readFully(jpeg);
             if((jpeg[0]&0xff)!=0xff||(jpeg[1]&0xff)!=0xd8)throw new IOException("照片预览数据无效");

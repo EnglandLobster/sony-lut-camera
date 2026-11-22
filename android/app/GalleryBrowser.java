@@ -14,6 +14,12 @@ import java.util.concurrent.*;
  * 2026-11-22: the reopen took about 6 s on the A6300). Never opens the camera
  * itself; screen-nails come from Sony's index, one read at a time. */
 final class GalleryBrowser {
+    /** A photo already in memory, shown while the history is listed: the
+     * capture screen's review of the shot it just saved. The browser owns it. */
+    static final class Seed {
+        final File file;final Bitmap bitmap;final String lut;
+        Seed(File file,Bitmap bitmap,String lut){this.file=file;this.bitmap=bitmap;this.lut=lut;}
+    }
     interface Host {
         /** Browsing ended: capture=true for half-press/PLAY, false for MENU.
          * Called once. Unless the host chose not to drain for capture, no
@@ -43,25 +49,57 @@ final class GalleryBrowser {
     }
     View view(){return frame;}
     boolean reading(){return reading;}
+    /** The history as listed and edited here, or null before it is listed. */
+    List<PhotoCatalog.Pair> photos(){return photos==null?null:new ArrayList<PhotoCatalog.Pair>(photos);}
     /** A delete is running; the host must not move on to capture meanwhile. */
     boolean deleting(){return deleting;}
     /** For a host whose own view already tracks the Sony display. */
     void pixelAspect(float value){image.assumePixelAspect(value);}
     /** Lists the history, then shows the pair (null: newest) moved by offset. */
-    void open(final String pairId,final int offset){
-        io.execute(new Runnable(){public void run(){try{long begin=SystemClock.elapsedRealtime();loader=new SonyPhotoPreview(context,drainBeforeCapture);long ready=SystemClock.elapsedRealtime();
+    void open(String pairId,int offset){open(pairId,offset,null,null);}
+    /** known: the history this host already listed and kept current, or null
+     * to list it. seed: shown at once while listing, or null. */
+    void open(final String pairId,final int offset,final List<PhotoCatalog.Pair> known,final Seed seed){
+        io.execute(new Runnable(){public void run(){try{long begin=SystemClock.elapsedRealtime();
+            if(seed!=null)showSeed(seed);
+            loader=new SonyPhotoPreview(context,drainBeforeCapture);long ready=SystemClock.elapsedRealtime();
             File photosDir=ProductFiles.photos();
             catalog=new PhotoCatalog(photosDir,Environment.getExternalStorageDirectory());
-            // First open after an update: every receipt is read once (~45 ms each).
-            if(!new File(photosDir,PhotoCatalog.CACHE).exists()&&!new File(photosDir,PhotoCatalog.JOURNAL).exists())
-                ui.post(new Runnable(){public void run(){if(destroyed||photos!=null)return;hud.detail="正在建立相册索引";hud.progress="只在第一次需要，照片多时要十几秒";hud.update();}});
-            final List<PhotoCatalog.Pair> loaded=catalog.list();
-            String timing="photos="+loaded.size()+" loader_ms="+(ready-begin)+" total_ms="+(SystemClock.elapsedRealtime()-begin)+" "+catalog.timing;
-            android.util.Log.i("LutUI","gallery_list "+timing);SupportDiagnostics.event("gallery_list",timing);
-            if(catalog.pruned>0)SupportDiagnostics.event("gallery_pruned","count="+catalog.pruned);
+            final List<PhotoCatalog.Pair> loaded;
+            if(known!=null){
+                loaded=new ArrayList<PhotoCatalog.Pair>(known);
+                SupportDiagnostics.event("gallery_list","photos="+loaded.size()+" kept=true total_ms="+(SystemClock.elapsedRealtime()-begin));
+            }else{
+                // First open after an update: every receipt is read once (~45 ms each).
+                if(!new File(photosDir,PhotoCatalog.CACHE).exists()&&!new File(photosDir,PhotoCatalog.JOURNAL).exists())
+                    ui.post(new Runnable(){public void run(){if(destroyed||photos!=null)return;hud.detail="正在建立相册索引";hud.progress="只在第一次需要，照片多时要十几秒";hud.update();}});
+                loaded=catalog.list();
+                String timing="photos="+loaded.size()+" loader_ms="+(ready-begin)+" total_ms="+(SystemClock.elapsedRealtime()-begin)+" "+catalog.timing;
+                android.util.Log.i("LutUI","gallery_list "+timing);SupportDiagnostics.event("gallery_list",timing);
+                if(catalog.pruned>0)SupportDiagnostics.event("gallery_pruned","count="+catalog.pruned);
+            }
             ui.post(new Runnable(){public void run(){if(destroyed||leaving)return;photos=loaded;for(int i=0;i<photos.size();i++)if(photos.get(i).id.equals(pairId)){index=i;break;}
                 index=Math.max(0,Math.min(Math.max(0,photos.size()-1),index+offset));load();}});
         }catch(final Throwable e){ui.post(new Runnable(){public void run(){error(failure(e));}});}}});
+    }
+    /** io thread: orient the seed like its saved photo, then show it unless
+     * the list arrived first or the browser is gone. */
+    private void showSeed(final Seed seed){
+        if(!seed.file.isFile()){seed.bitmap.recycle();return;} // deleted meanwhile
+        long begin=SystemClock.elapsedRealtime();Bitmap oriented=seed.bitmap;int orientation=1;
+        try{orientation=JpegPreview.orientation(seed.file);oriented=ReviewLoader.rotate(seed.bitmap,orientation);}
+        catch(Throwable e){android.util.Log.w("LutUI","gallery_seed_orientation file="+seed.file.getName(),e);}
+        final Bitmap bitmap=oriented;final long ms=SystemClock.elapsedRealtime()-begin;final int turned=orientation;
+        ui.post(new Runnable(){public void run(){
+            String key=seed.file.getPath();
+            if(destroyed||leaving||photos!=null){bitmap.recycle();return;}
+            if(!cache.put(key,bitmap,(long)bitmap.getRowBytes()*bitmap.getHeight()))return; // put released it
+            desiredKey=key;cache.pin(key);displayedKey=key;drawKey=key;drawAt=requestAt=SystemClock.elapsedRealtime();drawHit=true;
+            image.setImageBitmap(bitmap);image.invalidate();
+            hud.setVisibility(View.VISIBLE);hud.mode="review";hud.name=seed.lut;hud.tag="";hud.original=false;hud.hasOriginal=false;
+            hud.detail=seed.file.getName();hud.footer="正在读取照片列表  半按拍摄";hud.update();
+            android.util.Log.i("LutUI","gallery_seeded file="+seed.file.getName()+" orientation="+turned+" prepare_ms="+ms);
+        }});
     }
     /** The capture process must survive a failed read: an OutOfMemoryError
      * here would otherwise end it with the camera open. */
