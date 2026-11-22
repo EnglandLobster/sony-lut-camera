@@ -157,16 +157,19 @@ public final class GalleryActivity extends Activity {
                 if(p.original!=null)remover.delete(p.original);
                 remover.delete(p.graded);catalog.remove(p);}
             catch(Exception e){failure=e;}
-            // Re-read even after a failure: a pair may be half deleted.
-            try{reloaded=catalog.list();}catch(Exception e){if(failure==null)failure=e;}
+            // Only a failure re-reads the history (a pair may be half deleted);
+            // listing reads every receipt, about 45 ms each on the A6300.
+            if(failure!=null)try{reloaded=catalog.list();}catch(Exception ignored){}
             final Exception error=failure;final List<PhotoCatalog.Pair> loaded=reloaded;
             if(error==null)SupportDiagnostics.event("photo_delete","graded="+p.graded.getName()+" original="+(p.original!=null));
             else SupportDiagnostics.failure("photo_delete",error);
             ui.post(new Runnable(){public void run(){deleting=false;
                 if(destroyed)return;if(leaving){finish();return;}
-                if(loaded!=null){photos=loaded;index=Math.max(0,Math.min(photos.size()-1,index));original=false;
-                    // Never leave the deleted photograph on screen while the next one loads.
-                    displayedKey=null;image.setImageBitmap(null);load();}
+                if(error==null){List<PhotoCatalog.Pair> rest=new ArrayList<PhotoCatalog.Pair>(photos);rest.remove(p);photos=rest;}
+                else if(loaded!=null)photos=loaded;
+                index=Math.max(0,Math.min(photos.size()-1,index));original=false;
+                // Never leave the deleted photograph on screen while the next one loads.
+                displayedKey=null;image.setImageBitmap(null);load();
                 if(error!=null){hud.setVisibility(View.VISIBLE);hud.detail="删除失败："+(error.getMessage()==null?"请重试":error.getMessage());hud.update();}
             }});
         }});
