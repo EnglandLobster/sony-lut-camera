@@ -1,3 +1,39 @@
+# v0.11.1-beta.1 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1-beta.1/SonyLutCamera-v0.11.1-beta.1.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.1) · [安装教程](USER_GUIDE.md)
+
+code127，公开预发行测试包。签名和包名与 0.11.0 相同，可以直接覆盖安装，导入的 LUT 和照片都保留。想退回时重新安装 [v0.11.0](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0)；如果相机不让旧版本覆盖新版本，先在相机的「应用程序管理」里删除本版再装，SD 卡上的 LUT 和照片不受影响。
+
+## 新增：保存方式
+
+在 LUT 库按 MENU 进入「更多」，选「保存方式」，按中央键在三种之间切换：
+
+- **仅成片**（默认）：只保存 LUT 调色后的 JPEG。少存一张原片，出片更快：A6300 每张约快 0.7–1 秒，没有保存完成通知的机型（A7、A6000 等）省得更多。**从旧版升级后默认就是仅成片**，想和以前一样保存原片，请改成「＋原片」。
+- **＋原片**：和 v0.11.0 一样，每次快门另存一张未套 LUT 的 JPEG，相册里按中央键对照。
+- **＋RAW**：每次快门在成片之外另存相机 RAW，文件名和成片同编号（如 DSC00512.ARW 与 DSC00512.JPG），和相机自带的 RAW+JPEG 一样。RAW 不带 LUT 色彩，用电脑软件打开后期；应用相册里只显示成片。
+
+相册里没有原片的照片，不再显示原片／成片切换。
+
+## 请帮忙确认
+
+1. 选「＋RAW」拍几张，在电脑上看 ARW 能不能正常打开、和成片是不是同一张。**A6300 以外的机型请特别反馈**，RAW 目前只在 A6300 上验证过。
+2. 对比「仅成片」和以前的出片速度。
+3. 有问题时，在 LUT 库按 MENU → 更多 → 导出诊断日志，提交 `SONYLUT/DIAG/REPORT.ZIP`，写上机型、固件版本和用的保存方式。
+
+## 验证与当前缺口
+
+- A6300 / 固件 2.01：
+  - 仅成片：从快门到保存完成 4.8 秒。
+  - ＋RAW：拍了 11 张，都写出同编号的 ARW 和成片；记录了耗时的 5 张从快门到保存 4.1–6.2 秒，存卡比仅成片多约 0.4 秒。ARW 用 LibRaw 解码正常。
+  - ＋原片沿用 v0.11.0 的保存流程，本版没有重新实拍。
+  - 应用不回读检查 ARW 是否写完整，等用户反馈。
+- 主机产品与拍摄链路套件通过；API10 ARM 模拟器整套与图形回归在发行 APK 上通过。发行 APK 签名证书与 0.11.0 相同。
+- A6300 以外的机型没有实拍本版。别的机身上 RAW 能否这样写出，未知。
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.11.0
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.0/SonyLutCamera-v0.11.0.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0) · [安装教程](USER_GUIDE.md)
