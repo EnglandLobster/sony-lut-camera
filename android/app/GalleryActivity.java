@@ -23,7 +23,9 @@ public final class GalleryActivity extends Activity {
             @Override protected void onDraw(Canvas c){super.onDraw(c);if(drawKey!=null&&drawKey.equals(displayedKey)){android.util.Log.i("LutUI","gallery_frame file="+new File(drawKey).getName()+" request_to_draw_ms="+(SystemClock.elapsedRealtime()-drawAt)+" cache_hit="+drawHit+" cache_bytes="+cache.bytes());drawKey=null;}}};
         frame.addView(image,new FrameLayout.LayoutParams(-1,-1));frame.addView(hud,new FrameLayout.LayoutParams(-1,-1));setContentView(frame);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);hud.detail="正在打开照片";
-        io.execute(new Runnable(){public void run(){try{loader=new SonyPhotoPreview(GalleryActivity.this);catalog=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory());final List<PhotoCatalog.Pair> loaded=catalog.list();
+        io.execute(new Runnable(){public void run(){try{long begin=SystemClock.elapsedRealtime();loader=new SonyPhotoPreview(GalleryActivity.this);long ready=SystemClock.elapsedRealtime();
+            catalog=new PhotoCatalog(ProductFiles.photos(),Environment.getExternalStorageDirectory());final List<PhotoCatalog.Pair> loaded=catalog.list();
+            android.util.Log.i("LutUI","gallery_list photos="+loaded.size()+" loader_ms="+(ready-begin)+" total_ms="+(SystemClock.elapsedRealtime()-begin)+" "+catalog.timing);
             if(catalog.pruned>0)SupportDiagnostics.event("gallery_pruned","count="+catalog.pruned);
             ui.post(new Runnable(){public void run(){if(destroyed)return;photos=loaded;String id=getIntent().getStringExtra("pair_id");for(int i=0;i<photos.size();i++)if(photos.get(i).id.equals(id)){index=i;break;}
                 index=Math.max(0,Math.min(Math.max(0,photos.size()-1),index+getIntent().getIntExtra("page_offset",0)));load();}});

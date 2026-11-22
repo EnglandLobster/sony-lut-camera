@@ -51,10 +51,10 @@ public final class ProductStorageTest {
             Files.copy(keep.toPath(),original.toPath());
             // Card trouble (DCIM unreadable) hides the pair but never deletes its receipt.
             File dcimRoot=new File(sd,"DCIM"),parked=new File(sd,"PARKED");require(dcimRoot.renameTo(parked),"park DCIM");
-            require(catalog.list().isEmpty()&&catalog.pruned==0&&history.list().length==2,"unreadable DCIM keeps receipts");
+            require(catalog.list().isEmpty()&&catalog.pruned==0&&receipts(history)==1,"unreadable DCIM keeps receipts");
             require(parked.renameTo(dcimRoot),"restore DCIM");
             // Graded deleted in Sony playback or on a computer: receipt dropped, original untouched.
-            graded.delete();require(catalog.list().isEmpty()&&catalog.pruned==1&&original.isFile()&&history.list().length==1,"missing graded drops receipt, keeps original");
+            graded.delete();require(catalog.list().isEmpty()&&catalog.pruned==1&&original.isFile()&&receipts(history)==0,"missing graded drops receipt, keeps original");
             require(new String(Files.readAllBytes(original.toPath()),"UTF-8").equals("original"),"never changes photo payload");
             write(graded,"graded");catalog.save(original,graded,"暖色 测试",33,4000,4200);
             // Graded only (original not saved): no original key; old pair receipts still read.
@@ -66,8 +66,24 @@ public final class ProductStorageTest {
             rejected=false;try{catalog.save(null,same,"x",25,1,2);}catch(IOException e){rejected=true;}require(rejected,"graded-only DCIM boundary required");
             catalog.remove(mixed.get(0));require(catalog.list().size()==1&&solo.isFile(),"remove drops only the receipt");
             rejected=false;try{catalog.remove(new PhotoCatalog.Pair("../x",null,0,0,0,0,null,solo));}catch(IOException e){rejected=true;}require(rejected,"remove rejects foreign names");
-            System.out.println("PASS product storage: exact-byte import, title/grid, dedup, failed/interrupted imports, source containment, independent pair and graded-only history, missing-photo pruning, receipt removal");
+            // Derived index: second open parses nothing, new receipts parse alone, damage rebuilds.
+            File cache=new File(history,"INDEX.CAC");
+            List<PhotoCatalog.Pair> indexed=catalog.list();require(cache.isFile(),"index written");
+            List<PhotoCatalog.Pair> again=catalog.list();
+            require(catalog.timing.contains("parsed=0")&&catalog.timing.contains("cache_written=false")&&again.size()==indexed.size()
+                &&again.get(0).graded.equals(indexed.get(0).graded)&&again.get(0).lut.equals(indexed.get(0).lut)&&again.get(0).grid==indexed.get(0).grid
+                &&(again.get(0).original==null)==(indexed.get(0).original==null),"index reused without reparsing");
+            File fresh=new File(dcim,"DSC00004.JPG");write(fresh,"new");catalog.save(null,fresh,"新 LUT=暖\n色",17,1,2);
+            List<PhotoCatalog.Pair> grown=catalog.list();
+            require(catalog.timing.contains("parsed=1")&&grown.size()==indexed.size()+1&&grown.get(0).lut.equals("新 LUT=暖\n色"),"new receipt parsed alone, odd LUT names survive the index");
+            require(catalog.list().get(0).lut.equals("新 LUT=暖\n色")&&catalog.timing.contains("parsed=0"),"index round-trips names");
+            write(cache,"format=1\ncount=zz\n");require(catalog.list().size()==grown.size()&&!catalog.timing.contains("parsed=0"),"corrupt index rebuilt");
+            write(cache,"format=1\ndcim="+new File(sd,"DCIM").getCanonicalPath()+"\ncount=1\n0.id=PAAAAAAA.JSN\n0.grid=1\n0.time=1\n0.display=1\n0.ready=1\n0.graded="+same.getCanonicalPath()+"\n");
+            require(catalog.list().size()==grown.size(),"index with a path outside DCIM ignored");
+            fresh.delete();require(catalog.list().size()==indexed.size()&&catalog.pruned==1,"photo deleted after indexing is dropped");
+            System.out.println("PASS product storage: exact-byte import, title/grid, dedup, failed/interrupted imports, source containment, independent pair and graded-only history, missing-photo pruning, receipt removal, derived index");
         }finally{delete(root);}
     }
+    private static int receipts(File dir){int n=0;for(String name:dir.list())if(name.endsWith(".JSN"))n++;return n;}
     private static void delete(File f){if(!Files.isSymbolicLink(f.toPath())){File[] files=f.listFiles();if(files!=null)for(File child:files)delete(child);}f.delete();}
 }
