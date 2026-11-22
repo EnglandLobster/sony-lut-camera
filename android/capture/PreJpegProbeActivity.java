@@ -191,7 +191,16 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private static final int SHUTTER_LIVE=0,SHUTTER_STOPPING=1,SHUTTER_HELD=2;
     /** Original-colour sessions only: DirectShutter state while the history is up. */
     private int galleryShutter=SHUTTER_LIVE;private boolean galleryShutterResume;
-    private final GalleryBrowser.Host galleryHost=new GalleryBrowser.Host(){public void left(boolean capture){galleryLeft(capture);}};
+    private final GalleryBrowser.Host galleryHost=new GalleryBrowser.Host(){
+        public void left(boolean capture){galleryLeft(capture);}
+        // A listing that outlived its browser is kept unless a record was
+        // written since that browser opened (the listing would lack it).
+        public void listed(java.util.List<PhotoCatalog.Pair> photos){
+            if(galleryPhotos==null&&catalogued==cataloguedAtOpen)galleryPhotos=photos;
+            event("gallery_listed","photos="+photos.size()+" kept="+(galleryPhotos==photos));
+        }
+    };
+    private int catalogued,cataloguedAtOpen;
     // Store notifications queue on the same worker as grading. The original
     // remains the sole pending store until confirmed, even with overlap enabled.
     private boolean lutApplied;private Bitmap sourceReference;
@@ -1614,7 +1623,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
      * session does the same here. Live view keeps running under the history. */
     private void openGallery(){
         try{if(autoPreview==null)holdShutter();}catch(Throwable e){failure("gallery_shutter",e);return;}
-        galleryOpenedAt=SystemClock.elapsedRealtime();ui.removeCallbacks(unfiredPress);
+        galleryOpenedAt=SystemClock.elapsedRealtime();cataloguedAtOpen=catalogued;ui.removeCallbacks(unfiredPress);
         if(controls!=null&&controls.panelOpen())controls.closePanel();
         reviewing=false;clearOriginalReview();review.setVisibility(View.INVISIBLE);review.setImageBitmap(null);
         if(productHud!=null){productHud.hideLiveHint();productHud.setVisibility(View.INVISIBLE);}
@@ -1644,8 +1653,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     /** UI thread, in record order. */
     private void shotCatalogued(PhotoCatalog.Pair pair){
-        lastShotFile=pair.graded;lastShotLut=pair.lut;
+        catalogued++;lastShotFile=pair.graded;lastShotLut=pair.lut;
         if(galleryPhotos==null)return;
+        for(PhotoCatalog.Pair kept:galleryPhotos)if(kept.id.equals(pair.id))return; // a listing already read it
         // Same order as PhotoCatalog.list(): newest-first by photo path.
         int at=0;String path=pair.graded.getPath();
         while(at<galleryPhotos.size()&&galleryPhotos.get(at).graded.getPath().compareTo(path)>0)at++;

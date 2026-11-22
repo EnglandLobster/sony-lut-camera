@@ -11,7 +11,8 @@ public final class GalleryActivity extends Activity {
     @Override public void onCreate(Bundle saved){super.onCreate(saved);
         browser=new GalleryBrowser(this,new GalleryBrowser.Host(){public void left(boolean capture){
             if(capture)setResult(RESULT_OK,new android.content.Intent().putExtra("return_capture",true));finish();
-        }},8L*1024*1024,true,"MENU 返回");
+        }
+        public void listed(java.util.List<PhotoCatalog.Pair> photos){}},8L*1024*1024,true,"MENU 返回");
         setContentView(browser.view());getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         browser.open(getIntent().getStringExtra("pair_id"),getIntent().getIntExtra("page_offset",0));
     }

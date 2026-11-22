@@ -25,6 +25,9 @@ final class GalleryBrowser {
          * Called once. Unless the host chose not to drain for capture, no
          * screen-nail read is in flight. */
         void left(boolean capture);
+        /** UI thread: a fresh listing finished, even if browsing already
+         * ended, so a host can keep it rather than read the index again. */
+        void listed(List<PhotoCatalog.Pair> photos);
     }
     private final Context context;private final Host host;private final boolean drainBeforeCapture;private final String exitHint;
     private final Handler ui=new Handler();private final ExecutorService io=Executors.newSingleThreadExecutor();
@@ -77,6 +80,7 @@ final class GalleryBrowser {
                 String timing="photos="+loaded.size()+" loader_ms="+(ready-begin)+" total_ms="+(SystemClock.elapsedRealtime()-begin)+" "+catalog.timing;
                 android.util.Log.i("LutUI","gallery_list "+timing);SupportDiagnostics.event("gallery_list",timing);
                 if(catalog.pruned>0)SupportDiagnostics.event("gallery_pruned","count="+catalog.pruned);
+                ui.post(new Runnable(){public void run(){host.listed(new ArrayList<PhotoCatalog.Pair>(loaded));}});
             }
             ui.post(new Runnable(){public void run(){if(destroyed||leaving)return;photos=loaded;for(int i=0;i<photos.size();i++)if(photos.get(i).id.equals(pairId)){index=i;break;}
                 index=Math.max(0,Math.min(Math.max(0,photos.size()-1),index+offset));load();}});
