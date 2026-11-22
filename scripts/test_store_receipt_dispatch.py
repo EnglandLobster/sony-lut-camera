@@ -43,7 +43,7 @@ public final class ReceiptDispatchReplay {
     static class SystemClock {static long elapsedRealtime(){return 41000;}}
     static class Queue {void post(Runnable r){r.run();}}
     static class Gate {long shot(){return 1;} String state(){return "ORIGINAL_SAVING";}}
-    boolean closed;final Queue storeObserver=new Queue(),work=new Queue();final Gate gate=new Gate();
+    boolean closed,queuedStores;final Queue storeObserver=new Queue(),work=new Queue();final Gate gate=new Gate();
     final CaptureReceiptPipelineTest.Camera cameraEx=new CaptureReceiptPipelineTest.Camera();
     PhotoFiles photoFiles;CaptureStoreCompletion storeCompletion;CaptureStoreEvents storeEvents;
     CaptureStoreCompletion.Receipt receipt;

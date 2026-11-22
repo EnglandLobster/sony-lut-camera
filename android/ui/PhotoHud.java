@@ -16,6 +16,8 @@ final class PhotoHud extends View {
     String panelTitle;String[] panelRows,panelValues;int panelSelected;String panelHint="";
     /** Gallery only: the panel also draws outside live view (delete confirmation). */
     boolean reviewPanel;
+    /** Background card write of a released shot ("写入中"), empty when none. */
+    String writing="";
     /** Flexible-spot AF point in Sony's -1000..1000 frame coordinates. */
     boolean afVisible,afEditing;int afX,afY;
     /** Composition guides over the capture frame, in both DISP states. */
@@ -251,6 +253,7 @@ final class PhotoHud extends View {
                 }
                 chip(c,"仅本次拍摄生效，退出后恢复",24,78+line*30,w-48,16,false);
             }
+            if(writing.length()>0)chip(c,writing,w-12,64,w/2,16,true);
             if(panelRows!=null)panel(c,w);
             if(liveHint.length()>0)chip(c,liveHint,12,390,w-24,16,false);
         }else{
@@ -269,6 +272,7 @@ final class PhotoHud extends View {
                 center(c,"原片",x+bw/4,y+24,16,original?CameraPage.TEXT:CameraPage.MUTED);
                 center(c,"LUT 成片",x+bw*3/4,y+24,16,original?CameraPage.MUTED:CameraPage.BG);
             }
+            if(writing.length()>0)chip(c,writing,w-12,72,w/2,16,true);
             if(reviewPanel&&panelRows!=null)panel(c,w);
         }
         c.restore();

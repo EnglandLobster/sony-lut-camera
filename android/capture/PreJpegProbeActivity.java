@@ -158,6 +158,23 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
      * RAW and the single graded store writes it beside the JPEG, like the
      * camera's RAW+JPEG. Verified on ILCE-6300 2.01; the ARW is not read back. */
     private boolean saveRaw;
+    /** Owner decision 2026-11-22: on bodies with Sony's named store receipt, a
+     * graded-only/＋RAW shot is released for the next capture once storeImage
+     * returns; the camera writes the card in the background. The receipt still
+     * confirms the file before its gallery record, and at most one store is ever
+     * unconfirmed: the next shot develops and grades, then its store waits.
+     * A6300 2.01: the write finished 0.6-2.0 s after the return, display ~1.5 s
+     * earlier (results/queue-exp-20261122). Legacy bodies keep waiting per shot. */
+    private boolean queuedStores;
+    private static final class QueuedShot {
+        final long shot;final LutLibrary.Entry lut;volatile long token; // token: diagnostics only
+        volatile File file;volatile boolean failed;long display=-1,ready=-1;boolean recorded;
+        QueuedShot(long shot,LutLibrary.Entry lut){this.shot=shot;this.lut=lut;}
+    }
+    /** The released shot whose store is unconfirmed or whose record is unwritten. */
+    private volatile QueuedShot queued;
+    private final Object storeTurn=new Object();
+    private boolean exitAfterWrites;
     // Store notifications queue on the same worker as grading. The original
     // remains the sole pending store until confirmed, even with overlap enabled.
     private boolean lutApplied;private Bitmap sourceReference;
@@ -843,7 +860,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 final long shot=gate.shot(),at=SystemClock.elapsedRealtime();
                 final long token=storeCompletion==null?0:storeCompletion.token();
                 storeObserver.post(new Runnable(){public void run(){
-                    if(closed||shot!=gate.shot()){event("stale_store_ignored","event_shot="+shot+" file="+file);return;}
+                    if(closed||(!queuedStores&&shot!=gate.shot())){event("stale_store_ignored","event_shot="+shot+" file="+file);return;}
                     event("stored_notification","receipt_id="+receiptId+" dir="+directory+" file="+file+" token="+token+" state="+gate.state());
                     try{if(photoFiles.knownStore(directory,file)){event("duplicate_store_ignored","file="+file);return;}}
                     catch(IOException e){failure("store_path",e);return;}
@@ -860,6 +877,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             storeCompletion=new CaptureStoreCompletion(photoFiles,storeIndex,storeEvents.hasNamedReceipt());
             event("store_validation","jpeg_header_and_tail");
         }
+        queuedStores=productUi()&&develops()&&lutSession()&&!paired()&&storeCompletion!=null&&storeEvents.hasNamedReceipt();
+        event("store_queue","enabled="+queuedStores);
         event("store_protocol",storeEvents.hasNamedReceipt()?"named_store_complete_with_index_recovery":"index_and_complete_file; overlap_original=false");
     }
     private void storeToCamera(Class<?> type,Object image,boolean releaseSource)throws Exception{
@@ -904,11 +923,12 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }});
     }
     private void pollStore(final long token,final long shot){
-        if(closed||shot!=gate.shot()||storeCompletion==null||!storeCompletion.active(token))return;
+        if(closed||(!queuedStores&&shot!=gate.shot())||storeCompletion==null||!storeCompletion.active(token))return;
         if(pendingStorePoll!=null){storeObserver.removeCallbacks(pendingStorePoll);pendingStorePoll=null;}
         storeObserverAt=SystemClock.elapsedRealtime();
         try{
             final CaptureStoreCompletion.Receipt receipt=storeCompletion.poll(token,storeObserverAt);
+            if(receipt!=null&&queuedStores){queuedConfirmed(token,receipt);return;}
             if(receipt!=null){
                 work.post(new Runnable(){public void run(){
                     if(closed||shot!=gate.shot())return;
@@ -922,6 +942,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }
             if(storeCompletion.overdue(token,SystemClock.elapsedRealtime()))showStoreRecovery();
         }catch(final CaptureStoreCompletion.ConfirmedInvalid error){
+            QueuedShot q=queued;
+            if(queuedStores&&q!=null){q.failed=true;synchronized(storeTurn){storeTurn.notifyAll();}}
             work.post(new Runnable(){public void run(){
                 photoFiles.accepted(error.file);
                 if(gate.state()==PreJpegGate.State.ORIGINAL_SAVING)originalFile=error.file;
@@ -1089,10 +1111,15 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                     // No original: grade the developed buffer in place, then
                     // hand it to Sony as the session's single record.
                     retainedImage=image;applyRetainedLut("developed_no_original");retainedImage=null;
+                    if(queuedStores)awaitPreviousStore();
                     gate.saving();storeAt=SystemClock.elapsedRealtime();imageTransferred=true;
                     processing(CaptureProgress.Stage.SAVE,rawPaired()?"正在保存成片与 RAW":"正在保存成片");
-                    event("store_begin","type=YC role=graded release_source=true original=skipped raw_file_store="+rawPaired());
-                    storeToCamera(imageType,image,true);
+                    event("store_begin","type=YC role=graded release_source=true original=skipped raw_file_store="+rawPaired()+" queued="+queuedStores);
+                    QueuedShot q=queuedStores?new QueuedShot(gate.shot(),selectedLut):null;
+                    if(q!=null)synchronized(storeTurn){queued=q;}
+                    try{storeToCamera(imageType,image,true);}
+                    catch(Exception error){if(q!=null)synchronized(storeTurn){if(queued==q)queued=null;}throw error;}
+                    if(q!=null){q.token=storeCompletion.token();releaseQueued(q);return;}
                 }else{
                     gate.saving();storeAt=SystemClock.elapsedRealtime();event("store_begin","type=YC release_source=true");imageTransferred=true;
                     processing(CaptureProgress.Stage.SAVE,"正在保存原片");
@@ -1129,6 +1156,69 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // Keep the one-shot release lock until this probe exits; no second shot.
         if(!active)ui.post(new Runnable(){public void run(){close();}});
     }catch(Throwable e){failure("verify",e);}}
+    /** Work thread, after storeImage returned: show the result and allow the
+     * next shot while Sony writes the card. */
+    private void releaseQueued(QueuedShot q){
+        long at=SystemClock.elapsedRealtime();
+        gate.saved();
+        event("store_accepted","call_ms="+(at-storeAt)+" queued=true token="+q.token+" from_press_ms="+(at-pressAt)+" written="+(q.file!=null));
+        ui.post(new Runnable(){public void run(){
+            writingChanged();
+            if(!active||destroyed){close();return;}
+            try{endProcessing();long start=SystemClock.elapsedRealtime();camera.stopPreview();long stopped=SystemClock.elapsedRealtime();
+                review.setImageBitmap(lutReview);reviewing=true;awaitFirstFrame=true;review.setVisibility(View.VISIBLE);review.invalidate();
+                android.util.Log.i("SonyPreJpeg","review_setup stop_preview_ms="+(stopped-start)+" view_ms="+(SystemClock.elapsedRealtime()-stopped)+" queued=true");
+            }catch(Throwable e){failure("show_review",e);}
+        }});
+    }
+    /** Work thread: one unconfirmed store at a time. The next shot has already
+     * been captured, developed and graded; only its store waits. */
+    private void awaitPreviousStore()throws InterruptedException,IOException{
+        QueuedShot q=queued;if(q==null||q.file!=null)return;
+        long begin=SystemClock.elapsedRealtime();
+        processing(CaptureProgress.Stage.SAVE,"正在等待上一张写入");
+        synchronized(storeTurn){while(!closed&&!q.failed&&q.file==null&&gate.state()!=PreJpegGate.State.FAILED)storeTurn.wait(100);}
+        event("store_turn_waited","ms="+(SystemClock.elapsedRealtime()-begin)+" previous_shot="+q.shot+" written="+(q.file!=null));
+        if(q.file==null)throw new IOException("previous photo was not confirmed");
+    }
+    /** Confirmation thread: the queued store's file is confirmed. */
+    private void queuedConfirmed(long token,CaptureStoreCompletion.Receipt receipt){
+        final QueuedShot q=queued;
+        if(receipt.stopRequested)stopAfterStore=true;
+        final File file=receipt.file;
+        event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" queued=true confirmation="+(receipt.recovered?"index_recovery":"named_receipt")+" "+storeCompletion.diagnostics());
+        photoFiles.accepted(file);
+        // Only one store is ever unconfirmed, so this receipt is the queued
+        // shot's; its token may not be copied yet when the receipt is quick.
+        if(q==null||q.file!=null){event("queued_receipt_unmatched","file="+file+" token="+token);return;}
+        synchronized(storeTurn){q.file=file;storeTurn.notifyAll();}
+        event("graded_saved","file="+file+" bytes="+file.length()+" queued=true shot_of_file="+q.shot+" current_shot="+gate.shot());
+        ui.post(new Runnable(){public void run(){
+            writingChanged();recordQueued(q,false);
+            if(!active||destroyed){close();return;}
+            if(stopAfterStore||exitAfterWrites)finishAfterWrites();
+            maybeOpenGallery();
+        }});
+    }
+    /** UI thread. A record needs the confirmed file and the shot's timing; a
+     * forced record (session closing) writes without the ready time. */
+    private void recordQueued(QueuedShot q,boolean force){
+        // The confirmation may land after the next shot replaced `queued`.
+        if(q==null||q.recorded||q.file==null||q.lut==null||(q.ready<0&&!force))return;
+        q.recorded=true;synchronized(storeTurn){if(queued==q)queued=null;}
+        writeReceipt(null,q.file,q.lut,Math.max(0,q.display),Math.max(0,q.ready));
+    }
+    private boolean writing(){QueuedShot q=queued;return q!=null&&q.file==null;}
+    private void writingChanged(){
+        if(productHud==null)return;
+        productHud.writing=writing()?(playbackRequested?"写入中 · 写完打开相册":"写入中"):"";productHud.invalidate();
+    }
+    private void finishAfterWrites(){
+        if(closed||workerActive||gate.busy()||writing()||pendingReceipts!=0)return;
+        event("exit_after_writes","stop_after_store="+stopAfterStore);
+        if(startupFailure==null&&gate.state()!=PreJpegGate.State.FAILED)setResult(RESULT_OK);
+        finish();
+    }
     private void verifyPairStore(File file,long confirmedAt){workerActive=true;try{
         boolean original=gate.state()==PreJpegGate.State.ORIGINAL_SAVING;
         if(!original&&gate.state()!=PreJpegGate.State.SAVING)throw new IOException("unexpected pair store in "+gate.state());
@@ -1249,7 +1339,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(!active||destroyed||closed||!continuous)return;
         if(!gate.beginRearm(shot))return;
         try{
-            if(workerActive||retainedImage!=null||gradedFile==null||(paired()&&(originalFile==null||originalFile.equals(gradedFile))))
+            QueuedShot q=queued;boolean released=q!=null&&q.shot==shot;
+            if(workerActive||retainedImage!=null||(gradedFile==null&&!released)||(paired()&&(originalFile==null||originalFile.equals(gradedFile))))
                 throw new IllegalStateException("cannot rearm before the declared records complete and buffers transfer");
             CaptureJpegQuality.verify(captureQuality,camera.getParameters().getJpegQuality());
             Camera.Size current=camera.getParameters().getPictureSize();
@@ -1283,6 +1374,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             event("next_ready","shutter_to_ready_ms="+(nextReadyAt-pressAt)+" displayed_ms="+(displayedAt-pressAt)
                 +" display_to_ready_ms="+(nextReadyAt-displayedAt)+" preview_resume_ms="+(nextReadyAt-rearmAt)+" cache_preserved=true");
             savedStatus("成片 "+seconds(displayedAt-pressAt)+" 秒 · 下张可拍 "+seconds(nextReadyAt-pressAt)+" 秒");
+            QueuedShot q=queued;
+            if(q!=null&&q.shot==shot){q.display=displayedAt-pressAt;q.ready=nextReadyAt-pressAt;recordQueued(q,false);}
             if(productUi())recordPair();
             maybeOpenGallery();
         }catch(Throwable e){failure("unlock_next_shot",e);}
@@ -1491,7 +1584,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     private void clearOriginalReview(){showingOriginal=false;}
     private void maybeOpenGallery(){
-        if(!playbackRequested||!productUi()||!active||closed||workerActive||pendingReceipts!=0||gate.state()!=PreJpegGate.State.READY)return;
+        writingChanged();
+        if(!playbackRequested||!productUi()||!active||closed||workerActive||pendingReceipts!=0||writing()||queued!=null||gate.state()!=PreJpegGate.State.READY)return;
         playbackRequested=false;
         event("playback_handoff","all_saves_complete=true receipt_writes=0");
         close(); // Complete vendor release before asking the library to open history.
@@ -1509,13 +1603,15 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void recordPair(){
         if(selectedLut==null||gradedFile==null||(paired()&&originalFile==null)||recordedPairShot==gate.shot())return;
         recordedPairShot=gate.shot();
-        final File original=originalFile,graded=gradedFile;final long display=Math.max(0,displayedAt-pressAt),ready=Math.max(0,nextReadyAt-pressAt);
-        final LutLibrary.Entry lut=selectedLut;pendingReceipts++;
+        writeReceipt(originalFile,gradedFile,selectedLut,Math.max(0,displayedAt-pressAt),Math.max(0,nextReadyAt-pressAt));
+    }
+    private void writeReceipt(final File original,final File graded,final LutLibrary.Entry lut,final long display,final long ready){
+        pendingReceipts++;
         work.post(new Runnable(){public void run(){try{
             new PhotoCatalog(ProductFiles.photos(),sd).save(original,graded,lut.name,lut.size,display,ready,ReviewLoader.capturedAt(original!=null?original:graded));
             event("pair_catalogued","original="+original+" graded="+graded);
         }catch(final IOException e){event("catalog_failed",e.toString());ui.post(new Runnable(){public void run(){if(!destroyed&&productHud!=null){productHud.detail="照片已保存在 DCIM；回看记录保存失败";productHud.update();}}});}
-        finally{ui.post(new Runnable(){public void run(){pendingReceipts--;maybeOpenGallery();exitProductProcess();}});}}});
+        finally{ui.post(new Runnable(){public void run(){pendingReceipts--;maybeOpenGallery();if(stopAfterStore||exitAfterWrites)finishAfterWrites();exitProductProcess();}});}}});
     }
     /** Set once a session in this process has released the camera and every receipt. */
     private static volatile boolean priorSessionReleased;
@@ -1578,7 +1674,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         for(String key:ZOOM_KEYS)s.append(key).append('=').append(p.get(key)).append(' ');
         return s.append("zoom=").append(p.get("zoom")).toString();}
     private void close(){if(closed||workerActive||storeRpcActive||gate.busy()||(storeCompletion!=null&&storeCompletion.pending()))return;
-        if(productUi())recordPair();
+        if(productUi()){recordPair();recordQueued(queued,true);}
         closed=true;ui.removeCallbacks(storeWatchdog);
         if(storeObserverThread!=null)storeObserverThread.quit();
         if(recoveryDetached&&review!=null)review.stopDisplayTracking();
@@ -1677,6 +1773,16 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(Thread.getDefaultUncaughtExceptionHandler()==exceptionHandler)Thread.setDefaultUncaughtExceptionHandler(previousExceptionHandler);
         super.onDestroy();exitProductProcess();}
     @Override public void onBackPressed(){
+        // A shot in progress or a background write finishes first; an overdue
+        // store keeps the recovery path below.
+        if(queuedStores&&(writing()||workerActive||gate.busy())&&storeCompletion!=null
+                &&!storeCompletion.overdue(storeCompletion.token(),SystemClock.elapsedRealtime())){
+            if(!exitAfterWrites)event("exit_requested","writing="+writing()+" busy="+(workerActive||gate.busy()));
+            exitAfterWrites=true;
+            if(productHud!=null&&!workerActive&&!gate.busy()){productHud.hideLiveHint();productHud.mode="error";productHud.detail="正在写入照片";
+                productHud.progress="写完后自动返回 LUT 库。";productHud.footer="请保持相机开机";productHud.update();}
+            return;
+        }
         if(storeCompletion!=null&&storeCompletion.pending()){
             storeCompletion.requestStop();stopAfterStore=true;
             if(productUi()&&recoveryFence!=null&&storeCompletion.overdue(storeCompletion.token(),SystemClock.elapsedRealtime())){
