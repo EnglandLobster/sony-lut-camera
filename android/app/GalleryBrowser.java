@@ -29,7 +29,9 @@ final class GalleryBrowser {
     private final Set<String> failedPrefetch=new HashSet<String>();
     private final Set<String> attempted=new HashSet<String>();
     private final PreviewCache<Bitmap> cache;
-    /** exitHint names where MENU goes, e.g. "MENU 返回". */
+    /** drainBeforeCapture=false: the host's camera is open; no read may use
+     * Sony's screen-nail decoder, and returning to capture does not wait for
+     * a read. exitHint names where MENU goes, e.g. "MENU 返回". */
     GalleryBrowser(Context context,Host host,long cacheBytes,boolean drainBeforeCapture,String exitHint){
         this.context=context;this.host=host;this.drainBeforeCapture=drainBeforeCapture;this.exitHint=exitHint;
         cache=new PreviewCache<Bitmap>(cacheBytes,new PreviewCache.Disposal<Bitmap>(){public void release(Bitmap bitmap){bitmap.recycle();}});
@@ -47,7 +49,7 @@ final class GalleryBrowser {
     void pixelAspect(float value){image.assumePixelAspect(value);}
     /** Lists the history, then shows the pair (null: newest) moved by offset. */
     void open(final String pairId,final int offset){
-        io.execute(new Runnable(){public void run(){try{long begin=SystemClock.elapsedRealtime();loader=new SonyPhotoPreview(context);long ready=SystemClock.elapsedRealtime();
+        io.execute(new Runnable(){public void run(){try{long begin=SystemClock.elapsedRealtime();loader=new SonyPhotoPreview(context,drainBeforeCapture);long ready=SystemClock.elapsedRealtime();
             File photosDir=ProductFiles.photos();
             catalog=new PhotoCatalog(photosDir,Environment.getExternalStorageDirectory());
             // First open after an update: every receipt is read once (~45 ms each).
