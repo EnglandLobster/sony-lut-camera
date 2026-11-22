@@ -8,7 +8,7 @@ import java.util.Arrays;
  * its orientation; a preview pointing past the file is refused. */
 public final class JpegPreviewTest {
     public static void main(String[] args)throws Exception{
-        File dir=new File("out/product-ui-tests/jpeg-preview");dir.mkdirs();
+        File dir=args.length>0?new File(args[0],"jpeg-preview"):new File("out/product-ui-tests/jpeg-preview");dir.mkdirs();
         byte[] preview={(byte)0xff,(byte)0xd8,1,2,3,4,5,(byte)0xff,(byte)0xd9};
         for(boolean little:new boolean[]{true,false}){
             File f=new File(dir,little?"II.JPG":"MM.JPG");write(f,photo(little,6,preview,0x010002,true));

@@ -4,7 +4,7 @@ Java 文件按职责分目录，全部使用同一 `io.github.englandlobster.lut
 
 | 位置 | 职责／关键入口 |
 | --- | --- |
-| `android/app/` | LibraryActivity、PhotoActivity、GalleryActivity：用户页面入口 |
+| `android/app/` | LibraryActivity、PhotoActivity、GalleryActivity：用户页面入口；GalleryBrowser 是相册视图与按键，GalleryActivity 和拍摄页（盖在开着的相机上）共用 |
 | `android/capture/` | PreJpegProbeActivity、PreJpegGate：生产拍摄、原生保存、曝光及遥测 |
 | `android/preview/` | 自动拟合调度、参数持有／恢复、半按隔离、每 LUT 偏好 |
 | `android/storage/` | LUT 导入、精确缓存、照片目录、资源与 SD 路径 |

@@ -12,7 +12,7 @@
 
 **[⬇ 下载 v0.11.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.0/SonyLutCamera-v0.11.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
-测试版 [v0.11.1-beta.1](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.1)：保存方式三选一，默认只存 LUT 成片，可选另存原片 JPEG 或相机 RAW（同编号 ARW），[说明](docs/RELEASE.md)
+测试版 [v0.11.1-beta.2](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.2)：出片后马上能拍下一张，相册放进拍摄页面（半按即回拍摄），相册可删照片，打开应用更快；含 beta.1 的保存方式三选一（仅成片／＋原片／＋RAW），[说明](docs/RELEASE.md)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
