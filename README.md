@@ -10,9 +10,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform: Sony PMCA](https://img.shields.io/badge/platform-Sony%20PMCA-black)](docs/compatibility/README.md)
 
-**[⬇ 下载 v0.10.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.10.0/SonyLutCamera-v0.10.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
-
-测试版 [v0.10.1-beta.4](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.1-beta.4)：修复在应用里改的光圈、快门等参数退出后留在原生相机里，并包含 beta.3 的快门修复，[说明](docs/RELEASE.md)
+**[⬇ 下载 v0.11.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.0/SonyLutCamera-v0.11.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
@@ -26,12 +24,13 @@
 - **导入自己的 LUT**：支持 2–65³ 的 `.cube`，单个文件最大 64 MiB，按内容去重。
 - **预装 10 个胶片风格 LUT**：Fuji、Ilford、Kodak、Ricoh，默认 Fuji C200，见[内置 LUT](docs/BUILTIN_LUTS.md)。
 - **手动曝光与对焦**：档位跟随机身 P/A/S/M 转盘，拨轮调光圈、快门和曝光补偿，可选 ISO、白平衡、对焦区域和自由点位置，半按合焦后显示绿框；设置会记住，退出后相机恢复原来的设置。
+- **取景网格线**：九宫格、九宫格＋对角线、方形网格、中心十字，只画在取景上，不进照片。
 - **近似实时取景**：导入时自动拟合相机原生色彩参数，取景接近成片效果；也可以改用原色取景。
 - **应用内相册**：随时切换原片和成片对比。
 
 ## 安装
 
-1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.10.0)下载 `SonyLutCamera-v0.10.0.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
+1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0)下载 `SonyLutCamera-v0.11.0.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
 2. 相机 USB 连接设为 MTP，用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装这个 APK。
 3. 在相机的应用程序列表里打开 **LUT Camera**。第一次打开时会把预装 LUT 写入 SD 卡，稍等片刻。
 
@@ -124,6 +123,12 @@ A6300 / A6000 这类「上拨盘 + 控制轮」的机身，拨轮按档位分工
 日志不包含照片和 LUT 内容，也不会自动上传。详见[诊断日志说明](docs/DIAGNOSTICS.md)。
 
 ## 版本动态
+
+**v0.11.0**
+
+- 新增取景网格线：下键打开设置 →「网格线」。
+- 半按合焦每次都显示绿框，不再有时只亮左下角绿点。
+- 包含 v0.10.1 测试版的修复：成片提速；在应用里待机或关机后相机设置被还原；退出后原生相机按快门不拍；在应用里调的光圈、快门等退出后不恢复。
 
 **v0.10.0**
 
