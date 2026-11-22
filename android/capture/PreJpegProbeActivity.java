@@ -1500,7 +1500,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void compareOriginal(boolean original){
         if(!reviewing||gate.state()!=PreJpegGate.State.READY||productHud==null)return;
         long begin=SystemClock.elapsedRealtime();
-        if(sourceReference==null)throw new IllegalStateException("original display cache missing");
+        if(closed||sourceReference==null||sourceReference.isRecycled()||lutReview==null||lutReview.isRecycled()){
+            event("review_compare_skipped","closed="+closed+" reference="+(sourceReference!=null));return;}
         showingOriginal=original;review.setImageBitmap(original?sourceReference:lutReview);
         productHud.setVisibility(View.VISIBLE);productHud.original=original;productHud.detail="";productHud.update();
         event("review_compare","role="+(original?"original":"graded")+" switch_ms="+(SystemClock.elapsedRealtime()-begin)+" jpeg_decode=false");
@@ -1712,6 +1713,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             // Sony applies the PASM dial itself. Leaving the key to the
             // framework can close a third-party app; follow the readback.
             if(e.getAction()==KeyEvent.ACTION_DOWN){event("mode_dial_key","key="+key+" scan="+scan);dialMoved();}
+            return true;
+        }
+        // Leaving (e.g. the playback handoff): the camera, review bitmaps and
+        // controls are already released. Keys queued while close() ran must not
+        // reach them. Error pages close without finishing and keep their keys.
+        if(productUi()&&closed&&isFinishing()){
+            if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)event("key_after_close","key="+key+" scan="+scan);
             return true;
         }
         if(productUi()&&controls!=null&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0
