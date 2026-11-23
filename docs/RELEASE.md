@@ -1,3 +1,38 @@
+# v0.11.1-beta.3 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1-beta.3/SonyLutCamera-v0.11.1-beta.3.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.3) · [安装教程](USER_GUIDE.md)
+
+code129，公开预发行测试包。beta.2 加一项修复。签名和包名与 0.11.0 相同，可以直接覆盖安装，导入的 LUT 和照片都保留。想退回时重新安装 [v0.11.0](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0)；如果相机不让旧版本覆盖新版本，先在相机的「应用程序管理」里删除本版再装，SD 卡上的 LUT 和照片不受影响。
+
+## 修复：用光圈环的机身按 MENU 要等 7–8 秒
+
+RX1R II 用户反馈：拍摄页按 MENU 要过约 8 秒才有反应。日志里每次离开拍摄页（MENU、播放键，拍没拍照都一样），应用都想把光圈拧回原来的值，可这台相机的光圈由镜头光圈环决定，应用拧不动，每次白等约 5.6 秒。失败又被记成「上次没恢复成」，下次进入把旧值当成原生值，于是以后每次退出都重来一遍。这个问题从 v0.10.1-beta.4 起就有。
+
+现在：
+
+- 应用拧光圈时两个方向都拧不动，而且本次一次都没拧动过，就认定光圈归机身管：光圈环上的位置就是原生值，不算恢复失败，也不再记录。
+- 应用没拧过的光圈（例如转了光圈环）退出时不再往回拧，也不当作下次进入要套用的光圈。
+- 快门同样处理。
+
+**已经卡在旧记录里的相机**，升级后第一次离开拍摄页还会等一次（约 5.6 秒），之后应恢复到 2 秒左右。
+
+## 请帮忙确认
+
+1. **RX1R II 等用光圈环的机身**：升级后进拍摄页再按 MENU，第一次可能还慢，之后几次是否都在 2–3 秒内回到 LUT 库。转过光圈环后再退出，原生相机里的光圈应是环上的位置。
+2. 其他机型：在应用里转拨盘改光圈或快门，退出后原生相机应回到原来的值，和 beta.2 一样。
+3. 有问题时，在 LUT 库按 MENU → 更多 → 导出诊断日志，提交 `SONYLUT/DIAG/REPORT.ZIP`，写上机型、固件版本。
+
+## 验证与当前缺口
+
+- 依据：RX1R II / 固件 1.00、v0.11.1-beta.1 的诊断日志，6 次退出都在拧光圈上花 5.4–5.6 秒，从按 MENU 到回到 LUT 库 7.6 秒。
+- A6300 / 固件 2.01，2026-11-23（电子光圈镜头，A 档，原生 F5.6）：不改参数退出约 2.0 秒，不多拧；应用把光圈拧到 F4 后退出，0.7 秒拧回 F5.6；拍摄中强制结束应用后再进入，认出遗留的 F4 并在退出时拧回 F5.6。
+- 主机套件通过，新增光圈环的模拟测试（旧代码在这项测试上失败）；API10 ARM 模拟器整套与图形回归在发行 APK 上通过。发行 APK 签名证书与 0.11.0 相同。
+- 我们手上没有 RX1R II，真正的光圈环没有上机验证，等用户反馈。
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.11.1-beta.2 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1-beta.2/SonyLutCamera-v0.11.1-beta.2.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.2) · [安装教程](USER_GUIDE.md)
