@@ -31,6 +31,8 @@ final class UiKeys {
         if(k==KeyEvent.KEYCODE_BACK||k==KeyEvent.KEYCODE_MENU||s==514)return BACK;
         return NONE;
     }
+    /** The trash (delete) key: Sony scan/key 595; Android DEL keys by key code only. */
+    static boolean exit(KeyEvent e){int k=e.getKeyCode();return SessionPolicy.exitKey(k,e.getScanCode())||k==KeyEvent.KEYCODE_DEL||k==KeyEvent.KEYCODE_FORWARD_DEL;}
     static boolean shutter(KeyEvent e){int k=e.getKeyCode(),s=e.getScanCode();
         return s==516||s==517||s==518||k==516||k==517||k==518||k==KeyEvent.KEYCODE_CAMERA;
     }

@@ -175,6 +175,39 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private volatile QueuedShot queued;
     private final Object storeTurn=new Object();
     private boolean exitAfterWrites;
+    /** Requested 2026-11-20 (A7 II user, PR): the trash key (Sony 595; C4 on the A7 II, not yet confirmed on the body) and the idle
+     * timer leave the app, not just this screen. Same safe path as MENU (writes
+     * and stores finish, close() restores the camera and hands the shutter back),
+     * then the library runs its native exit (退出应用) on the exit_app result. */
+    private boolean exitApp;
+    private SessionPolicy.Idle idle;
+    private void requestAppExit(String reason){
+        if(isFinishing()||destroyed)return;
+        if(!exitApp)event("app_exit_requested","reason="+reason+" state="+gate.state()+" writing="+writing()+" busy="+(workerActive||gate.busy()));
+        exitApp=true;ui.removeCallbacks(idleCheck);ui.removeCallbacks(exitRetry);
+        if(controls!=null&&controls.panelOpen())controls.closePanel();
+        onBackPressed();
+        // A shot without background writes ignores MENU until it ends; retry.
+        if(!isFinishing()&&!exitAfterWrites&&!stopAfterStore)ui.postDelayed(exitRetry,500);
+    }
+    private final Runnable exitRetry=new Runnable(){public void run(){if(exitApp)requestAppExit("retry");}};
+    private void setDoneResult(){if(exitApp)setResult(RESULT_OK,new android.content.Intent().putExtra(SessionPolicy.EXIT_EXTRA,true));else setResult(RESULT_OK);}
+    /** Keys and shots re-arm the idle exit; it fires only when nothing is in flight. */
+    private final Runnable idleActivity=new Runnable(){public void run(){touchIdle();}};
+    private void touchIdle(){
+        if(idle==null||!idle.enabled())return;long now=SystemClock.uptimeMillis();idle.touch(now);
+        ui.removeCallbacks(idleCheck);if(active&&!closed&&!exitApp)ui.postDelayed(idleCheck,idle.remaining(now));
+    }
+    private final Runnable idleCheck=new Runnable(){public void run(){
+        if(idle==null||!idle.enabled()||!active||closed||destroyed||exitApp||isFinishing())return;
+        long now=SystemClock.uptimeMillis();
+        if(!idle.due(now)){ui.postDelayed(this,idle.remaining(now));return;}
+        boolean safe=gate.state()==PreJpegGate.State.READY&&!workerActive&&!storeRpcActive&&!writing()
+            &&!(storeCompletion!=null&&storeCompletion.pending())&&pendingReceipts==0
+            &&gallery==null&&!(controls!=null&&controls.panelOpen())&&!exitAfterWrites&&!stopAfterStore;
+        if(!safe){ui.postDelayed(this,SessionPolicy.IDLE_RECHECK_MS);return;}
+        requestAppExit("idle");
+    }};
     /** Owner decision 2026-11-22: PLAY shows the history over this open camera
      * instead of releasing it, so half-press returns to shooting at once (the
      * release, library hop and reopen took ~6 s on the A6300 2.01). Opens only
@@ -406,6 +439,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // Diagnostic entries keep the verified pair; the product passes the user's choice.
         saveOriginal=getIntent().getBooleanExtra("save_original",!productUi());
         saveRaw=getIntent().getBooleanExtra("save_raw",false);
+        idle=new SessionPolicy.Idle(productUi()?SessionPolicy.idleMillis(getIntent().getIntExtra(SessionPolicy.IDLE_EXIT,0)):0,SystemClock.uptimeMillis());
         if(saveRaw&&(!lutSession()||saveOriginal)){
             status=new TextView(this);status.setText("RAW 只能和成片一起保存，不能同时保存原片 JPEG。");setContentView(status);return;
         }
@@ -1054,7 +1088,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             maybeOpenGallery();
         }catch(Throwable e){failure("cancel_recovery",e);}
     }
-    private void arm(String origin){
+    private void arm(String origin){ui.post(idleActivity);
         if(gate.state()==PreJpegGate.State.READY&&autoPreview!=null&&!autoPreview.shotStarted()){
             autoPreview.fail(new IOException("shutter before preview baseline barrier: "+origin));return;
         }
@@ -1237,14 +1271,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         writeReceipt(null,q.file,q.lut,Math.max(0,q.display),Math.max(0,q.ready));
     }
     private boolean writing(){QueuedShot q=queued;return q!=null&&q.file==null;}
-    private void writingChanged(){
+    private void writingChanged(){touchIdle();
         if(productHud==null)return;
         productHud.writing=writing()?(playbackRequested?"写入中 · 写完打开相册":"写入中"):"";productHud.invalidate();
     }
     private void finishAfterWrites(){
         if(closed||workerActive||gate.busy()||writing()||pendingReceipts!=0)return;
         event("exit_after_writes","stop_after_store="+stopAfterStore);
-        if(startupFailure==null&&gate.state()!=PreJpegGate.State.FAILED)setResult(RESULT_OK);
+        if(startupFailure==null&&gate.state()!=PreJpegGate.State.FAILED)setDoneResult();
         finish();
     }
     private void verifyPairStore(File file,long confirmedAt){workerActive=true;try{
@@ -1267,7 +1301,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(paired()&&(originalFile==null||originalFile.equals(file)))throw new IOException("graded save did not preserve distinct original");
             gradedFile=file;gate.saved();event("pair_saved","shutter_to_saved_ms="+(confirmedAt-pressAt));
             ui.post(new Runnable(){public void run(){
-                if(stopAfterStore){recordPair();setResult(RESULT_OK);finish();return;}
+                if(stopAfterStore){recordPair();setDoneResult();finish();return;}
                 if(!active||destroyed){close();return;}
                 try{endProcessing();long start=SystemClock.elapsedRealtime();camera.stopPreview();long stopped=SystemClock.elapsedRealtime();
                     review.setImageBitmap(lutReview);reviewing=true;awaitFirstFrame=true;review.setVisibility(View.VISIBLE);review.invalidate();
@@ -1395,7 +1429,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }catch(Throwable e){failure("unlock_next_shot",e);}
         finally{finishingRearm=false;}
     }
-    private void completeRearm(long shot){
+    private void completeRearm(long shot){ui.post(idleActivity);
         try{
             if(!gate.rearmed(shot))throw new IllegalStateException("capture state changed while unlocking");
             nextReadyAt=SystemClock.elapsedRealtime();
@@ -1782,7 +1816,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         return s.append("zoom=").append(p.get("zoom")).toString();}
     private void close(){if(closed||workerActive||storeRpcActive||gate.busy()||(storeCompletion!=null&&storeCompletion.pending()))return;
         if(productUi()){recordPair();recordQueued(queued,true);}
-        closed=true;ui.removeCallbacks(storeWatchdog);
+        closed=true;ui.removeCallbacks(storeWatchdog);ui.removeCallbacks(idleCheck);
         if(storeObserverThread!=null)storeObserverThread.quit();
         if(recoveryDetached&&review!=null)review.stopDisplayTracking();
         ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;
@@ -1845,7 +1879,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(recoveryFence!=null&&!cleanupFailed)try{recoveryFence.released();}catch(IOException error){cleanupFailed=true;android.util.Log.w("SonyPreJpeg","recovery_fence_retained",error);}
         exitProductProcess();
     }
-    @Override protected void onResume(){super.onResume();active=true;
+    @Override protected void onResume(){super.onResume();active=true;touchIdle();
         if(recoveryDetached&&storeCompletion!=null&&storeCompletion.pending()){showStoreRecovery();return;}
         if(closed&&startupFailure==null){finish();return;}
         if(closed&&startupFailure!=null){
@@ -1876,7 +1910,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             storeCompletion.requestStop();stopAfterStore=true;recoveryDetached=true;
         }
         if(gallery!=null)gallery.pause();
-        active=false;ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;ui.removeCallbacks(hideReviewStatus);ui.removeCallbacks(processingTick);ui.removeCallbacks(restoreGraphics);if(review!=null&&!recoveryDetached)review.stopDisplayTracking();close();super.onPause();}
+        active=false;ui.removeCallbacks(idleCheck);ui.removeCallbacks(retrySurface);surfaceWaitStarted=-1;ui.removeCallbacks(hideReviewStatus);ui.removeCallbacks(processingTick);ui.removeCallbacks(restoreGraphics);if(review!=null&&!recoveryDetached)review.stopDisplayTracking();close();super.onPause();}
     @Override protected void onDestroy(){if(productUi())lifecycle("destroy");destroyed=true;closeGallery();close();if(closed&&thread!=null&&pendingReceipts==0)thread.quit();
         if(Thread.getDefaultUncaughtExceptionHandler()==exceptionHandler)Thread.setDefaultUncaughtExceptionHandler(previousExceptionHandler);
         super.onDestroy();exitProductProcess();}
@@ -1897,14 +1931,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 recoveryDetached=true;recoverySnapshot("return_to_library");
                 // Finish the screen only. Native worker and retained buffers
                 // stay alive; the library's persistent fence blocks reopening.
-                setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("capture_recovery",true));finish();return;
+                setResult(Activity.RESULT_FIRST_USER,new android.content.Intent().putExtra("capture_recovery",true).putExtra(SessionPolicy.EXIT_EXTRA,exitApp));finish();return;
             }
             if(productHud!=null){productHud.mode="error";productHud.detail="正在结束此次拍摄";
                 productHud.progress="正在确认已提交照片的保存。\n确认后返回 LUT 库。";productHud.footer="请保持相机开机";productHud.update();}
             return;
         }
         if(!workerActive&&!gate.busy()){
-        if(startupFailure==null&&gate.state()!=PreJpegGate.State.FAILED)setResult(RESULT_OK);
+        if(startupFailure==null&&gate.state()!=PreJpegGate.State.FAILED)setDoneResult();
         finish();
     }}
     public void surfaceCreated(SurfaceHolder h){if(h==holder){surfaceGate.created();event("surface_created","");open();}}
@@ -1923,6 +1957,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         close();
     }}
     @Override public boolean dispatchKeyEvent(KeyEvent e){int key=e.getKeyCode(),scan=e.getScanCode();
+        touchIdle();
         if(productUi()&&UiKeys.modeDial(e)){
             // Sony applies the PASM dial itself. Leaving the key to the
             // framework can close a third-party app; follow the readback.
@@ -1946,6 +1981,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             event("gallery_shutter_key","key="+key+" scan="+scan+" read_in_flight="+gallery.reading());
             gallery.leave(true);
             if(gallery!=null||autoPreview==null)return true;
+        }
+        // Trash key: safe exit to the native camera. The history overlay above
+        // ignores it (its delete is ▼), so it never exits mid-browse.
+        if(productUi()&&UiKeys.exit(e)){
+            if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)event("exit_key","key="+key+" scan="+scan+" state="+gate.state());
+            else if(e.getAction()==KeyEvent.ACTION_UP)requestAppExit("trash_key");
+            return true;
         }
         if(productUi()&&controls!=null&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0
                 &&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS)&&controls.panelOpen())controls.shutter();
