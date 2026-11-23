@@ -83,8 +83,12 @@ public final class ManualExposureTest {
         }
         String shutter(){return values.get("shutter-speed-nume")+"/"+values.get("shutter-speed-deno");}
         /** Steps act on the manual values only in a mode that shows them. */
+        /** The aperture is set by a lens ring (RX1R II): steps are accepted
+         * and change nothing. */
+        boolean ring;int apertureSteps;
         public void stepAperture(int d){
-            if(!showsAperture())return;
+            apertureSteps++;
+            if(ring||!showsAperture())return;
             stepped(new LinkedHashMap<String,String>(values));int i=APERTURES.indexOf(manualAperture);
             if(i>=0)aperture(APERTURES.get(Math.max(0,Math.min(APERTURES.size()-1,i+d))));
         }
@@ -300,6 +304,52 @@ public final class ManualExposureTest {
         check(ns.ready()&&ns.mode()==ManualExposure.Mode.P&&noS.values.get("scene-mode").equals("program-auto"),"refused remembered mode skipped");
         check(ns.memory().mode==ManualExposure.Mode.P,"memory overwritten with the working mode");
         ns.close();
+
+        // RX1R II (NAS report 2026-11-23): the aperture ring owns the
+        // aperture. A stale record (native F3.5, app left F2.0) used to be
+        // walked on every exit, fail, and be recorded again.
+        final StringBuilder ringLog=new StringBuilder();
+        ManualExposure.Log ringEvents=new ManualExposure.Log(){public void log(String n,String d){ringLog.append(n).append(' ');}};
+        Camera rx1=new Camera("aperture-priority");rx1.ring=true;rx1.aperture("200");
+        Map<String,String> ringNative=new LinkedHashMap<String,String>(rx1.read()),ringLeft=new LinkedHashMap<String,String>(ringNative);
+        ringNative.put("aperture","350");
+        NativeSettings.Pending stale=new NativeSettings.Pending(
+            NativeSettings.project(ringNative,Arrays.asList("scene-mode","iso-sensitivity","exposure-compensation","whitebalance","auto-exposure-lock","aperture")),
+            NativeSettings.project(ringLeft,Arrays.asList("scene-mode","iso-sensitivity","exposure-compensation","whitebalance","auto-exposure-lock","aperture")));
+        ManualExposure r1=new ManualExposure(rx1,ringEvents);r1.open(none(),true,stale);
+        check(r1.original().get("aperture").equals("350"),"stale record still adopted at open "+r1.original());
+        r1.close(); // no exception: nothing the app can restore
+        check(ringLog.toString().contains("exposure_fixed")&&r1.original().get("aperture").equals("200")
+            &&rx1.values.get("aperture").equals("200"),"ring value taken as native after one walk: "+ringLog+" "+r1.original());
+        // The next session (record cleared by the activity) walks nothing.
+        ringLog.setLength(0);int stepsBefore=rx1.apertureSteps;long clockBefore=rx1.clock;
+        ManualExposure r2=new ManualExposure(rx1,ringEvents);r2.open(none(),true);
+        rx1.aperture("560"); // the user turns the ring while in the app
+        r2.step(ControlLayout.Action.EV,1);r2.refresh();
+        Map<String,String> ringLeftNow=r2.left();
+        check(ringLeftNow.get("aperture").equals("200"),"a ring change is not the app's leftover "+ringLeftNow);
+        check(!NativeSettings.leftChanged(new NativeSettings.Pending(r2.original(),ringLeftNow),"aperture"),"killed session leaves no aperture record");
+        r2.close();
+        check(rx1.apertureSteps==stepsBefore&&rx1.clock==clockBefore&&!ringLog.toString().contains("exposure_walk")
+            &&rx1.values.get("aperture").equals("560"),"ring position kept, no walk on exit: "+ringLog+" steps="+(rx1.apertureSteps-stepsBefore));
+        check(r2.memory().aperture==null,"ring aperture not remembered as the session's");
+        // A remembered aperture on a ring body: one walk at open finds the
+        // ring, then the dial no longer steps and memory drops the value.
+        Camera rx1b=new Camera("aperture-priority");rx1b.ring=true;rx1b.aperture("200");
+        ManualExposure.Memory oldMemory=new ManualExposure.Memory();oldMemory.aperture="350";
+        ringLog.setLength(0);ManualExposure r3=new ManualExposure(rx1b,ringEvents);r3.open(oldMemory,true);
+        check(r3.ready()&&ringLog.toString().contains("exposure_fixed")&&r3.memory().aperture==null,"ring found at open: "+ringLog);
+        stepsBefore=rx1b.apertureSteps;
+        check(!r3.step(ControlLayout.Action.APERTURE,1)&&rx1b.apertureSteps==stepsBefore,"dial does not step a ring aperture");
+        stepsBefore=rx1b.apertureSteps;rx1b.aperture("400");r3.close();
+        check(rx1b.apertureSteps==stepsBefore&&rx1b.values.get("aperture").equals("400")&&r3.original().get("aperture").equals("400"),
+            "exit keeps the ring position "+r3.original());
+        // Electronic aperture after the app moved it: a walk that stops is
+        // still a failure, never taken as a ring (covered by "stuck" above),
+        // and an untouched electronic aperture is left alone.
+        Camera plain=new Camera("aperture-priority");ManualExposure pl=new ManualExposure(plain,null);pl.open(none(),true);
+        plain.aperture("400");pl.refresh();stepsBefore=plain.apertureSteps;pl.close();
+        check(plain.apertureSteps==stepsBefore&&plain.values.get("aperture").equals("400"),"a change the app did not make is not walked");
 
         Camera unsupported=new Camera("program-auto");unsupported.values.put("iso-sensitivity-values","100,200");before=unsupported.read();
         rejected=false;try{new ManualExposure(unsupported,null).open(none(),true);}catch(Exception expected){rejected=true;}

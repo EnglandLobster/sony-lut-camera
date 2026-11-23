@@ -118,6 +118,7 @@ bash scripts/build_android.sh
 - 拍摄页发现自己进入的是之前留下的拍摄进程时：如果上一次会话已经释放相机和所有回执，就把这次进入交还 LUT 库重新打开，并结束旧进程，只自动重试一次（日志里 `stale_capture_process`、`capture_restart`）。上一次会话没有收尾时，提示关机再开机。A6300 上，待机唤醒后再选 LUT，约 1 秒进入新的拍摄进程，并正常拍摄保存。2026-11-17 改。
 
 - 退出恢复光圈快门（2026-11-20 改）：只在读数跟上之后把光圈快门当作相机的手动值；退出时在能显示它们的档位里走回原值，必要时临时切到 M；转盘拨过档位也恢复。原生值和应用留下的值存在 `viewfinder_controls`，上次没恢复成的下次认出来再恢复。A6300 上验证过：A 档拨 3 格到 F4 后退出，走回 F5.6；会话中 `am force-stop` 结束应用，下次进入记录 `exposure_native_recovered [aperture=400->560]`，退出走回 F5.6，再进入时没有遗留记录。同日所有者用转盘 A→S，在 S 把快门从原生 1/250 调到 1/320 并改了 EV，再拨回 A 退出：S 档原生快门在读数跟上后记为 1/250；退出时临时切到 M，光圈走回 F5.6、快门走回 1/250，回到 A，读回一致。
+- 光圈环（2026-11-23，NAS「雁南飞RX1R2」，RX1R II 1.00，v0.11.1-beta.1）：`incrementAperture`/`decrementAperture` 调用不报错，读数一直是环上的值。6 次退出每次都在 `exposure_walk aperture target=350 from=200 steps: + 200@600ms - 200@600ms stopped` 上花 5.4–5.6 秒，按 MENU 到回到 LUT 库 7.6 秒。日志里的 `@600ms` 只计等待，不计读参数：RX1R II 和 A6300 上读一次参数约 60–80 ms，所以 600 ms 的等待实际约 2.4 秒。现在两个方向都拧不动、本次会话也从没拧动过时记 `exposure_fixed`，把当前值当原生值（`ManualExposure.NotSteppable`）。还没有上 RX1R II 验证。
 - 释放 CameraSequence 前交还快门（`handBackShutter`，日志 `shutter_handback`）：直通快门在运行就先停止并最多等 1 秒回调；确认停止后打开快门锁再释放。停止没有确认时保持锁定。A6300 上拍完退出、未拍退出两次都是 `release_unlocked=true wait_ms=5`，原生快门正常；直通快门仍在运行时退出的分支还没有上机走到。2026-11-17 改。
 
 细节见 `docs/ARCHITECTURE.md` 和各测试脚本。
