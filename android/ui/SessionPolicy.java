@@ -21,10 +21,9 @@ final class SessionPolicy {
     static long idleMillis(int minutes){return idleMinutes(minutes)*60000L;}
     static String idleLabel(int minutes){minutes=idleMinutes(minutes);return minutes==0?"关":minutes+" 分钟";}
 
-    /** Only the first library load of a fresh launch opens shooting; a return
-     * from shooting, a capture lock or a missing LUT stays in the library. */
-    static boolean autoEnter(boolean enabled,boolean firstLoad,boolean captureLocked,boolean lutSelected){
-        return enabled&&firstLoad&&!captureLocked&&lutSelected;
+    /** Why this open does not go straight to shooting, or null to enter. */
+    static String skipReason(boolean enabled,boolean busy,boolean captureLocked,boolean libraryShown,boolean lutAvailable){
+        return !enabled?"setting_off":busy?"capture_or_exit_pending":captureLocked?"capture_locked":!libraryShown?"notice_shown":!lutAvailable?"no_lut":null;
     }
 
     static boolean exitKey(int key,int scan){return key==DELETE_KEY||scan==DELETE_KEY;}

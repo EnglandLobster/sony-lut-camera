@@ -110,7 +110,7 @@ bash scripts/build_android.sh
 - 全按快门后相机没有释放快门时撤回这次拍摄：按键松开后等“2 倍曝光时间 + 1 秒”仍没有快门回调，就回到取景并提示重新按下（`ShutterConfirmation`，日志 `shutter_not_released`）。曝光时间读不到或超过 30 秒时不撤回，仍由 25 秒超时处理。A6300 2.01 上 4 次未释放都在约 1.0 秒后恢复，同一会话 7 组正常拍摄不受影响。
 - `CaptureStoreCompletion` 统一判定保存完成：先等保存调用返回，再按回调文件名、索引或预测的 DCF 文件名确认。
 - `CaptureRecoveryFence` 在拍摄进程异常退出后阻止再次拍摄，直到相机重启。
-- 直接拍摄、删除键退出、闲置退出（2026-11-20，A7 II 用户的 PR，未上机）：`SessionPolicy`（`android/ui/`，主机测试 `SessionPolicyTest`）放选项和判定。LUT 库每次启动第一次载入后进入当前 LUT 的拍摄（`direct_capture`，`capture_options` 里默认开）。删除键 595（OpenMemories ScalarInput 的 ISV_KEY_DELETE；A7 II 的 C4 是否发这个码待日志 `exit_key` 确认）和闲置计时（`idle_exit_minutes` 关／1／3，默认 3，经 intent 传给 `:capture`）在拍摄页走 onBackPressed 的等写完路径，结果带 `exit_app`，LUT 库恢复后调用 exitToCamera（核验未完成时每 3 秒重试）。日志 `app_exit_requested`、`exit_from_capture`、`idle_exit`。FLAG_KEEP_SCREEN_ON 未改。
+- 直接拍摄、删除键退出、闲置退出（2026-11-20，A7 II 用户的 PR，未上机）：`SessionPolicy`（`android/ui/`，主机测试 `SessionPolicyTest`）放选项和判定。每次从外面打开都进入上次使用的 LUT 的拍摄（`direct_capture`，`capture_options` 里默认开）：新的 LUT 库页面，或页面停止后不是因自己打开的拍摄、相册、测试连接而重新显示（Sony 保留 LUT 库进程，关机再开机后打开应用只恢复原页面，不调用 onCreate；A7 II 实测旧判断因此不进入）。不进入时记 `direct_capture_skipped reason=`。删除键 595（OpenMemories ScalarInput 的 ISV_KEY_DELETE；A7 II 的 C4 是否发这个码待日志 `exit_key` 确认）和闲置计时（`idle_exit_minutes` 关／1／3，默认 3，经 intent 传给 `:capture`）在拍摄页走 onBackPressed 的等写完路径，结果带 `exit_app`，LUT 库恢复后调用 exitToCamera（核验未完成时每 3 秒重试）。日志 `app_exit_requested`、`exit_from_capture`、`idle_exit`。FLAG_KEEP_SCREEN_ON 未改。
 - 超时只让界面脱离等待，不打断还在进行的保存调用。
 - 画质选相机支持的最高档，界面显示实际选中的档位，退出时恢复原设置。
 - 诊断日志是私有存储和存储卡上的定长日志，导出时不含照片、LUT 内容和凭据。
