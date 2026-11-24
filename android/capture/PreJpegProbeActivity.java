@@ -89,6 +89,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }};
     private CaptureSetup captureSetup;
     private CaptureGeometry captureGeometry=new CaptureGeometry(6000,4000);
+    // Picture-size stays captureGeometry; a shot in APS-C crop develops smaller.
+    private CaptureGeometry developedGeometry;private String advertisedSizes;
     private CaptureMemoryMap.Selection captureMap;
     private boolean originalColorOnly;
     private final CaptureSurfaceGate surfaceGate=new CaptureSurfaceGate();
@@ -597,7 +599,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             event("camera_parameters","drive="+p.get("drive-mode")+" storage="+p.get("storage-fmt")+" hdr="+p.get("hdr-mode")+" effect="+p.get("picture-effect")+" scene="+p.get("scene-mode")+" jpeg_quality="+p.get("jpeg-quality")+" size="+(size==null?"null":size.width+"x"+size.height));
             event("camera_zoom",zoomValues(p));
             event("camera_capabilities","drive="+p.get("drive-mode-values")+" sizes="+p.get("picture-size-values")
-                +" quality="+p.get("jpeg-quality-values")+" matrix="+p.get("rgb-matrix-supported")+" gamma="+p.get("extended-gamma-table-supported"));
+                +" quality="+p.get("jpeg-quality-values")+" matrix="+p.get("rgb-matrix-supported")+" gamma="+p.get("extended-gamma-table-supported")+" apsc="+apscParameters(p));
             if(productUi()){
                 captureGeometry=CaptureGeometry.select(p.get("picture-size-values"),size==null?null:size.width+"x"+size.height,
                     captureMap.entry.memory,captureMap.entry.pixels);
@@ -608,6 +610,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(!"single".equals(p.get("drive-mode"))||!"jpeg".equals(p.get("storage-fmt")))throw new IOException("probe requires existing single/JPEG settings");
             if(size==null)throw new IOException("picture-size unavailable");
             captureGeometry.verify(size.width,size.height);
+            advertisedSizes=p.get("picture-size-values");developedGeometry=captureGeometry;
             if(photoFiles!=null)photoFiles.expect(captureGeometry);
             if(lutSession()&&!initOnly){
                 lutReview=Bitmap.createBitmap(captureGeometry.reviewWidth(),captureGeometry.reviewHeight(),Bitmap.Config.ARGB_8888);
@@ -1123,7 +1126,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 int w=((Integer)imageType.getMethod("getWidth").invoke(image)).intValue(),h=((Integer)imageType.getMethod("getHeight").invoke(image)).intValue();
                 int format=((Integer)imageType.getMethod("getImageFormat").invoke(image)).intValue();
                 event("image","width="+w+" height="+h+" format="+format+" "+Native.deviceInfo(image));
-                captureGeometry.verify(w,h);if(format!=0)throw new IOException("unexpected developed image format");
+                CaptureGeometry developed=captureGeometry.developed(w,h,advertisedSizes);
+                if(!developed.same(developedGeometry)){
+                    // Saved JPEGs are checked against what was developed.
+                    event("developed_geometry","requested="+captureGeometry+" developed="+developed+(developed==captureGeometry?"":" crop=true"));
+                    developedGeometry=developed;if(photoFiles!=null)photoFiles.expect(developed);
+                }
+                if(format!=0)throw new IOException("unexpected developed image format");
                 if(sourceReference!=null){
                     long referenceAt=SystemClock.elapsedRealtime();Native.devicePreview(image,sourceReference);
                     event("source_reference_snapshot","ms="+(SystemClock.elapsedRealtime()-referenceAt)+" source=developed_before_original_store sample="+captureGeometry.reviewWidth()+"x"+captureGeometry.reviewHeight());
@@ -1792,6 +1801,12 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void release(Object value){if(value!=null)try{
         Method valid=value.getClass().getMethod("isValid");if(((Boolean)valid.invoke(value)).booleanValue())value.getClass().getMethod("release").invoke(value);
     }catch(Throwable e){cleanupFailed=true;event("release_error",cause(e).toString());}}
+    /** Sony's APS-C crop keys, when this body exposes any (older A7 bodies may not). */
+    private static String apscParameters(Camera.Parameters p){
+        StringBuilder out=new StringBuilder();String flat=p.flatten();
+        if(flat!=null)for(String pair:flat.split(";"))if(pair.toLowerCase(java.util.Locale.US).contains("apsc")){if(out.length()>0)out.append(',');out.append(pair);}
+        return out.length()==0?"none":out.toString();
+    }
     private static String zoomValues(Camera.Parameters p){StringBuilder s=new StringBuilder();
         for(String key:ZOOM_KEYS)s.append(key).append('=').append(p.get(key)).append(' ');
         return s.append("zoom=").append(p.get("zoom")).toString();}
