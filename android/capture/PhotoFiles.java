@@ -72,7 +72,12 @@ final class PhotoFiles {
      * When the base names no file on the card, its predecessor is added too: after
      * the newest photos were deleted in camera playback, ILCE-6000 3.21 field logs
      * (PR #7) show the camera writing just before the still-advanced, now missing
-     * index head, far above the folder's newest file.
+     * index head, far above the folder's newest file. The missing head itself is
+     * added as well: ILCE-7R 3.20 writes its next photo at a missing index head's
+     * own number (NAS a7r1 report, beta.3: heads 4087 and 4089 were written as
+     * such), and after its newest photo was deleted the head ran two ahead of the
+     * folder's newest file (head 4090, newest 4088), where neither successor
+     * reaches it and the store stayed unconfirmed until the camera was switched off.
      * Keep only identities absent now; a pre-existing file can never confirm a store,
      * and exactly one candidate may appear. */
     synchronized void predictAfter(int folder,int file){
@@ -86,7 +91,8 @@ final class PhotoFiles {
             int newest=dcim.isDirectory()?newestNumber(folder):-1;
             if(newest>0&&newest!=file){addAfter(next,folder,newest);note.append(" folder_max=").append(folder).append('/').append(newest);}
             boolean headMissing=file>1&&dcim.isDirectory()&&resolveNumbers(folder,file)==null;
-            if(headMissing){addBefore(next,folder,file);note.append(" before_head=").append(folder).append('/').append(file-1);}
+            if(headMissing){addBefore(next,folder,file);addIdentity(next,folder,file);if(folder<999)addIdentity(next,folder+1,file);
+                note.append(" before_head=").append(folder).append('/').append(file-1);}
             note.append(" candidates=");
             for(int[] identity:next){
                 boolean exists=dcim.isDirectory()&&resolveNumbers(identity[0],identity[1])!=null;

@@ -283,7 +283,10 @@ public final class LibraryActivity extends Activity {
         if(mode.equals("loading"))mode="library";
         showNotice("上一张照片仍在核验","暂不能再次拍摄或返回原生相机。\n可导出日志，后台恢复后自动解除。\n若持续未恢复，请待存储灯熄灭后正常关机再开机。");return false;
     }
-    private void openGallery(String pairId,int offset){if(!requireReleasedCapture())return;startActivityForResult(new Intent(this,GalleryActivity.class).putExtra("pair_id",pairId).putExtra("page_offset",offset),GALLERY_REQUEST);}
+    private void openGallery(String pairId,int offset){openGallery(pairId,offset,null);}
+    /** deletePair: delete this pair once listed (confirmed in capture's history). */
+    private void openGallery(String pairId,int offset,String deletePair){if(!requireReleasedCapture())return;
+        startActivityForResult(new Intent(this,GalleryActivity.class).putExtra("pair_id",pairId).putExtra("page_offset",offset).putExtra("delete_pair",deletePair),GALLERY_REQUEST);}
     private void startCapture(final LutLibrary.Entry entry){
         if(!requireReleasedCapture())return;
         final boolean previewSupported=NativePreviewCapability.available();
@@ -369,7 +372,8 @@ public final class LibraryActivity extends Activity {
         }
         if(request==CAPTURE_REQUEST&&result==RESULT_CANCELED){showInterruptedCapture();return;}
         if(result!=RESULT_OK||data==null)return;
-        if(request==CAPTURE_REQUEST&&data.getBooleanExtra("open_gallery",false))openGallery(null,data.getIntExtra("page_offset",0));
+        if(request==CAPTURE_REQUEST&&data.getBooleanExtra("open_gallery",false))
+            openGallery(data.getStringExtra("pair_id"),data.getIntExtra("page_offset",0),data.getStringExtra("delete_pair"));
         else if(request==GALLERY_REQUEST&&data.getBooleanExtra("return_capture",false)){mode="library";selection=indexOf(selectedId);if(!luts.isEmpty())startCapture(luts.get(selection));}
     }
     private void action(){if(busy)return;

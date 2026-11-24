@@ -59,6 +59,11 @@ final class ManualExposure {
      * camera had them before this session changed them; null until seen. */
     private String cameraAperture,cameraShutter,nativeAperture,nativeShutter;
     private boolean apertureTouched,shutterTouched;
+    /** An app step visibly moved the value this session; the native value
+     * was adopted from an earlier session's record; the app's steps cannot
+     * move the value at all, so the body owns it (the RX1R II aperture ring,
+     * NAS report 2026-11-23). */
+    private boolean apertureMoved,shutterMoved,apertureAdopted,shutterAdopted,apertureFixed,shutterFixed;
     private NativeSettings.Pending pending;
     private Map<String,String> closedOriginal;
     /** Start of an unsettled aperture/shutter readback, and its value before. */
@@ -150,11 +155,13 @@ final class ManualExposure {
         Mode m=fromScene(p.get("scene-mode"));
         if(showsAperture(m)&&number(p.get("aperture"))>0){
             cameraAperture=p.get("aperture");
-            if(apertureApplied)rememberedAperture=cameraAperture;
+            // Only a value the app set is the session's to remember; one
+            // the body set (a ring) is not walked to next time.
+            if(apertureApplied&&apertureTouched&&!apertureFixed)rememberedAperture=cameraAperture;
             if(nativeAperture==null){
                 Map<String,String> seen=one("aperture",cameraAperture);
                 List<String> adopted=NativeSettings.adopt(seen,pending,"aperture");
-                if(!adopted.isEmpty())log("exposure_native_recovered",adopted.toString());
+                if(!adopted.isEmpty()){apertureAdopted=true;log("exposure_native_recovered",adopted.toString());}
                 nativeAperture=seen.get("aperture");original.put("aperture",nativeAperture);
                 log("exposure_native_seen","aperture="+nativeAperture+" scene="+p.get("scene-mode"));
             }
@@ -162,12 +169,12 @@ final class ManualExposure {
         String shutter=shutterOf(p);
         if(showsShutter(m)&&shutter!=null){
             cameraShutter=shutter;
-            if(shutterApplied)rememberedShutter=cameraShutter;
+            if(shutterApplied&&shutterTouched&&!shutterFixed)rememberedShutter=cameraShutter;
             if(nativeShutter==null){
                 Map<String,String> seen=new LinkedHashMap<String,String>();
                 seen.put("shutter-speed-nume",p.get("shutter-speed-nume"));seen.put("shutter-speed-deno",p.get("shutter-speed-deno"));
                 List<String> adopted=NativeSettings.adopt(seen,pending,SHUTTER_KEY);
-                if(!adopted.isEmpty())log("exposure_native_recovered",adopted.toString());
+                if(!adopted.isEmpty()){shutterAdopted=true;log("exposure_native_recovered",adopted.toString());}
                 nativeShutter=seen.get("shutter-speed-nume")+"/"+seen.get("shutter-speed-deno");
                 original.putAll(seen);
                 log("exposure_native_seen","shutter="+nativeShutter+" scene="+p.get("scene-mode"));
@@ -274,10 +281,14 @@ final class ManualExposure {
     private void reapplyModeValues(){
         if(!showsAperture(mode)&&!showsShutter(mode))return;
         attempt("readback",new Step(){public void run()throws Exception{settled();}});
-        if(showsAperture(mode)&&rememberedAperture!=null)
-            attempt("aperture",new Step(){public void run()throws Exception{moveAperture(rememberedAperture);}});
-        if(showsShutter(mode)&&rememberedShutter!=null)
-            attempt("shutter",new Step(){public void run()throws Exception{moveShutter(rememberedShutter);}});
+        if(showsAperture(mode)&&rememberedAperture!=null&&!apertureFixed)
+            attempt("aperture",new Step(){public void run()throws Exception{
+                try{moveAperture(rememberedAperture);}catch(NotSteppable e){fixed(APERTURE,"open");}
+            }});
+        if(showsShutter(mode)&&rememberedShutter!=null&&!shutterFixed)
+            attempt("shutter",new Step(){public void run()throws Exception{
+                try{moveShutter(rememberedShutter);}catch(NotSteppable e){fixed(SHUTTER,"open");}
+            }});
         apertureApplied|=showsAperture(mode);shutterApplied|=showsShutter(mode);
         // From here the camera's values are the session's.
         attempt("readback",new Step(){public void run()throws Exception{settled();}});
@@ -298,15 +309,46 @@ final class ManualExposure {
     void moveAperture(String target)throws Exception{
         int value=number(target);
         if(value<=0)throw new IOException("invalid aperture "+target);
-        walk("aperture",value,new Reading(){public double of(Map<String,String> p){return apertureValue(p);}},
+        walk(APERTURE,value,new Reading(){public double of(Map<String,String> p){return apertureValue(p);}},
             new Stepper(){public void step(int d)throws Exception{changing();apertureTouched=true;driver.stepAperture(d);}});
     }
     void moveShutter(String target)throws Exception{
         String[] parts=target.split("/");
         int n=parts.length==2?number(parts[0]):0,d=parts.length==2?number(parts[1]):0;
         if(n<=0||d<=0)throw new IOException("invalid shutter "+target);
-        walk("shutter",(double)n/d,new Reading(){public double of(Map<String,String> p){return shutterSeconds(p);}},
+        walk(SHUTTER,(double)n/d,new Reading(){public double of(Map<String,String> p){return shutterSeconds(p);}},
             new Stepper(){public void step(int dir)throws Exception{changing();shutterTouched=true;driver.stepShutter(dir);}});
+    }
+    private static final String APERTURE="aperture",SHUTTER="shutter";
+    /** A walk whose steps moved the value in neither direction, in a session
+     * where no app step ever moved it: the body or lens owns the value. The
+     * RX1R II aperture ring read F2.0 through every step (NAS report
+     * 2026-11-23); each exit then retried a restore that cannot happen. */
+    static final class NotSteppable extends IOException {
+        NotSteppable(String message){super(message);}
+    }
+    private boolean moved(String what){return APERTURE.equals(what)?apertureMoved:shutterMoved;}
+    private void markMoved(String what){if(APERTURE.equals(what))apertureMoved=true;else shutterMoved=true;}
+    /** The body owns {@code what}: the value it shows is the native one, the
+     * app leaves nothing of its own there, and the session stops walking it. */
+    private void fixed(String what,String where)throws Exception{
+        Map<String,String> p=settled();
+        if(APERTURE.equals(what)){
+            String was=nativeAperture;
+            apertureFixed=true;rememberedAperture=null;
+            if(showsAperture(fromScene(p.get("scene-mode")))&&number(p.get("aperture"))>0)cameraAperture=p.get("aperture");
+            if(cameraAperture!=null){nativeAperture=cameraAperture;if(original!=null)original.put("aperture",cameraAperture);}
+            log("exposure_fixed","aperture="+cameraAperture+" native_was="+was+" at="+where);
+        }else{
+            String was=nativeShutter,shutter=shutterOf(p);
+            shutterFixed=true;rememberedShutter=null;
+            if(showsShutter(fromScene(p.get("scene-mode")))&&shutter!=null)cameraShutter=shutter;
+            if(cameraShutter!=null){
+                nativeShutter=cameraShutter;
+                if(original!=null){String[] v=cameraShutter.split("/");original.put("shutter-speed-nume",v[0]);original.put("shutter-speed-deno",v[1]);}
+            }
+            log("exposure_fixed","shutter="+cameraShutter+" native_was="+was+" at="+where);
+        }
     }
     private static boolean same(double a,double b){return Math.abs(a-b)<=Math.abs(b)*1e-6;}
     /** How long a step may take to show in getParameters before the walk
@@ -340,6 +382,7 @@ final class ManualExposure {
                 stepper.step(direction);trace.append(direction>0?" +":" -");
                 double next=settle(reading,now,trace);
                 if(Double.isNaN(next))throw new IOException(what+" unreadable after step");
+                if(!same(next,now))markMoved(what);
                 if(same(next,target)){trace.append(" ok");return;}
                 if(same(next,now)){
                     if(reversed)break;
@@ -355,6 +398,10 @@ final class ManualExposure {
                     break;
                 }
                 if(away){direction=-direction;reversed=true;}
+            }
+            if(!moved(what)){
+                trace.append(" fixed");
+                throw new NotSteppable(what+" does not step from "+format(now));
             }
             trace.append(" stopped");
             throw new IOException(what+" stopped at "+format(now)+" target "+format(target));
@@ -470,20 +517,24 @@ final class ManualExposure {
         if(steps==0)return false;
         switch(action){
             case APERTURE:{
-                if(mode!=Mode.A&&mode!=Mode.M)return false;
+                if(mode!=Mode.A&&mode!=Mode.M||apertureFixed)return false;
                 String before=last.get("aperture");
                 changing();apertureTouched=true;
                 for(int i=0;i<Math.abs(steps);i++)driver.stepAperture(steps>0?1:-1);
                 String after=read().get("aperture");
-                return after!=null&&!after.equals(before);
+                boolean changed=after!=null&&!after.equals(before);
+                if(changed)apertureMoved=true;
+                return changed;
             }
             case SHUTTER:{
-                if(mode!=Mode.S&&mode!=Mode.M)return false;
+                if(mode!=Mode.S&&mode!=Mode.M||shutterFixed)return false;
                 String before=last.get("shutter-speed-nume")+"/"+last.get("shutter-speed-deno");
                 changing();shutterTouched=true;
                 for(int i=0;i<Math.abs(steps);i++)driver.stepShutter(steps>0?1:-1);
                 Map<String,String> p=read();
-                return !before.equals(p.get("shutter-speed-nume")+"/"+p.get("shutter-speed-deno"));
+                boolean changed=!before.equals(p.get("shutter-speed-nume")+"/"+p.get("shutter-speed-deno"));
+                if(changed)shutterMoved=true;
+                return changed;
             }
             case EV:{
                 if(!evAvailable())return false;
@@ -558,9 +609,13 @@ final class ManualExposure {
         Map<String,String> o=original();if(o==null)return null;
         Map<String,String> out=NativeSettings.project(settled(),o.keySet());
         out.remove("aperture");out.remove("shutter-speed-nume");out.remove("shutter-speed-deno");
-        if(cameraAperture!=null)out.put("aperture",cameraAperture);
+        // A value the app neither stepped nor inherited was set on the body
+        // (a ring): nothing of the app's is left there.
+        String aperture=apertureTouched||apertureAdopted?cameraAperture:nativeAperture;
+        String shutter=shutterTouched||shutterAdopted?cameraShutter:nativeShutter;
+        if(aperture!=null)out.put("aperture",aperture);
         else if(pending!=null)carry(out,pending.left,"aperture");
-        if(cameraShutter!=null){String[] v=cameraShutter.split("/");out.put("shutter-speed-nume",v[0]);out.put("shutter-speed-deno",v[1]);}
+        if(shutter!=null){String[] v=shutter.split("/");out.put("shutter-speed-nume",v[0]);out.put("shutter-speed-deno",v[1]);}
         else if(pending!=null)carry(out,pending.left,"shutter-speed-nume","shutter-speed-deno");
         return out;
     }
@@ -613,8 +668,11 @@ final class ManualExposure {
         settled();
         // Manual aperture/shutter first, from a mode that shows them: the
         // target mode if it shows both that need it, otherwise M.
-        boolean aperture=restoreNeeded(nativeAperture,cameraAperture,apertureTouched,"aperture");
-        boolean shutter=restoreNeeded(nativeShutter,cameraShutter,shutterTouched,SHUTTER_KEY);
+        // A value the body owns is native wherever the user left it.
+        if(apertureFixed)fixed(APERTURE,"exit");
+        if(shutterFixed)fixed(SHUTTER,"exit");
+        boolean aperture=restoreNeeded(nativeAperture,cameraAperture,apertureTouched,apertureAdopted,apertureFixed,"aperture");
+        boolean shutter=restoreNeeded(nativeShutter,cameraShutter,shutterTouched,shutterAdopted,shutterFixed,SHUTTER_KEY);
         if(aperture||shutter){
             String visit=(!aperture||showsAperture(target))&&(!shutter||showsShutter(target))?targetScene:SCENE_M;
             try{
@@ -622,8 +680,12 @@ final class ManualExposure {
                 Map<String,String> p=settled(); // a value never seen is seen here
                 if(!visit.equals(p.get("scene-mode")))throw new IOException("scene readback "+p.get("scene-mode"));
                 // A lens without electronic aperture reports 0: nothing to walk.
-                if(aperture&&nativeAperture!=null)try{moveAperture(nativeAperture);}catch(Exception e){log("exposure_restore_walk","aperture "+e);}
-                if(shutter&&nativeShutter!=null)try{moveShutter(nativeShutter);}catch(Exception e){log("exposure_restore_walk","shutter "+e);}
+                if(aperture&&nativeAperture!=null)try{moveAperture(nativeAperture);}
+                    catch(NotSteppable e){fixed(APERTURE,"exit");}
+                    catch(Exception e){log("exposure_restore_walk","aperture "+e);}
+                if(shutter&&nativeShutter!=null)try{moveShutter(nativeShutter);}
+                    catch(NotSteppable e){fixed(SHUTTER,"exit");}
+                    catch(Exception e){log("exposure_restore_walk","shutter "+e);}
                 p=settled();
                 if(aperture&&nativeAperture!=null&&!nativeAperture.equals(p.get("aperture")))failed.add("aperture");
                 if(shutter&&nativeShutter!=null&&!nativeShutter.equals(shutterOf(p)))failed.add("shutter");
@@ -647,10 +709,13 @@ final class ManualExposure {
         closedOriginal=saved;original=null;
         if(differs.length()>0)throw new IOException("exposure restore differs: "+differs.toString().trim());
     }
-    /** A known native value is restored when the session moved it; one never
-     * seen only when an earlier session recorded leaving it changed. */
-    private boolean restoreNeeded(String nativeValue,String camera,boolean touched,String key){
-        if(nativeValue!=null)return touched||!nativeValue.equals(camera);
+    /** A known native value is restored when the session stepped it or
+     * inherited an earlier session's leftover; a change the body made
+     * itself (an aperture ring) is the user's and stays. One never seen is
+     * restored only when an earlier session recorded leaving it changed. */
+    private boolean restoreNeeded(String nativeValue,String camera,boolean touched,boolean adopted,boolean fixed,String key){
+        if(fixed)return false;
+        if(nativeValue!=null)return touched||adopted&&!nativeValue.equals(camera);
         return NativeSettings.leftChanged(pending,key);
     }
 }

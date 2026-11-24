@@ -193,6 +193,24 @@ public final class LegacyDcfPredictionTest {
             System.out.println("PASS legacy prediction confirms a pair below and at a phantom index head");
         }finally{s.close();}
     }
+    /** The ILCE-7R 3.20 report (NAS a7r1, beta.3): its newest photo DSC04089 was
+     * deleted, the index head is 990/4090 with no file, the folder's newest is 4088,
+     * and the camera writes at the missing head's own number. */
+    private static void missingHeadItself(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("990MSDCF","DSC04087.JPG");s.db.publish(10,990,4087);
+            s.photo("990MSDCF","DSC04088.JPG");s.db.publish(11,990,4088);
+            s.db.publish(12,990,4090); // 4089 deleted; the head names no file
+            long token=s.completion.begin(0);
+            String note=s.files.prediction();
+            check(note.contains("after=990/4090 folder_max=990/4088 before_head=990/4089 candidates=")&&note.contains("990/4090,"),"missing head itself predicted: "+note);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("990MSDCF","DSC04090.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("DSC04090.JPG"),"write at the missing head confirmed: "+r.file);
+            System.out.println("PASS legacy prediction includes a missing index head's own number");
+        }finally{s.close();}
+    }
     /** A predecessor still on the card is never a candidate; the head's successor still confirms. */
     private static void beforeExists(File root)throws Exception{
         final Session s=new Session(root,false);
@@ -303,6 +321,7 @@ public final class LegacyDcfPredictionTest {
             seriesCounter(new File(root,"series"));
             deletedInPlayback(new File(root,"deleted"));
             deletedPair(new File(root,"deleted-pair"));
+            missingHeadItself(new File(root,"missing-head"));
             beforeExists(new File(root,"before-exists"));
             filesAbove(new File(root,"above"),false);
             filesAbove(new File(root,"above-below"),true);
