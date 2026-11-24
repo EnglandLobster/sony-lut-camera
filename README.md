@@ -12,7 +12,7 @@
 
 **[⬇ 下载 v0.11.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.0/SonyLutCamera-v0.11.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
-测试版 [v0.11.1-beta.3](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.3)：修复 RX1R II 等用光圈环的机身按 MENU 要等 7–8 秒；含 beta.2 的出片即拍下一张、相册放进拍摄页面、相册删除，以及 beta.1 的保存方式三选一，[说明](docs/RELEASE.md)
+测试版 [v0.11.1-beta.4](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.4)：修复拍摄页相册删除照片卡死、删除后再拍卡在「正在核验照片保存」（A7、A7R 等）、关机再开机误报「拍摄会话意外结束」；含 beta.3 的光圈环退出修复、beta.2 的出片即拍下一张与相册删除，以及 beta.1 的保存方式三选一，[说明](docs/RELEASE.md)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
