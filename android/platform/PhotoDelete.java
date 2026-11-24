@@ -6,6 +6,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import java.io.*;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Deletes a saved photo through Sony's image index, the way playback does,
  * so the camera database never lists a file that is gone. One index content
@@ -34,15 +36,14 @@ final class PhotoDelete {
      * A photo already gone from both index and card counts as deleted. */
     void delete(File jpeg)throws Exception{
         long begin=android.os.SystemClock.elapsedRealtime();int[] n=dcf(jpeg);File raw=raw(jpeg);
-        Cursor cursor=resolver.query(external,new String[]{"_id"},"dcf_folder_number="+n[0]+" AND dcf_file_number="+n[1],null,null);
-        if(cursor==null)throw new IOException("相机照片索引不可用");
-        long id=-1;int rows=0;
-        try{while(cursor.moveToNext()){id=cursor.getLong(0);rows++;}}finally{cursor.close();}
-        if(rows>1)throw new IOException("照片索引中有 "+rows+" 条同编号记录");
-        if(rows==0){
-            if(jpeg.exists()||raw!=null)throw new IOException("相机照片索引里找不到 "+jpeg.getName());
-            android.util.Log.i("LutUI","photo_delete file="+jpeg.getName()+" already_gone=true");return;
-        }
+        long id=PhotoDeleteTarget.settle(new PhotoDeleteTarget.Lookup(){public List<Long> ids(int folder,int file)throws IOException{
+            Cursor cursor=resolver.query(external,new String[]{"_id"},"dcf_folder_number="+folder+" AND dcf_file_number="+file,null,null);
+            if(cursor==null)throw new IOException("相机照片索引不可用");
+            List<Long> ids=new ArrayList<Long>();
+            try{while(cursor.moveToNext())ids.add(cursor.getLong(0));}finally{cursor.close();}
+            return ids;
+        }},n,jpeg,raw!=null,PhotoDeleteTarget.ATTEMPTS,PhotoDeleteTarget.WAIT_MS);
+        if(id<0){android.util.Log.i("LutUI","photo_delete file="+jpeg.getName()+" already_gone=true");return;}
         long queried=android.os.SystemClock.elapsedRealtime();
         if(!((Boolean)deleteImage.invoke(null,resolver,external,id)).booleanValue())throw new IOException("相机拒绝删除 "+jpeg.getName());
         boolean jpegGone=!jpeg.exists(),rawGone=raw==null||!raw.exists();

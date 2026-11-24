@@ -12,8 +12,13 @@ public final class GalleryActivity extends Activity {
         browser=new GalleryBrowser(this,new GalleryBrowser.Host(){public void left(boolean capture){
             if(capture)setResult(RESULT_OK,new android.content.Intent().putExtra("return_capture",true));finish();
         }
-        public void listed(java.util.List<PhotoCatalog.Pair> photos){}},8L*1024*1024,true,"MENU 返回");
+        public void listed(java.util.List<PhotoCatalog.Pair> photos){}
+        public boolean deleteWithoutCamera(PhotoCatalog.Pair pair){return false;}},8L*1024*1024,true,"MENU 返回");
         setContentView(browser.view());getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // Confirmed over the capture screen, which released its camera first.
+        // Once only: a recreated screen must not delete again.
+        String doomed=getIntent().getStringExtra("delete_pair");
+        if(doomed!=null&&saved==null)browser.deleteWhenListed(doomed);
         browser.open(getIntent().getStringExtra("pair_id"),getIntent().getIntExtra("page_offset",0));
     }
     @Override public void onBackPressed(){browser.leave(false);}

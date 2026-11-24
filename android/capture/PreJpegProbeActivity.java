@@ -199,6 +199,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(galleryPhotos==null&&catalogued==cataloguedAtOpen)galleryPhotos=photos;
             event("gallery_listed","photos="+photos.size()+" kept="+(galleryPhotos==photos));
         }
+        public boolean deleteWithoutCamera(PhotoCatalog.Pair pair){return galleryDelete(pair);}
     };
     private int catalogued,cataloguedAtOpen;
     // Store notifications queue on the same worker as grading. The original
@@ -1650,6 +1651,20 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(closed||gate.state()!=PreJpegGate.State.READY)return;
         try{resumeShutter();}catch(Throwable e){failure("gallery_shutter",e);return;}
         if(productHud!=null){productHud.setVisibility(View.VISIBLE);productLive();}
+    }
+    /** Delete confirmed in the history. On the ILCE-7M2 4.01 Sony's deleteImage
+     * did not return while this process held the camera and the history kept
+     * every key: the reporter had to restart (issue #11). It returned 0.3 s
+     * after the camera was released. So release it, as the PLAY handoff did
+     * before 2026-11-22, and let the library delete from GalleryActivity,
+     * which never opens the camera. Half-press there reopens capture. */
+    private boolean galleryDelete(PhotoCatalog.Pair pair){
+        if(gallery==null||closed)return false;
+        event("gallery_delete_handoff","graded="+pair.graded.getName()+" original="+(pair.original!=null)+" shown_ms="+(SystemClock.elapsedRealtime()-galleryOpenedAt));
+        close();
+        if(!closed){event("gallery_delete_busy","worker="+workerActive+" busy="+gate.busy()+" store_rpc="+storeRpcActive);return false;}
+        setResult(RESULT_OK,new android.content.Intent().putExtra("open_gallery",true).putExtra("pair_id",pair.id).putExtra("delete_pair",pair.id));
+        finish();return true;
     }
     /** UI thread, in record order. */
     private void shotCatalogued(PhotoCatalog.Pair pair){

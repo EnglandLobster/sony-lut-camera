@@ -28,12 +28,19 @@ final class GalleryBrowser {
         /** UI thread: a fresh listing finished, even if browsing already
          * ended, so a host can keep it rather than read the index again. */
         void listed(List<PhotoCatalog.Pair> photos);
+        /** UI thread, only for a host whose camera is open: the user
+         * confirmed deleting pair. Sony's deleteImage did not return while
+         * the camera was open (ILCE-7M2 4.01, issue #11: it returned 0.3 s
+         * after the release), so the host releases the camera and deletes
+         * from a browser without one. False: the camera is busy, nothing
+         * changed. */
+        boolean deleteWithoutCamera(PhotoCatalog.Pair pair);
     }
     private final Context context;private final Host host;private final boolean drainBeforeCapture;private final String exitHint;
     private final Handler ui=new Handler();private final ExecutorService io=Executors.newSingleThreadExecutor();
     private final FrameLayout frame;private final SonyReviewView image;private final PhotoHud hud;private List<PhotoCatalog.Pair> photos;
     private SonyPhotoPreview loader;private int index,direction=1;private boolean original,destroyed,reading,active,leaving,leaveCapture,leftNotified,tracking,infoVisible=true;
-    private PhotoCatalog catalog;private PhotoDelete remover;private boolean confirming,deleting;
+    private PhotoCatalog catalog;private PhotoDelete remover;private boolean confirming,deleting;private String pendingDelete;
     private String desiredKey,displayedKey,drawKey;private long requestAt,drawAt;private boolean drawHit;
     private final Set<String> failedPrefetch=new HashSet<String>();
     private final Set<String> attempted=new HashSet<String>();
@@ -60,6 +67,9 @@ final class GalleryBrowser {
     void pixelAspect(float value){image.assumePixelAspect(value);}
     /** Lists the history, then shows the pair (null: newest) moved by offset. */
     void open(String pairId,int offset){open(pairId,offset,null,null);}
+    /** Before open: delete this pair once it is listed, without asking
+     * again. The user confirmed it over the open camera (Host.deleteWithoutCamera). */
+    void deleteWhenListed(String pairId){pendingDelete=pairId;deleting=true;} // keys wait for the delete
     /** known: the history this host already listed and kept current, or null
      * to list it. seed: shown at once while listing, or null. */
     void open(final String pairId,final int offset,final List<PhotoCatalog.Pair> known,final Seed seed){
@@ -83,8 +93,12 @@ final class GalleryBrowser {
                 ui.post(new Runnable(){public void run(){host.listed(new ArrayList<PhotoCatalog.Pair>(loaded));}});
             }
             ui.post(new Runnable(){public void run(){if(destroyed||leaving)return;photos=loaded;for(int i=0;i<photos.size();i++)if(photos.get(i).id.equals(pairId)){index=i;break;}
-                index=Math.max(0,Math.min(Math.max(0,photos.size()-1),index+offset));load();}});
-        }catch(final Throwable e){ui.post(new Runnable(){public void run(){error(failure(e));}});}}});
+                index=Math.max(0,Math.min(Math.max(0,photos.size()-1),index+offset));
+                String doomed=pendingDelete;pendingDelete=null;
+                if(doomed!=null&&!photos.isEmpty()&&photos.get(index).id.equals(doomed)){delete(photos.get(index));return;}
+                if(doomed!=null){deleting=false;SupportDiagnostics.event("photo_delete_missing","photos="+photos.size());}
+                load();}});
+        }catch(final Throwable e){ui.post(new Runnable(){public void run(){if(pendingDelete!=null){pendingDelete=null;deleting=false;}error(failure(e));}});}}});
     }
     /** io thread: orient the seed like its saved photo, then show it unless
      * the list arrived first or the browser is gone. */
@@ -230,8 +244,27 @@ final class GalleryBrowser {
     private void closeConfirm(){confirming=false;hud.panelRows=null;hud.panelHint="";
         if(hud.mode.equals("review"))hud.setVisibility(infoVisible?View.VISIBLE:View.INVISIBLE);hud.update();}
     private void deleteSelected(){
-        final PhotoCatalog.Pair p=photos.get(index);closeConfirm();deleting=true;
+        final PhotoCatalog.Pair p=photos.get(index);closeConfirm();
+        if(drainBeforeCapture){delete(p);return;}
+        // Over the open camera: the host releases it first. Keys stay
+        // swallowed meanwhile; the post runs after this HUD is drawn.
+        deleting=true;hud.setVisibility(View.VISIBLE);hud.detail="准备删除 "+p.graded.getName();hud.footer="正在关闭相机，请稍候";hud.update();
+        android.util.Log.i("LutUI","gallery_delete_release file="+p.graded.getName());
+        ui.post(new Runnable(){public void run(){
+            if(destroyed||host.deleteWithoutCamera(p))return;
+            deleting=false;load();
+            hud.setVisibility(View.VISIBLE);hud.detail="删除失败：相机正忙，请稍后重试";hud.update();
+        }});
+    }
+    private void delete(final PhotoCatalog.Pair p){
+        deleting=true;
         hud.setVisibility(View.VISIBLE);hud.detail="正在删除 "+p.graded.getName();hud.footer="请稍候，不要关机";hud.update();
+        // Keys stay with the delete, so say how to get out if Sony never returns
+        // (field logs: only releasing the camera, by the power switch, ended it).
+        final Runnable stalled=new Runnable(){public void run(){if(deleting&&!destroyed){
+            hud.footer="相机一直没有完成删除，请关机再开机";hud.update();
+            SupportDiagnostics.event("photo_delete_stalled","graded="+p.graded.getName());}}};
+        ui.postDelayed(stalled,10000);
         io.execute(new Runnable(){public void run(){
             Exception failure=null;List<PhotoCatalog.Pair> reloaded=null;
             try{if(remover==null)remover=new PhotoDelete(context);
@@ -244,7 +277,7 @@ final class GalleryBrowser {
             final Exception error=failure;final List<PhotoCatalog.Pair> loaded=reloaded;
             if(error==null)SupportDiagnostics.event("photo_delete","graded="+p.graded.getName()+" original="+(p.original!=null));
             else SupportDiagnostics.failure("photo_delete",error);
-            ui.post(new Runnable(){public void run(){deleting=false;
+            ui.post(new Runnable(){public void run(){deleting=false;ui.removeCallbacks(stalled);
                 if(destroyed)return;if(leaving){notifyLeft();return;}
                 if(error==null){List<PhotoCatalog.Pair> rest=new ArrayList<PhotoCatalog.Pair>(photos);rest.remove(p);photos=rest;}
                 else if(loaded!=null)photos=loaded;
