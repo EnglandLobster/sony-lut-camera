@@ -34,7 +34,7 @@ public final class LibraryActivity extends Activity {
     private final Runnable exitTimeout=new Runnable(){public void run(){
         if(!destroyed&&exiting&&displayStarted){
             if(exitRequest!=null)exitRequest.cancel();
-            exiting=false;android.util.Log.e("LutUI","native_exit_not_acknowledged");
+            exiting=false;reopenAfterExit=false;android.util.Log.e("LutUI","native_exit_not_acknowledged");
             page.busy=false;
             showExitFailure("相机未响应退出请求，可重试或打开测试连接。");
         }
@@ -42,6 +42,9 @@ public final class LibraryActivity extends Activity {
     private long createdAt,fontMs;
     @Override public void onCreate(Bundle state){super.onCreate(state);createdAt=SystemClock.elapsedRealtime();
         if(state!=null){capturePending=state.getBoolean("capture_pending");captureAway=state.getBoolean("capture_away");}
+        // A recreated instance that never got to enter (e.g. destroyed while the
+        // library was still loading) still owes this launch its direct entry.
+        autoEnterPending=state==null||!state.getBoolean("auto_enter_done");autoEnterTrigger=state==null?"create":"recreate";reopenAfterExit=false;
         try{UiFont.get(this);fontMs=SystemClock.elapsedRealtime()-createdAt;}catch(RuntimeException e){android.util.Log.e("LutLibrary","font_failed",e);android.widget.TextView error=new android.widget.TextView(this);error.setText("Font could not load. Please update LUT Camera.\nMENU: Exit");setContentView(error);return;}
         page=new CameraPage(this);setContentView(page);
         page.tap=new CameraPage.Tap(){public void select(int row){selection=row;render();action();}};
@@ -59,11 +62,41 @@ public final class LibraryActivity extends Activity {
             builtinIds.clear();defaultId=null;
             for(BuiltinLuts.Entry entry:BuiltinLuts.read(getAssets().open("CATALOG.JSN"))){String id=installBuiltin(entry);builtinIds.add(id);if(entry.selected)defaultId=id;}
             long t5=SystemClock.elapsedRealtime();
-            selectedId=library.selectedId();if(library.find(selectedId)==null)selectedId=defaultId;luts=library.entries();
+            savedId=library.selectedId();selectedId=library.find(savedId)==null?defaultId:savedId;luts=library.entries();
             long t6=SystemClock.elapsedRealtime();
             SupportDiagnostics.event("library_open","luts="+luts.size()+" since_create_ms="+(t0-createdAt)+" font_ms="+fontMs+" reference_ms="+(t1-t0)+" open_ms="+(t2-t1)
                 +" retire_ms="+(t3-t2)+" purge_ms="+(t4-t3)+" builtins_ms="+(t5-t4)+" select_ms="+(t6-t5)+" total_ms="+(t6-t0));
-        }},new Runnable(){public void run(){mode="library";selection=indexOf(selectedId);render();requestPreview();if(showingCaptureRecovery)requireReleasedCapture();}});
+        }},new Runnable(){public void run(){mode="library";selection=indexOf(selectedId);render();requestPreview();if(showingCaptureRecovery)requireReleasedCapture();else autoEnterCapture();}});
+    }
+    /** Requested 2026-11-20 (A7 II user, PR): opening the app goes straight to shooting
+     * with the last-used LUT; MENU there returns to this library. Each open from
+     * outside counts: a new instance, or this instance resumed after a native
+     * exit (Sony keeps the library process and may resume it). Never after a
+     * return from shooting, a capture lock or without a LUT (PRODUCT_UI: never
+     * trap the camera); one attempt per open, failures land in the library. */
+    private boolean autoEnterPending,resumedNow;
+    private String autoEnterTrigger="";
+    /** Process-wide: set when this app asks Sony to return to the camera. */
+    private static boolean reopenAfterExit;
+    private boolean stoppedSinceResume,childOut;
+    private final Runnable tryAutoEnter=new Runnable(){public void run(){autoEnterCapture();}};
+    private void autoEnterCapture(){
+        if(!autoEnterPending||destroyed||page==null)return;
+        // Wait for the library list and the foreground; onResume or the load retries.
+        if(mode.equals("loading")||busy||!resumedNow)return;
+        autoEnterPending=false;
+        if(!mode.equals("library")&&!mode.equals("notice")&&!exiting){mode="library";selection=indexOf(selectedId);render();requestPreview();}
+        int index=-1;String source="none";
+        if(selectedId!=null)for(int i=0;i<luts.size();i++)if(luts.get(i).id.equals(selectedId)){index=i;source=selectedId.equals(savedId)?"last_used":"default";}
+        if(index<0&&!luts.isEmpty()&&mode.equals("library")){index=UiList.clamp(selection,luts.size());source="highlighted";}
+        String reason=SessionPolicy.skipReason(directCapture(),capturePending||exiting,captureRecoveryBlocked(),mode.equals("library"),index>=0);
+        if(reason!=null){SupportDiagnostics.event("direct_capture_skipped","reason="+reason+" trigger="+autoEnterTrigger+" mode="+mode);return;}
+        LutLibrary.Entry entry=luts.get(index);selection=index;
+        SupportDiagnostics.event("direct_capture","trigger="+autoEnterTrigger+" source="+source+" lut_id="+entry.id);
+        startCapture(entry);
+    }
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);
+        if(Intent.ACTION_MAIN.equals(intent.getAction())&&!capturePending){autoEnterPending=true;autoEnterTrigger="new_intent";}
     }
     private String installBuiltin(BuiltinLuts.Entry item)throws Exception{
         LutLibrary.Entry existing=library.find(item.sha256);
@@ -93,6 +126,20 @@ public final class LibraryActivity extends Activity {
         if(!getSharedPreferences(CAPTURE_OPTIONS,0).edit().putString(SAVE_MODE,next).remove(LEGACY_SAVE_ORIGINAL).commit()){showNotice("设置未保存","请检查后重试。");return;}
         SupportDiagnostics.event("save_mode","value="+next);
         render();
+    }
+    /** The LUT recorded on the card as last used (SONYLUT/LIBRARY/LAST?.CFG), if any. */
+    private String savedId;
+    private boolean directCapture(){return getSharedPreferences(CAPTURE_OPTIONS,0).getBoolean(SessionPolicy.DIRECT_CAPTURE,true);}
+    private int idleMinutes(){return SessionPolicy.idleMinutes(getSharedPreferences(CAPTURE_OPTIONS,0).getInt(SessionPolicy.IDLE_EXIT,SessionPolicy.IDLE_DEFAULT));}
+    private void toggleDirectCapture(){
+        boolean next=!directCapture();
+        if(!getSharedPreferences(CAPTURE_OPTIONS,0).edit().putBoolean(SessionPolicy.DIRECT_CAPTURE,next).commit()){showNotice("设置未保存","请检查后重试。");return;}
+        SupportDiagnostics.event("direct_capture_option","value="+next);render();
+    }
+    private void cycleIdleExit(){
+        int next=SessionPolicy.nextIdle(idleMinutes());
+        if(!getSharedPreferences(CAPTURE_OPTIONS,0).edit().putInt(SessionPolicy.IDLE_EXIT,next).commit()){showNotice("设置未保存","请检查后重试。");return;}
+        SupportDiagnostics.event("idle_exit_option","minutes="+next);idle=new SessionPolicy.Idle(SessionPolicy.idleMillis(next),SystemClock.uptimeMillis());scheduleIdle();render();
     }
     private void runTask(String label,final Task task,final Runnable complete){if(busy)return;busy=true;page.busy=true;page.previewMode=false;page.title=label;page.subtitle="";page.rows=new ArrayList<CameraPage.Row>();page.empty=label;page.note="";page.footer="处理中";page.invalidate();
         io.execute(new Runnable(){public void run(){try{task.run();ui.post(new Runnable(){public void run(){if(destroyed)return;busy=false;page.busy=false;complete.run();}});}
@@ -139,6 +186,8 @@ public final class LibraryActivity extends Activity {
             if(SonyAppPolicy.hasDebugHelper(this))rows.add(new CameraPage.Row("测试连接","打开已安装的相机调试工具","打开"));
             rows.add(new CameraPage.Row("当前 LUT 的取景","近似色彩或原色 · 每个 LUT 单独记忆","设置"));
             rows.add(new CameraPage.Row("保存方式",saveOriginal()?"另存一张未调色的 JPEG 原片":saveRaw()?"另存相机 RAW（同编号 ARW），用电脑软件后期":"只存 LUT 成片，出片最快、最省空间",saveModeBadge(saveMode())));
+            rows.add(new CameraPage.Row("打开时直接拍摄",directCapture()?"打开应用即进入拍摄，MENU 回到 LUT 库":"打开应用先显示 LUT 库",directCapture()?"开":"关"));
+            rows.add(new CameraPage.Row("闲置自动退出",idleMinutes()==0?"不自动退出；应用打开时相机不会自动关机":"无操作后安全返回相机，由相机自动关机省电",SessionPolicy.idleLabel(idleMinutes())));
             LutLibrary.Entry current=luts.isEmpty()?null:luts.get(UiList.clamp(lastSelection,luts.size()));
             rows.add(new CameraPage.Row("删除当前 LUT",current==null?"LUT 库为空":builtinIds.contains(current.id)?current.name+" · 内置色彩不能删除":current.name,"删除"));
             rows.add(new CameraPage.Row("导出诊断日志","出问题后导出日志包，交给开发者分析","导出"));
@@ -175,6 +224,7 @@ public final class LibraryActivity extends Activity {
             rows.add(saveOriginal()?new CameraPage.Row("一次快门，两张 JPEG","原片和 LUT 成片都保存在 DCIM","保存")
                 :saveRaw()?new CameraPage.Row("一次快门，LUT 成片 + RAW","RAW 是同编号的 ARW，不带 LUT 色彩","保存")
                 :new CameraPage.Row("一次快门，一张 LUT 成片","需要原片或 RAW：MENU → 保存方式","保存"));
+            rows.add(new CameraPage.Row("一键退出","删除键（A7 II 为 C4）安全返回相机原生拍摄","退出"));
             rows.add(new CameraPage.Row("快速对照与继续拍摄",saveOriginal()?"左右翻图，中央键对照，半按返回取景":"左右翻图，半按返回取景","回看"));
             page.note="效果参考图不是实时取景；成片保留本机全尺寸";page.footer="MENU 返回";
         }else{
@@ -259,7 +309,8 @@ public final class LibraryActivity extends Activity {
                     .putExtra("develop_animation",getIntent().getBooleanExtra("develop_animation",true))
                     .putExtra("develop_animation_alternate",getIntent().getBooleanExtra("develop_animation_alternate",false))
                     .putExtra("save_original",saveOriginal())
-                    .putExtra("save_raw",saveRaw()),CAPTURE_REQUEST);
+                    .putExtra("save_raw",saveRaw())
+                    .putExtra(SessionPolicy.IDLE_EXIT,idleMinutes()),CAPTURE_REQUEST);
     }
     private int captureRestarts;
     /** The capture screen found its process left over from a session that auto
@@ -305,6 +356,9 @@ public final class LibraryActivity extends Activity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);
         if(request==CAPTURE_REQUEST){capturePending=false;captureAway=false;
+            // Trash key or idle in shooting: the capture session has closed; leave
+            // through the same native exit as MENU → 退出应用 once this screen resumes.
+            if(data!=null&&data.getBooleanExtra(SessionPolicy.EXIT_EXTRA,false)){pendingExit=true;SupportDiagnostics.event("exit_from_capture","");}
             if(data!=null&&data.getBooleanExtra("capture_recovery",false)){requireReleasedCapture();return;}
             if(data!=null&&data.getBooleanExtra("restart_capture",false)){restartCapture(data.getStringExtra("lut_id"));return;}
             captureRestarts=0;
@@ -333,7 +387,8 @@ public final class LibraryActivity extends Activity {
             if(row.equals("导入 LUT")){mode="import";selection=0;}else if(row.equals("使用说明")){mode="help";selection=0;}
             else if(row.equals("回到 LUT 库")){libraryPage();return;}else if(row.equals("退出应用")){exitToCamera();return;}
             else if(row.equals("测试连接")){openDebugHelper();return;}else if(row.equals("当前 LUT 的取景")){previewSettings();return;}
-            else if(row.equals("保存方式")){cycleSaveMode();return;}else if(row.equals("删除当前 LUT")){deleteRequest();return;}
+            else if(row.equals("保存方式")){cycleSaveMode();return;}else if(row.equals("打开时直接拍摄")){toggleDirectCapture();return;}
+            else if(row.equals("闲置自动退出")){cycleIdleExit();return;}else if(row.equals("删除当前 LUT")){deleteRequest();return;}
             else if(row.equals("导出诊断日志")){exportDiagnostics();return;}
             render();
         }else if(mode.equals("delete_confirm")){if(selection==1)deleteLut();else libraryPage();
@@ -359,11 +414,29 @@ public final class LibraryActivity extends Activity {
         if(exiting||busy)return;exiting=true;previewRequests.next();
         if(page!=null){page.busy=true;page.title="正在返回相机";page.subtitle="正在结束应用会话";page.invalidate();}
         exitRequest=new SonyAppPolicy.ExitRequest(this,new SonyAppPolicy.ExitListener(){public void failed(Exception e){
-            exiting=false;ui.removeCallbacks(exitTimeout);android.util.Log.e("LutUI","native_exit_failed",e);
+            exiting=false;reopenAfterExit=false;ui.removeCallbacks(exitTimeout);android.util.Log.e("LutUI","native_exit_failed",e);
             if(page!=null){page.busy=false;showExitFailure(explain(e));}
         }});
-        ui.postDelayed(exitTimeout,12000);exitRequest.start();
+        reopenAfterExit=true;ui.postDelayed(exitTimeout,12000);exitRequest.start();
     }
+    private boolean pendingExit;
+    /** Retried until a capture lock (unfinished save) clears. */
+    private final Runnable runPendingExit=new Runnable(){public void run(){
+        if(destroyed||!pendingExit)return;
+        if(captureRecoveryBlocked()||busy){if(captureRecoveryBlocked())requireReleasedCapture();ui.removeCallbacks(this);ui.postDelayed(this,3000);return;}
+        pendingExit=false;exitToCamera();
+    }};
+    /** Requested 2026-11-20 (A7 II user, PR): the app keeps the camera from powering off
+     * by itself; after the chosen idle time return to the camera so Sony's own
+     * auto power-off takes over. Every key re-arms it. */
+    private SessionPolicy.Idle idle;
+    private void scheduleIdle(){ui.removeCallbacks(idleCheck);if(idle!=null&&idle.enabled())ui.postDelayed(idleCheck,idle.remaining(SystemClock.uptimeMillis()));}
+    private final Runnable idleCheck=new Runnable(){public void run(){
+        if(destroyed||idle==null||!idle.enabled())return;long now=SystemClock.uptimeMillis();
+        if(!idle.due(now)){scheduleIdle();return;}
+        if(page==null||busy||exiting||capturePending||pendingExit||mode.equals("loading")||captureRecoveryBlocked()){ui.postDelayed(this,SessionPolicy.IDLE_RECHECK_MS);return;}
+        SupportDiagnostics.event("idle_exit","screen=library minutes="+idleMinutes());exitToCamera();
+    }};
     private void showExitFailure(String detail){mode="exit_error";selection=0;notice=detail;render();}
     private void openDebugHelper(){
         if(!requireReleasedCapture())return;
@@ -374,6 +447,8 @@ public final class LibraryActivity extends Activity {
         else if(mode.equals("notice")){if(previous.equals("loading"))exitToCamera();else action();}else if(mode.equals("help")){mode="options";selection=1;render();}else libraryPage();}
     private void moveSelection(int delta){if(page.rows.isEmpty())return;selection=UiList.move(selection,delta,page.rows.size());render();if(mode.equals("library"))requestPreview();}
     @Override public boolean dispatchKeyEvent(KeyEvent e){if(UiKeys.modeDial(e))return true; // Sony owns the PASM dial; never let it close the app.
+        if(idle!=null){idle.touch(SystemClock.uptimeMillis());scheduleIdle();}
+        if(UiKeys.exit(e)){if(!exiting&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0){SupportDiagnostics.event("exit_key","screen=library key="+e.getKeyCode()+" scan="+e.getScanCode());exitToCamera();}return true;}
         if(exiting)return true;int key=UiKeys.key(e),dial=UiKeys.dial(e);if(key==UiKeys.NONE&&dial==0)return super.dispatchKeyEvent(e);if(e.getAction()!=KeyEvent.ACTION_DOWN)return true;if(page==null){if(key==UiKeys.BACK)exitToCamera();return true;}if(busy)return true;
         if(key==UiKeys.PLAY){openGallery(null);}
         else if(dial!=0)moveSelection(dial);
@@ -392,7 +467,7 @@ public final class LibraryActivity extends Activity {
             .setPositiveButton("返回 LUT 库",null).show();
     }
     @Override protected void onSaveInstanceState(Bundle state){
-        state.putBoolean("capture_pending",capturePending);state.putBoolean("capture_away",captureAway);super.onSaveInstanceState(state);
+        state.putBoolean("capture_pending",capturePending);state.putBoolean("auto_enter_done",!autoEnterPending);state.putBoolean("capture_away",captureAway);super.onSaveInstanceState(state);
     }
     private final Runnable recoveryRefresh=new Runnable(){public void run(){
         if(destroyed)return;
@@ -401,12 +476,23 @@ public final class LibraryActivity extends Activity {
         SonyAppPolicy.register(LibraryActivity.this);
         if(page!=null&&!displayStarted)try{page.startDisplayTracking();displayStarted=true;}catch(Exception error){android.util.Log.w("LutLibrary","display_resume_after_recovery",error);}
     }};
-    @Override protected void onResume(){super.onResume();
+    @Override protected void onResume(){super.onResume();resumedNow=true;
+        // Back in front without this screen having opened anything itself:
+        // the user opened the app again (Sony keeps this process across a native
+        // exit, standby and power OFF/ON, and may only resume this instance).
+        boolean reopened=(stoppedSinceResume||reopenAfterExit)&&!childOut&&!capturePending&&!pendingExit;
+        if(reopened&&!autoEnterPending){autoEnterPending=true;autoEnterTrigger=reopenAfterExit?"reopen_after_exit":"reopen";}
+        stoppedSinceResume=false;childOut=false;reopenAfterExit=false;
+        if(autoEnterPending){ui.removeCallbacks(tryAutoEnter);ui.post(tryAutoEnter);}
+        idle=new SessionPolicy.Idle(SessionPolicy.idleMillis(idleMinutes()),SystemClock.uptimeMillis());scheduleIdle();
+        if(pendingExit){ui.removeCallbacks(runPendingExit);ui.post(runPendingExit);}
         if(captureRecoveryBlocked()){ui.removeCallbacks(recoveryRefresh);ui.postDelayed(recoveryRefresh,3000);requireReleasedCapture();return;}
 
         if(capturePending&&captureAway){capturePending=false;captureAway=false;showInterruptedCapture();}
 if(exiting&&page!=null){page.busy=false;exiting=false;render();}exiting=false;SonyAppPolicy.register(this);if(page!=null)try{page.startDisplayTracking();displayStarted=true;}catch(ClassNotFoundException e){android.util.Log.i("LutLibrary","non-Sony UI preview");}catch(Exception e){showNotice("屏幕初始化失败",explain(e));}}
-    @Override protected void onStop(){SupportDiagnostics.lifecycle(this,"stop");super.onStop();}
-    @Override protected void onPause(){SupportDiagnostics.lifecycle(this,"pause");ui.removeCallbacks(recoveryRefresh);if(capturePending)captureAway=true;ui.removeCallbacks(exitTimeout);if(exitRequest!=null)exitRequest.cancel();if(exiting)android.util.Log.i("LutUI","native_exit_activity_paused");if(displayStarted){page.stopDisplayTracking();displayStarted=false;}super.onPause();}
+    @Override protected void onStop(){SupportDiagnostics.lifecycle(this,"stop");stoppedSinceResume=true;super.onStop();}
+    /** Capture, history, debug helper: their return is not a new open of the app. */
+    @Override public void startActivityForResult(Intent intent,int request){childOut=true;super.startActivityForResult(intent,request);}
+    @Override protected void onPause(){SupportDiagnostics.lifecycle(this,"pause");resumedNow=false;ui.removeCallbacks(tryAutoEnter);ui.removeCallbacks(recoveryRefresh);ui.removeCallbacks(idleCheck);ui.removeCallbacks(runPendingExit);if(capturePending)captureAway=true;ui.removeCallbacks(exitTimeout);if(exitRequest!=null)exitRequest.cancel();if(exiting)android.util.Log.i("LutUI","native_exit_activity_paused");if(displayStarted){page.stopDisplayTracking();displayStarted=false;}super.onPause();}
     @Override protected void onDestroy(){SupportDiagnostics.lifecycle(this,"destroy");destroyed=true;previewRequests.next();io.shutdown();ui.removeCallbacksAndMessages(null);if(page!=null)page.preview=null;if(previews!=null)previews.clear();super.onDestroy();}
 }
