@@ -1,3 +1,37 @@
+# v0.11.1-beta.5 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1-beta.5/SonyLutCamera-v0.11.1-beta.5.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.5) · [安装教程](USER_GUIDE.md)
+
+code131，公开预发行测试包。beta.4 加一项修复：全画幅机身的 APS-C 画幅。签名和包名与 0.11.0 相同，可以直接覆盖安装，导入的 LUT 和照片都保留。想退回时重新安装 [v0.11.0](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0)；如果相机不让旧版本覆盖新版本，先在相机的「应用程序管理」里删除本版再装，SD 卡上的 LUT 和照片不受影响。
+
+## 修复：全画幅机身开 APS-C 画幅，一拍就「拍摄未完成」
+
+A7、A7 II、A7R 等全画幅机身，在菜单里打开 APS-C 画幅，或装上 APS-C 镜头（如索尼 16-50）自动进入 APS-C 时，用应用拍照每次都提示「拍摄未完成」；之后原生相册黑屏，关机再开屏幕全黑，只能拔电池。
+
+原因：这时相机报告的照片尺寸仍是全画幅的 6000×4000，拍出来的却是 APS-C 裁切的 3936×2624（A7 II）。应用发现尺寸对不上，就当成错误中止了拍摄。
+
+现在：APS-C 裁切出来的尺寸照常调色、保存，成片就是 APS-C 尺寸（A7 II 约 1000 万像素）。全画幅拍摄不受影响。
+
+## 请帮忙确认
+
+1. **全画幅机身（A7、A7 II、A7R、A7R II 等）**：打开 APS-C 画幅，或装 APS-C 镜头，用应用拍几张，看是否正常出成片、正常保存，退出后原生相机是否正常。
+2. 关闭 APS-C 画幅再拍几张，确认全画幅照常。
+3. 不管成功还是失败，都请在 LUT 库按 MENU → 更多 → 导出诊断日志，提交 `SONYLUT/DIAG/REPORT.ZIP`，写上机型、固件版本、镜头，以及是菜单里开的 APS-C 还是装 APS-C 镜头自动进入的。
+
+**如果仍然提示「拍摄未完成」**，请先关闭 APS-C 画幅使用，并把日志发给我们。
+
+## 验证与当前缺口
+
+- 依据：NAS 用户报告「298007」（A7 II / 4.01）0.10.1-beta.1、beta.3 和 0.11.1-beta.3 的诊断日志与说明：只在 APS-C 下发生，关闭就正常；日志里是 `capture geometry changed: expected=6000x4000 actual=3936x2624`。
+- **我们手上没有全画幅机身，APS-C 拍摄完全没有实测**，只有模拟测试。本版就是为了请用户试。
+- A6300 / 固件 2.01，2026-11-24：正常拍摄不受影响（6000×4000，约 4.9 秒可拍下一张）。
+- 主机套件通过，新增 APS-C 尺寸的测试；API10 ARM 模拟器整套与图形回归在发行 APK 上通过。发行 APK 签名证书与 0.11.0 相同。
+- 之前失败后要拔电池，是哪一步造成的还没有确定；本版只是让 APS-C 拍摄不再走到失败这一步。
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.11.1-beta.4 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1-beta.4/SonyLutCamera-v0.11.1-beta.4.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.4) · [安装教程](USER_GUIDE.md)

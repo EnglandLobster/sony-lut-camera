@@ -12,7 +12,7 @@
 
 **[⬇ 下载 v0.11.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.0/SonyLutCamera-v0.11.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
-测试版 [v0.11.1-beta.4](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.4)：修复拍摄页相册删除照片卡死、删除后再拍卡在「正在核验照片保存」（A7、A7R 等）、关机再开机误报「拍摄会话意外结束」；含 beta.3 的光圈环退出修复、beta.2 的出片即拍下一张与相册删除，以及 beta.1 的保存方式三选一，[说明](docs/RELEASE.md)
+测试版 [v0.11.1-beta.5](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.5)：修复全画幅机身开 APS-C 画幅（或装 APS-C 镜头）一拍就「拍摄未完成」；含 beta.4 的相册删除卡死等三项修复、beta.3 的光圈环退出修复、beta.2 的出片即拍下一张与相册删除，以及 beta.1 的保存方式三选一，[说明](docs/RELEASE.md)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
@@ -22,7 +22,7 @@
 
 - **完整 3D LUT 成片**：保存的照片按完整网格逐像素调色，不是近似滤镜。
 - **原片与成片各存一份**：未套 LUT 的原片 JPEG 和调色 JPEG 分别保存到 SD 卡。
-- **全尺寸、最高画质**：使用本机原生比例的最大尺寸（A6300 为 6000×4000），自动选择机身支持的最高 JPEG 档位。
+- **全尺寸、最高画质**：使用本机原生比例的最大尺寸（A6300 为 6000×4000），自动选择机身支持的最高 JPEG 档位。全画幅机身在 APS-C 画幅下按 APS-C 尺寸保存（如 A7 II 为 3936×2624）。
 - **导入自己的 LUT**：支持 2–65³ 的 `.cube`，单个文件最大 64 MiB，按内容去重。
 - **预装 10 个胶片风格 LUT**：Fuji、Ilford、Kodak、Ricoh，默认 Fuji C200，见[内置 LUT](docs/BUILTIN_LUTS.md)。
 - **手动曝光与对焦**：档位跟随机身 P/A/S/M 转盘，拨轮调光圈、快门和曝光补偿，可选 ISO、白平衡、对焦区域和自由点位置，半按合焦后显示绿框；设置会记住，退出后相机恢复原来的设置。
