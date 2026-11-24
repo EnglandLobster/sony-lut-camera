@@ -1862,7 +1862,12 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     @Override protected void onResume(){super.onResume();active=true;
         if(recoveryDetached&&storeCompletion!=null&&storeCompletion.pending()){showStoreRecovery();return;}
-        if(closed&&startupFailure==null){finish();return;}
+        // Closed while paused (standby, power switch): close() only succeeds when
+        // idle, so unless the session had failed this is a normal end. Without a
+        // result the library showed 拍摄会话意外结束 after a power cycle on
+        // ILCE-7R 3.20, which resumed this page instead of opening the library
+        // (NAS a7r1 report, beta.3: the session had logged closed at 480.6 s).
+        if(closed&&startupFailure==null){if(gate.state()!=PreJpegGate.State.FAILED)setResult(RESULT_OK);finish();return;}
         if(closed&&startupFailure!=null){
             if(review!=null)try{review.startDisplayTracking();review.showGraphicsOutput();}
             catch(Exception e){android.util.Log.e("SonyPreJpeg","error_display_resume_failed",e);}
