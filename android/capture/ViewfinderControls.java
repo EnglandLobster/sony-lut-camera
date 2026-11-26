@@ -28,8 +28,46 @@ final class ViewfinderControls {
         void gridChanged(CompositionGrid grid);
     }
     /** CHOICE is the option list of one settings row (area, face, mode). */
-    enum Panel { NONE, ISO, WB, SETTINGS, CHOICE, POINT }
-    private enum Row { POINT, AREA, FACE, MODE, GRID }
+    enum Panel { NONE, ISO, WB, SETTINGS, CHOICE, POINT, ADJUST, NATIVE }
+    private enum Row { POINT, AREA, FACE, MODE, GRID, APERTURE, SHUTTER, EV, ISO, WB, EXTRA }
+    interface Selection { void apply(String value)throws Exception; }
+    interface Additional { String[] labels();void select(int index)throws Exception; }
+    private Additional additional;
+    private Selection nativeSelection;
+    private String nativeTitle;
+    private String[] nativeLabels;
+    private ControlLayout.Action adjustment;
+    private boolean nativeBindings;
+    void additional(Additional value){additional=value;}
+    void nativeBindings(boolean value){nativeBindings=value;}
+    void showSettings(){open(Panel.SETTINGS);}
+    void showIso(){open(Panel.ISO);}
+    void showWhiteBalance(){open(Panel.WB);}
+    void showMode(){openChoice(Row.MODE);host.changed();}
+    void showFocusArea(){if(focus!=null){openChoice(Row.AREA);host.changed();}}
+    void showFace(){if(focus!=null){openChoice(Row.FACE);host.changed();}}
+    void focusStandard(){
+        if(focus!=null&&focus.flexible()&&focus.pointAvailable()){focus.beginPoint();panel=Panel.POINT;host.changed();}
+    }
+    void selectMode(ManualExposure.Mode mode){
+        try{exposure.selectMode(mode);alternate=false;host.whiteBalanceChanged();host.changed();}
+        catch(Exception e){host.failed("mode_key",e);}
+    }
+    void showAdjust(ControlLayout.Action action){adjustment=action;selected=0;panel=Panel.ADJUST;host.changed();}
+    void showNative(String title,List<String> values,String current,Selection selection){
+        choices.clear();choices.addAll(values);nativeTitle=title;nativeSelection=selection;nativeLabels=null;
+        selected=Math.max(0,choices.indexOf(current));panel=Panel.NATIVE;host.changed();
+    }
+    void nativeLabels(String[] labels){nativeLabels=labels;host.changed();}
+    void step(ControlLayout.Action action,int direction)throws Exception{
+        if(action==ControlLayout.Action.EV&&exposure.evDialOwnsValue())host.hint("请使用机身曝光补偿转盘");
+        else exposure.step(action,direction);
+        host.changed();
+    }
+    void toggleShared(){alternate=!alternate;host.changed();}
+    void stepShared(int direction)throws Exception{
+        step(alternate?ControlLayout.Action.APERTURE:ControlLayout.Action.SHUTTER,direction);
+    }
 
     private final ManualExposure exposure;
     private final FocusControls focus;
@@ -52,6 +90,7 @@ final class ViewfinderControls {
 
     /** A PASM dial event arrived on a body whose probe did not report one. */
     void physicalDial(boolean value){physicalDial=value;}
+    boolean modeSelectable(){return !physicalDial;}
     /** Remembered grid; set once after construction. */
     void grid(CompositionGrid value){grid=value==null?CompositionGrid.OFF:value;}
     CompositionGrid grid(){return grid;}
@@ -69,6 +108,7 @@ final class ViewfinderControls {
         if(steps==0)return;
         try{
             switch(panel){
+                case ADJUST:step(adjustment,steps);return;
                 case NONE:{
                     ControlLayout.Action action=layout.action(exposure.mode(),input,alternate);
                     boolean changed=exposure.step(action,steps);
@@ -92,6 +132,18 @@ final class ViewfinderControls {
                 case POINT:return point(action);
                 case SETTINGS:return settings(action);
                 case CHOICE:return choice(action);
+                case ADJUST:
+                    if(action==UiKeyActions.BACK||action==UiKeyActions.OK){closePanel();return true;}
+                    if(action==UiKeyActions.UP||action==UiKeyActions.RIGHT)step(adjustment,1);
+                    if(action==UiKeyActions.DOWN||action==UiKeyActions.LEFT)step(adjustment,-1);
+                    return true;
+                case NATIVE:
+                    if(action==UiKeyActions.BACK){closePanel();return true;}
+                    if(action==UiKeyActions.OK){String value=choices.get(selected);Selection callback=nativeSelection;
+                        closePanel();callback.apply(value);host.changed();return true;}
+                    if(action==UiKeyActions.UP||action==UiKeyActions.LEFT)move(-1);
+                    if(action==UiKeyActions.DOWN||action==UiKeyActions.RIGHT)move(1);
+                    return true;
                 default:return list(action);
             }
         }catch(Exception e){
@@ -126,13 +178,20 @@ final class ViewfinderControls {
         if(focus!=null&&focus.faceAvailable())rows.add(Row.FACE);
         if(!physicalDial)rows.add(Row.MODE);
         rows.add(Row.GRID);
+        if(additional!=null){
+            if(exposure.mode()==ManualExposure.Mode.A||exposure.mode()==ManualExposure.Mode.M)rows.add(Row.APERTURE);
+            if(exposure.mode()==ManualExposure.Mode.S||exposure.mode()==ManualExposure.Mode.M)rows.add(Row.SHUTTER);
+            if(exposure.evAvailable())rows.add(Row.EV);
+            rows.add(Row.ISO);rows.add(Row.WB);
+            for(String ignored:additional.labels())rows.add(Row.EXTRA);
+        }
     }
     private int size(){
         switch(panel){
             case ISO:return exposure.isoValues().size();
             case WB:return exposure.whiteBalanceValues().size();
             case SETTINGS:return rows.size();
-            case CHOICE:return choices.size();
+            case CHOICE:case NATIVE:return choices.size();
             default:return 0;
         }
     }
@@ -191,7 +250,13 @@ final class ViewfinderControls {
         // Sony-style: centre opens the row (its option list, or the point
         // editor); left/right is the quick change without opening it.
         if(action==UiKeyActions.OK){
-            if(row==Row.POINT){focus.beginPoint();panel=Panel.POINT;}
+            if(row==Row.EXTRA){additional.select(selected-rows.indexOf(Row.EXTRA));return true;}
+            else if(row==Row.ISO){showIso();return true;}
+            else if(row==Row.WB){showWhiteBalance();return true;}
+            else if(row==Row.APERTURE||row==Row.SHUTTER||row==Row.EV){
+                showAdjust(row==Row.APERTURE?ControlLayout.Action.APERTURE:row==Row.SHUTTER?ControlLayout.Action.SHUTTER:ControlLayout.Action.EV);return true;
+            }
+            else if(row==Row.POINT){focus.beginPoint();panel=Panel.POINT;}
             else openChoice(row);
             host.changed();return true;
         }
@@ -284,6 +349,8 @@ final class ViewfinderControls {
     // ---- HUD model --------------------------------------------------------------
     String modeLabel(){return exposure.modeLabel();}
     private static String rowName(Row r){
+        if(r==Row.APERTURE)return "光圈";if(r==Row.SHUTTER)return "快门";if(r==Row.EV)return "曝光补偿";
+        if(r==Row.ISO)return "ISO";if(r==Row.WB)return "白平衡";
         return r==Row.POINT?"移动对焦点":r==Row.AREA?"对焦区域":r==Row.FACE?"人脸优先":r==Row.GRID?"网格线":"曝光模式";
     }
     String modeName(){return modeName(exposure.mode());}
@@ -296,6 +363,7 @@ final class ViewfinderControls {
         }
     }
     String hint(){
+        if(nativeBindings)return "Fn / MENU 设置";
         return layout.hint(exposure.mode(),alternate)+" · → ISO · ← 白平衡 · ↓ 设置";
     }
     String isoText(int measured){
@@ -311,6 +379,8 @@ final class ViewfinderControls {
             case WB:return "白平衡";
             case SETTINGS:return "对焦与取景设置";
             case CHOICE:return rowName(choiceRow);
+            case NATIVE:return nativeTitle;
+            case ADJUST:return ControlLayout.label(adjustment);
             default:return null;
         }
     }
@@ -328,7 +398,7 @@ final class ViewfinderControls {
             }
             case SETTINGS:{
                 String[] out=new String[rows.size()];
-                for(int i=0;i<out.length;i++)out[i]=rowName(rows.get(i));
+                for(int i=0;i<out.length;i++)out[i]=rows.get(i)==Row.EXTRA?additional.labels()[i-rows.indexOf(Row.EXTRA)]:rowName(rows.get(i));
                 return out;
             }
             case CHOICE:{
@@ -340,6 +410,8 @@ final class ViewfinderControls {
                 }
                 return out;
             }
+            case NATIVE:return nativeLabels==null?choices.toArray(new String[choices.size()]):nativeLabels;
+            case ADJUST:return new String[]{adjustmentLabel()};
             default:return null;
         }
     }
@@ -352,13 +424,28 @@ final class ViewfinderControls {
             else if(r==Row.AREA)out[i]=FocusControls.areaLabel(focus.area());
             else if(r==Row.FACE)out[i]=focus.face()?"开":"关";
             else if(r==Row.GRID)out[i]=grid.label;
+            else if(r==Row.EXTRA||r==Row.APERTURE||r==Row.SHUTTER||r==Row.EV||r==Row.ISO||r==Row.WB)out[i]="";
             else out[i]=modeName();
         }
         return out;
     }
     int selected(){return selected;}
+    ControlLayout.Action adjustment(){return panel==Panel.ADJUST?adjustment:ControlLayout.Action.NONE;}
+    private String adjustmentLabel(){
+        if(adjustment==ControlLayout.Action.EV)return exposure.compensationLabel();
+        MapReadout r=new MapReadout(exposure.parameters());
+        return adjustment==ControlLayout.Action.APERTURE?r.aperture():r.shutter();
+    }
+    private static final class MapReadout {
+        final java.util.Map<String,String> p;
+        MapReadout(java.util.Map<String,String> p){this.p=p;}
+        String aperture(){int value=ManualExposure.number(p.get("aperture"));return value>0?String.format(java.util.Locale.US,"F%.1f",value/100f):"--";}
+        String shutter(){String n=p.get("shutter-speed-nume"),d=p.get("shutter-speed-deno");return n==null||d==null?"--":n+"/"+d;}
+    }
     String panelHint(){
         switch(panel){
+            case ADJUST:return "←→ / ↑↓ 调整 · 中键 / MENU 返回";
+            case NATIVE:return "↑↓ 选择 · 中键确定 · MENU 返回";
             case ISO:case WB:return "↑↓ 实时预览 · 中键确定 · MENU 取消";
             case SETTINGS:{
                 if(rows.isEmpty())return "";

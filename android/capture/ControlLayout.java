@@ -20,11 +20,11 @@ final class ControlLayout {
     private final List<Input> order=new ArrayList<Input>();
 
     /** @param available inputs the camera reported, in any order; empty means
-     * unknown, which assumes the common two-input layout. */
+     * no rotary controls; null means detection is unavailable. */
     ControlLayout(List<Input> available){
         for(Input input:new Input[]{Input.RING,Input.DIAL1,Input.DIAL2,Input.WHEEL})
             if(available!=null&&available.contains(input))order.add(input);
-        if(order.isEmpty()){order.add(Input.DIAL1);order.add(Input.DIAL2);}
+        if(available==null){order.add(Input.DIAL1);order.add(Input.DIAL2);}
     }
 
     /** Rotary scan/key code to input, or null. Clockwise is +1. */
@@ -61,6 +61,11 @@ final class ControlLayout {
             case 540:return ManualExposure.Mode.M;
             default:return null;
         }
+    }
+    /** Dedicated mode-selection keys are not evidence of a physical dial. */
+    static ManualExposure.Mode selectionMode(int code){
+        switch(code){case 628:return ManualExposure.Mode.P;case 629:return ManualExposure.Mode.A;
+            case 630:return ManualExposure.Mode.S;case 631:return ManualExposure.Mode.M;default:return null;}
     }
     static String dialName(int code){
         switch(code){

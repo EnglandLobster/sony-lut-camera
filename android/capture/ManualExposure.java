@@ -48,6 +48,7 @@ final class ManualExposure {
     private Mode mode=Mode.P;
     private int iso,evIndex,evMin,evMax;
     private float evStep;
+    private boolean evDialOwnsValue;
     private String whiteBalance;
     private boolean ready,wroteScene,dialMoved;
     private String dialScene,fallbackFrom;
@@ -193,7 +194,7 @@ final class ManualExposure {
         if(scene!=null&&scene.equals(sceneS))return Mode.S;
         return null;
     }
-    boolean supports(Mode m){return m!=Mode.S||sceneS!=null;}
+    boolean supports(Mode m){return last!=null&&scene(m)!=null&&listed(last.get("scene-mode-values"),scene(m));}
 
     // ---- lifecycle ----------------------------------------------------------------
     /** @param remembered previous session values; may be empty, never null
@@ -537,7 +538,7 @@ final class ManualExposure {
                 return changed;
             }
             case EV:{
-                if(!evAvailable())return false;
+                if(!evAvailable()||evDialOwnsValue)return false;
                 int target=clampEv(evIndex+steps);
                 if(target==evIndex)return false;
                 applyEv(target);return true;
@@ -554,7 +555,20 @@ final class ManualExposure {
     }
     /** M with a fixed ISO has nothing for compensation to act on. */
     boolean evAvailable(){return mode!=Mode.M||iso==0;}
-    void resetEv()throws Exception{requireReady();if(evIndex!=0)applyEv(0);}
+    void resetEv()throws Exception{requireReady();if(!evDialOwnsValue&&evIndex!=0)applyEv(0);}
+    boolean evDialOwnsValue(){return evDialOwnsValue;}
+    /** Sony's marked EV dial reports signed parameter indices. At zero,
+     * software compensation is available; a movement back to zero resets it. */
+    void followEvDial(int position,boolean moved)throws Exception{
+        requireReady();evDialOwnsValue=position!=0;
+        if(!moved&&!evDialOwnsValue)return;
+        int target=clampEv(position);
+        if(moved&&original!=null)original.put("exposure-compensation",Integer.toString(target));
+        evIndex=target;
+        if(evAvailable()&&number(last.get("exposure-compensation"))!=target)try{applyEv(target);}
+        catch(Exception e){evIndex=number(last.get("exposure-compensation"));throw e;}
+        log("ev_dial","position="+position+" index="+target+" available="+evAvailable());
+    }
     void setIso(int value)throws Exception{
         requireReady();
         if(!isoValues.contains(Integer.valueOf(value)))throw new IOException("unsupported ISO "+value);

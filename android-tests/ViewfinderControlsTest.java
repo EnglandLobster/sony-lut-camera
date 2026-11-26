@@ -39,7 +39,8 @@ public final class ViewfinderControlsTest {
         check(two.action(S,D1,false)==SH&&two.action(S,D2,false)==EV,"S");
         check(two.action(M,D1,false)==AP&&two.action(M,D2,false)==SH,"M");
         check(two.hint(M,false).equals("拨轮 光圈 · 控制轮 快门"),two.hint(M,false));
-        check(new ControlLayout(Collections.<ControlLayout.Input>emptyList()).action(A,D1,false)==AP,"unknown probe assumes two inputs");
+        check(new ControlLayout(null).inputs()==2,"unavailable probe has a fallback");
+        check(new ControlLayout(Collections.<ControlLayout.Input>emptyList()).inputs()==0,"no dials is not two dials");
         // A7: front/rear plus control wheel for ISO.
         ControlLayout three=new ControlLayout(Arrays.asList(WHEEL,D2,D1));
         check(three.action(M,D1,false)==AP&&three.action(M,D2,false)==SH&&three.action(M,WHEEL,false)==ISO,"A7 M");

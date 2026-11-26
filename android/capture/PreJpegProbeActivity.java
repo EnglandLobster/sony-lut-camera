@@ -39,6 +39,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private ManualExposure exposure;
     private FocusControls focus;
     private ViewfinderControls controls;
+    private SonyShootingControls sonyControls;
+    private CameraFocusMagnifier magnifier;
     private boolean physicalDial,consumeBackRelease;
     private android.content.BroadcastReceiver modeDialReceiver;
     private int dialSyncRetries;
@@ -47,6 +49,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     private final ViewfinderControls.Host controlHost=new ViewfinderControls.Host(){
         public void changed(){
+            flushSonyControls();
             showUserExposure();refreshControls();
             ui.removeCallbacks(saveLeftSettings);if(!closed)ui.postDelayed(saveLeftSettings,LEFT_SAVE_DELAY_MS);
         }
@@ -86,6 +89,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         int position=CameraInputs.dialPosition();
         event("mode_dial_position","code="+position+" name="+ControlLayout.dialName(position)+" status="+CameraInputs.dialStatus());
         controls.dialChanged(position);
+        flushSonyControls();
     }};
     private CaptureSetup captureSetup;
     private CaptureGeometry captureGeometry=new CaptureGeometry(6000,4000);
@@ -1408,6 +1412,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private void completeRearm(long shot){
         try{
             if(!gate.rearmed(shot))throw new IllegalStateException("capture state changed while unlocking");
+            flushSonyControls();
             nextReadyAt=SystemClock.elapsedRealtime();
             event("next_ready","shutter_to_ready_ms="+(nextReadyAt-pressAt)+" displayed_ms="+(displayedAt-pressAt)
                 +" display_to_ready_ms="+(nextReadyAt-displayedAt)+" preview_resume_ms="+(nextReadyAt-rearmAt)+" cache_preserved=true");
@@ -1427,6 +1432,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     private void productLive(){
         if(productHud==null)return;
+        flushSonyControls();
         boolean entering=!productHud.mode.equals("live");
         // A confirmation from the previous shot never carries into a new view.
         if(entering){focusFeedback.clear();productHud.focusState=PhotoHud.FOCUS_NONE;productHud.focusFrames=new java.util.ArrayList<int[]>();}
@@ -1465,13 +1471,36 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         NativeSettings.Pending nativeFocus=NativeSettings.Pending.decode(memory.getString(NATIVE_FOCUS,null),memory.getString(LEFT_FOCUS,null));
         if(nativeExposure!=null||nativeFocus!=null)event("native_settings_pending","exposure="+(nativeExposure!=null)+" focus="+(nativeFocus!=null));
         exposure=new ManualExposure(driver,log);
-        try{exposure.open(ManualExposure.Memory.decode(memory.getString("exposure",null)),physicalDial,nativeExposure);}
+        ManualExposure.Memory remembered=ManualExposure.Memory.decode(memory.getString("exposure",null));
+        // A physical compensation dial must not be overwritten by an old app preference.
+        if(Boolean.TRUE.equals(CameraInputs.has(SonyControlAssignments.EV_DIAL)))remembered.ev=Integer.MIN_VALUE;
+        try{exposure.open(remembered,physicalDial,nativeExposure);}
         catch(Exception error){throw new IOException("exposure setting failed",error);}
         focus=new FocusControls(driver,log);
         try{focus.open(FocusControls.Memory.decode(memory.getString("focus",null)),nativeFocus);}
         catch(Exception error){event("focus_unavailable",cause(error).toString());try{focus.close();}catch(Exception ignored){}focus=null;}
         controlDriver=driver;saveNativeSettings();
         controls=new ViewfinderControls(exposure,focus,new ControlLayout(CameraInputs.rotary()),physicalDial,controlHost);
+        magnifier=new CameraFocusMagnifier(cameraEx,camera,ui,new CameraFocusMagnifier.Host(){
+            public boolean allowed(){return controlsAdjustable(true)&&gallery==null&&!controls.panelOpen();}
+            public void changed(boolean active,int ratio,int x,int y){
+                if(productHud==null||closed)return;
+                productHud.magnified=active;productHud.magnification=ratio;productHud.magnifyX=x;productHud.magnifyY=y;productHud.update();
+            }
+            public void failed(String operation,Exception error){controlHost.failed(operation,error);}
+        });
+        try{magnifier.open();event("mf_assist","supported="+magnifier.supported());}
+        catch(Exception e){event("mf_assist_unavailable",cause(e).toString());}
+        sonyControls=new SonyShootingControls(driver,exposure,controls,magnifier,new SonyShootingControls.Host(){
+            public boolean allowed(){return nativeControlsWritable();}
+            public void changed(){controlHost.changed();}
+            public void display(){productHud.liveInfoVisible=!productHud.liveInfoVisible;productHud.hideLiveHint();productHud.update();}
+            public void exit(){ui.post(new Runnable(){public void run(){onBackPressed();}});}
+            public void hint(String message){controlHost.hint(message);}
+            public void failed(String operation,Exception error){controlHost.failed(operation,error);}
+            public void record(String name,String detail){event(name,detail);}
+        });
+        try{sonyControls.open();}catch(Exception e){controlHost.failed("native_controls_open",e);}
         controls.grid(CompositionGrid.decode(memory.getString(GRID,null)));
         event("controls_ready","inputs="+CameraInputs.describe()+" physical_dial="+dial+" grid="+controls.grid().key+" "+exposure.state()+(focus==null?"":" "+focus.state()));
         registerModeDial();
@@ -1527,6 +1556,13 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         AutoPreviewGate.State state=autoPreview.state();
         return state==AutoPreviewGate.State.PREVIEW||(held&&state==AutoPreviewGate.State.READY);
     }
+    private boolean nativeControlsWritable(){
+        if(controls==null||!active||closed||workerActive||gallery!=null||gate.state()!=PreJpegGate.State.READY)return false;
+        return autoPreview==null||autoPreview.state()==AutoPreviewGate.State.PREVIEW||autoPreview.state()==AutoPreviewGate.State.READY;
+    }
+    private void flushSonyControls(){
+        if(sonyControls!=null)try{sonyControls.flush();}catch(Exception e){controlHost.failed("native_controls_sync",e);}
+    }
     private void fillControls(){
         if(productHud==null||controls==null)return;
         productHud.liveMode=controls.modeLabel();
@@ -1535,6 +1571,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         productHud.liveWhiteBalance=controls.whiteBalanceText();
         productHud.panelTitle=controls.title();productHud.panelRows=controls.rowLabels();productHud.panelValues=controls.rowValues();
         productHud.panelSelected=controls.selected();productHud.panelHint=controls.panelHint();
+        productHud.adjustment=controls.adjustment();
         productHud.afVisible=controls.afVisible();productHud.afEditing=controls.afEditing();
         productHud.afX=controls.afX();productHud.afY=controls.afY();
         productHud.grid=controls.grid();
@@ -1632,6 +1669,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
      * already locked the release and stopped DirectShutter; an original-colour
      * session does the same here. Live view keeps running under the history. */
     private void openGallery(){
+        try{if(magnifier!=null)magnifier.stop();}catch(Exception e){controlHost.failed("mf_gallery",e);return;}
         try{if(autoPreview==null)holdShutter();}catch(Throwable e){failure("gallery_shutter",e);return;}
         galleryOpenedAt=SystemClock.elapsedRealtime();cataloguedAtOpen=catalogued;ui.removeCallbacks(unfiredPress);
         if(controls!=null&&controls.panelOpen())controls.closePanel();
@@ -1819,6 +1857,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(storeCompletion!=null)storeCompletion.cancel();
         if(storeIndex!=null){storeIndex.close();storeIndex=null;}
         if(storeEvents!=null)try{storeEvents.close();storeEvents=null;}catch(Exception e){event("store_listener_close_error",cause(e).toString());}
+        if(magnifier!=null)try{magnifier.close();}catch(Exception e){event("mf_close_error",cause(e).toString());}finally{magnifier=null;}
+        if(sonyControls!=null)try{sonyControls.close();}catch(Exception e){event("native_controls_close_error",cause(e).toString());}finally{sonyControls=null;}
         if(autoPreview!=null)autoPreview.close();
         if(isolationBarrier!=null)isolationBarrier.fail();
         if(isolationPreview!=null)try{isolationPreview.close();event("isolation_closed","baseline_restored=true");}
@@ -1958,10 +1998,26 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         close();
     }}
     @Override public boolean dispatchKeyEvent(KeyEvent e){int key=e.getKeyCode(),scan=e.getScanCode();
+        // Releases belong to the function that saw DOWN, even over a panel,
+        // review or busy capture. Writes are deferred until the gate reopens.
+        if(sonyControls!=null&&sonyControls.release(e))return true;
+        if(sonyControls!=null&&sonyControls.evDial(e))return true;
         if(productUi()&&UiKeys.modeDial(e)){
+            ManualExposure.Mode requested=ControlLayout.selectionMode(UiKeys.sonyCode(e));
+            if(requested!=null){
+                if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0&&controlsAdjustable(false)){
+                    if(magnifier!=null)try{magnifier.stop();}catch(Exception error){controlHost.failed("mf_mode",error);return true;}
+                    controls.selectMode(requested);
+                }
+                return true;
+            }
+            // SHOOTING_MODE is Sony's still/movie key, not a PASM dial event.
+            if(UiKeys.sonyCode(e)==624){if(e.getAction()==KeyEvent.ACTION_DOWN)controlHost.hint("不支持视频 LUT");return true;}
             // Sony applies the PASM dial itself. Leaving the key to the
             // framework can close a third-party app; follow the readback.
-            if(e.getAction()==KeyEvent.ACTION_DOWN){event("mode_dial_key","key="+key+" scan="+scan);dialMoved();}
+            if(e.getAction()==KeyEvent.ACTION_DOWN){
+                if(magnifier!=null&&magnifier.active()&&nativeControlsWritable())try{magnifier.stop();}catch(Exception error){controlHost.failed("mf_mode",error);return true;}
+                event("mode_dial_key","key="+key+" scan="+scan);dialMoved();}
             return true;
         }
         // Leaving (e.g. the playback handoff): the camera, review bitmaps and
@@ -1984,6 +2040,14 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }
         if(productUi()&&controls!=null&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0
                 &&(UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS)&&controls.panelOpen())controls.shutter();
+        if(magnifier!=null){
+            boolean shutter=UiKeys.shutter(e)||key==KeyEvent.KEYCODE_FOCUS;
+            boolean release=key==772||scan==772||(shutter&&e.getAction()==KeyEvent.ACTION_UP);
+            try{
+                if(release)magnifier.shutter(false);
+                else if(shutter&&e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0)magnifier.shutter(true);
+            }catch(Exception error){controlHost.failed("mf_shutter",error);return true;}
+        }
         if(key==518||scan==518||key==KeyEvent.KEYCODE_CAMERA){
             // A held button may still be waiting for focus; judge the press only once it is released.
             if(e.getAction()==KeyEvent.ACTION_UP){fullPressHeld=false;watchUnfiredPress();}
@@ -2017,6 +2081,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }
         if(productUi()){
             int action=UiKeys.key(e);
+            if(sonyControls!=null&&sonyControls.magnifierKey(e))return true;
             if(action==UiKeys.PLAY){
                 if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0){
                     event("playback_key","key="+key+" scan="+scan+" state="+gate.state());
@@ -2034,6 +2099,15 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                         productHud.setVisibility(productHud.getVisibility()==View.VISIBLE?View.INVISIBLE:View.VISIBLE);
                 }
                 return true;
+            }
+            if(sonyControls!=null&&!reviewing&&!controls.panelOpen()){
+                if(action==UiKeys.BACK){
+                    if(e.getAction()==KeyEvent.ACTION_DOWN&&e.getRepeatCount()==0&&controlsAdjustable(false)){
+                        controls.showSettings();consumeBackRelease=true;
+                    }else if(e.getAction()==KeyEvent.ACTION_UP&&consumeBackRelease)consumeBackRelease=false;
+                    return true;
+                }
+                if(sonyControls.key(e))return true;
             }
             ControlLayout.Input rotary=UiKeys.rotary(e);
             if(rotary!=null&&controls!=null){
