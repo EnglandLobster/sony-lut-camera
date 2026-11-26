@@ -18,15 +18,19 @@ final class CameraInputs {
             return Boolean.valueOf(value.getClass().getField("valid").getInt(value)==1);
         }catch(Throwable e){return null;}
     }
-    /** Empty when the probe is unavailable (ControlLayout then assumes two). */
+    /** Empty means no rotary inputs; null means availability could not be read. */
     static List<ControlLayout.Input> rotary(){
         List<ControlLayout.Input> found=new ArrayList<ControlLayout.Input>();
-        if(Boolean.TRUE.equals(has(ControlLayout.DIAL1_STATUS)))found.add(ControlLayout.Input.DIAL1);
-        if(Boolean.TRUE.equals(has(ControlLayout.DIAL2_STATUS)))found.add(ControlLayout.Input.DIAL2);
-        if(Boolean.TRUE.equals(has(ControlLayout.KURU_STATUS))||Boolean.TRUE.equals(has(ControlLayout.DIAL3_STATUS)))
-            found.add(ControlLayout.Input.WHEEL);
-        if(Boolean.TRUE.equals(has(ControlLayout.RING_STATUS)))found.add(ControlLayout.Input.RING);
-        return found;
+        int[] codes={ControlLayout.DIAL1_STATUS,ControlLayout.DIAL2_STATUS,ControlLayout.KURU_STATUS,
+            ControlLayout.DIAL3_STATUS,ControlLayout.RING_STATUS};
+        ControlLayout.Input[] inputs={ControlLayout.Input.DIAL1,ControlLayout.Input.DIAL2,ControlLayout.Input.WHEEL,
+            ControlLayout.Input.WHEEL,ControlLayout.Input.RING};
+        boolean unknown=false;
+        for(int i=0;i<codes.length;i++){
+            Boolean available=has(codes[i]);if(available==null)unknown=true;
+            if(Boolean.TRUE.equals(available)&&!found.contains(inputs[i]))found.add(inputs[i]);
+        }
+        return found.isEmpty()&&unknown?null:found;
     }
     static Integer status(int code){
         try{
@@ -61,6 +65,23 @@ final class CameraInputs {
     }
     /** TRUE/FALSE from the camera, null when unknown. */
     static Boolean modeDial(){return has(ControlLayout.MODE_DIAL);}
+    static final SonyControlAssignments.Source ASSIGNMENTS=new SonyControlAssignments.Source(){
+        public Integer logic(int key,int category){return integer("com.sony.scalar.sysutil.ScalarInput","getKeyLogicCode",
+            new Class<?>[]{int.class,int.class,int.class},new Object[]{key,1,category});}
+        public Integer custom(int key){
+            try{
+                Class<?> type=Class.forName("com.sony.scalar.sysutil.didep.Settings");
+                int[] values=(int[])type.getMethod("getKeyFunction",int[].class).invoke(null,new Object[]{new int[]{key}});
+                return values!=null&&values.length==1?Integer.valueOf(values[0]):null;
+            }catch(Exception e){return null;}
+        }
+        public Integer setting(String name){return integer("com.sony.scalar.sysutil.didep.Settings",name,new Class<?>[0],new Object[0]);}
+        public Integer status(int key){return CameraInputs.status(key);}
+    };
+    private static Integer integer(String type,String name,Class<?>[] signature,Object[] args){
+        try{return (Integer)Class.forName(type).getMethod(name,signature).invoke(null,args);}
+        catch(Exception e){return null;}
+    }
     static String describe(){
         StringBuilder s=new StringBuilder();
         int[] codes={ControlLayout.DIAL1_STATUS,ControlLayout.DIAL2_STATUS,ControlLayout.KURU_STATUS,

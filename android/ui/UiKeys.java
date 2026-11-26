@@ -34,4 +34,16 @@ final class UiKeys {
     static boolean shutter(KeyEvent e){int k=e.getKeyCode(),s=e.getScanCode();
         return s==516||s==517||s==518||k==516||k==517||k==518||k==KeyEvent.KEYCODE_CAMERA;
     }
+    /** Sony's assignment API takes Linux scan codes, not Android DPAD codes. */
+    static int sonyCode(KeyEvent e){
+        if(e.getScanCode()!=0)return e.getScanCode();
+        switch(e.getKeyCode()){
+            case KeyEvent.KEYCODE_DPAD_UP:return 103;
+            case KeyEvent.KEYCODE_DPAD_DOWN:return 108;
+            case KeyEvent.KEYCODE_DPAD_LEFT:return 105;
+            case KeyEvent.KEYCODE_DPAD_RIGHT:return 106;
+            case KeyEvent.KEYCODE_DPAD_CENTER:case KeyEvent.KEYCODE_ENTER:return 232;
+            default:return e.getKeyCode();
+        }
+    }
 }

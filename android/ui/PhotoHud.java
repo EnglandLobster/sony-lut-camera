@@ -14,12 +14,14 @@ final class PhotoHud extends View {
     String liveExposure="",liveCompensation="+0.0 EV",qualityLabel="",liveMode="P",liveIso="",liveWhiteBalance="";
     /** Viewfinder list: ISO/WB choices or focus settings. Null when closed. */
     String panelTitle;String[] panelRows,panelValues;int panelSelected;String panelHint="";
+    ControlLayout.Action adjustment=ControlLayout.Action.NONE;
     /** Gallery only: the panel also draws outside live view (delete confirmation). */
     boolean reviewPanel;
     /** Background card write of a released shot ("写入中"), empty when none. */
     String writing="";
     /** Flexible-spot AF point in Sony's -1000..1000 frame coordinates. */
     boolean afVisible,afEditing;int afX,afY;
+    boolean magnified;int magnification,magnifyX,magnifyY;
     /** Composition guides over the capture frame, in both DISP states. */
     CompositionGrid grid=CompositionGrid.OFF;
     /** Focus confirmation: 0 none, 1 in focus (green), 2 missed. Frames
@@ -197,7 +199,9 @@ final class PhotoHud extends View {
             if(focus){p.setColor(CameraPage.FOCUS);c.drawRoundRect(new RectF(left+8,y,left+pw-8,y+rowH-4),6,6,p);
                 p.setColor(CameraPage.ACCENT);c.drawRect(left+8,y+8,left+11,y+rowH-12,p);}
             String value=panelValues==null?"":panelValues[index];
-            text(c,fit(panelRows[index],value.length()>0?pw*0.45f:pw-48,18),left+20,y+25,18,focus?CameraPage.TEXT:CameraPage.MUTED);
+            String row=adjustment==ControlLayout.Action.APERTURE?readout.apertureText():
+                adjustment==ControlLayout.Action.SHUTTER?readout.shutterText():panelRows[index];
+            text(c,fit(row,value.length()>0?pw*0.45f:pw-48,18),left+20,y+25,18,focus?CameraPage.TEXT:CameraPage.MUTED);
             if(value.length()>0)right(c,fit(focus?"← "+value+" →":value,pw*0.5f,17),left+pw-18,y+25,17,focus?CameraPage.ACCENT:CameraPage.MUTED);
         }
         if(rows>visible)right(c,(panelSelected+1)+"/"+rows,left+pw-16,top+30,14,CameraPage.MUTED);
@@ -231,9 +235,18 @@ final class PhotoHud extends View {
         }else if(mode.equals("live")){ 
             // Camera-style edge readouts, with outlined text instead of
             // full-width bars. The native preview geometry is unchanged.
-            grid(c,w);
-            if(afVisible)afPoint(c,w);
-            focusConfirmation(c,w);
+            if(!magnified){grid(c,w);if(afVisible)afPoint(c,w);focusConfirmation(c,w);}
+            else{
+                String ratio=magnification>0?String.format(java.util.Locale.US,"%.1f×",magnification/100f):"MF";
+                text(c,ratio,14,92,22,CameraPage.TEXT);
+                text(c,"方向键移动 · 中键放大 · 半按返回",14,425,16,CameraPage.TEXT);
+                float left=w-116,top=80;
+                p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.5f);p.setColor(CameraPage.TEXT);
+                c.drawRect(left,top,left+100,top+66,p);
+                float x=left+(magnifyX+1000)/20f,y=top+(magnifyY+1000)*66/2000f;
+                float half=magnification>100?Math.min(50,5000f/magnification):8;
+                c.drawRect(x-half,y-half*0.66f,x+half,y+half*0.66f,p);p.setStyle(Paint.Style.FILL);
+            }
             if(liveInfoVisible){
                 text(c,liveMode,14,34,24,CameraPage.ACCENT);
                 text(c,fit(name,w-180,18),48,31,18,CameraPage.TEXT);

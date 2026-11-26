@@ -5,12 +5,14 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 /** CameraEx-backed exposure and focus primitives. All calls run on the UI
  * thread that owns the preview session, so a full-parameter write can never
  * interleave with a preview matrix write. Exact values are verified by the
  * pure session classes; this driver only chooses Sony's write path. */
-final class CameraControlDriver implements ManualExposure.Driver,FocusControls.Driver {
+final class CameraControlDriver implements ManualExposure.Driver,FocusControls.Driver,SonyCameraFunctions.Driver {
     private final Object cameraEx;
     private final Camera camera;
     private final CameraExposureDriver parameters;
@@ -23,6 +25,70 @@ final class CameraControlDriver implements ManualExposure.Driver,FocusControls.D
 
     public void stepAperture(int direction)throws Exception{invoke(direction>0?"incrementAperture":"decrementAperture");}
     public void stepShutter(int direction)throws Exception{invoke(direction>0?"incrementShutterSpeed":"decrementShutterSpeed");}
+    public void programShift(int direction)throws Exception{
+        cameraEx.getClass().getMethod("adjustProgramLine",int.class).invoke(cameraEx,direction);
+    }
+    public void toggleFocus(boolean enabled)throws Exception{
+        cameraEx.getClass().getMethod("setToggleFocusMode",boolean.class).invoke(cameraEx,enabled);
+    }
+    public void focusHold(boolean enabled)throws Exception{invoke(enabled?"startFocusHold":"stopFocusHold");}
+    private Object currentModifier()throws Exception{
+        return cameraEx.getClass().getMethod("createParametersModifier",Camera.Parameters.class).invoke(cameraEx,camera.getParameters());
+    }
+    private Object modifierValue(String method)throws Exception{
+        Object m=currentModifier();return m.getClass().getMethod(method).invoke(m);
+    }
+    @SuppressWarnings("unchecked") public List<String> settingValues(String key)throws Exception{
+        List<String> result=new ArrayList<String>();
+        if(key.equals("flash-compensation")){
+            int min=(Integer)modifierValue("getMinFlashCompensation"),max=(Integer)modifierValue("getMaxFlashCompensation");
+            if(min<max&&max-min<1000)for(int i=min;i<=max;i++)result.add(Integer.toString(i));
+            return result;
+        }
+        String values=read().get(key+"-values");
+        if(values!=null)for(String value:values.split(","))if(value.trim().length()>0)result.add(value.trim());
+        if(key.equals("focus-mode")&&result.contains("auto"))try{
+            List<String> af=(List<String>)modifierValue("getSupportedAutoFocusModes");
+            if(af!=null){
+                List<String> still=new ArrayList<String>();
+                for(String mode:af)if(mode.equals("af-s")||mode.equals("af-c")||mode.equals("af-a"))still.add(mode);
+                if(!still.isEmpty()){int at=result.indexOf("auto");result.remove(at);result.addAll(at,still);}
+            }
+        }catch(NoSuchMethodException ignored){}
+        return result;
+    }
+    public String setting(String key)throws Exception{
+        if(key.equals("flash-compensation"))return String.valueOf(modifierValue("getFlashCompensation"));
+        if(key.equals("auto-focus-mode"))try{return (String)modifierValue("getAutoFocusMode");}catch(NoSuchMethodException e){return null;}
+        String value=read().get(key);
+        if(key.equals("focus-mode")&&"auto".equals(value)){
+            String af=setting("auto-focus-mode");if(af!=null)value=af;
+        }
+        return value;
+    }
+    public void setting(final String key,final String value)throws Exception{
+        if(key.equals("flash-compensation")){
+            modify(new Patch(){public void apply(Object m,Camera.Parameters p)throws Exception{
+                m.getClass().getMethod("setFlashCompensation",int.class).invoke(m,Integer.parseInt(value));
+            }});return;
+        }
+        if(key.equals("auto-focus-mode")||key.equals("focus-mode")&&value.startsWith("af-")){
+            modify(new Patch(){public void apply(Object m,Camera.Parameters p)throws Exception{
+                if(key.equals("focus-mode"))p.setFocusMode("auto");
+                m.getClass().getMethod("setAutoFocusMode",String.class).invoke(m,value);
+            }});return;
+        }
+        write(one(key,value));
+    }
+    String settingLabel(String key,String value)throws Exception{
+        if(key.equals("focus-mode")){
+            if(value.equals("manual"))return "MF";if(value.equals("auto"))return "AF";
+            return value.toUpperCase(java.util.Locale.US);
+        }
+        if(key.equals("flash-compensation"))return String.format(java.util.Locale.US,"%+.1f EV",
+            Integer.parseInt(value)*((Number)modifierValue("getFlashCompensationStep")).floatValue());
+        return value;
+    }
     public void pause(int ms)throws InterruptedException{Thread.sleep(ms);}
     public long millis(){return android.os.SystemClock.uptimeMillis();}
     private void invoke(String name)throws Exception{

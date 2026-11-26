@@ -17,6 +17,12 @@ Java 文件按职责分目录，全部使用同一 `io.github.englandlobster.lut
 
 `PhotoActivity` 继承 `capture/PreJpegProbeActivity`，生产与诊断逻辑尚共享该基类。目录分类没有把旧探针从 APK 删除，也不代表已经完成模块拆分。
 
+## 原生按键与手动对焦辅助
+
+`SonyControlAssignments` 根据 ScalarInput 的逻辑键、Sony 的自定义按键和拨轮设置解析功能；`SonyShootingControls` 在取景页分发，列表／放大对焦使用各自的导航。`SonyCameraFunctions` 保留按下时的绑定，松开时即使正在拍摄也先更新意图，拍摄门重新开放时释放 AEL／AF-MF 等状态。它还负责焦点模式、测光和闪光参数的读回及会话恢复。`ManualExposure.followEvDial` 管理带刻度的 EV 转盘优先级。
+
+`FocusMagnifier` 是可主机测试的放大状态；`CameraFocusMagnifier` 独占 Sony 的 PreviewMagnificationListener，将通知投递到相机所属的 UI 线程。焦环辅助读取相机自己的开关和时间；快门、回放、模式切换和退出结束放大。没有旋转输入时，Fn／MENU 的设置里仍能用方向键调整曝光；MENU 的退出入口移到设置末行。接口依据、实现范围和未验证部分见 [SONY_CONTROLS.md](SONY_CONTROLS.md)。
+
 ## 依赖与数据
 
 用户内容读取 SD 卡，不读工作区 `LUT_Collected/`。工作区该目录是测试输入和用户收藏，不能自动打包发行。随包资源在 `android-assets/`。诊断预览样例由 `scripts/generate_preview_fixture.py` 从项目中性数学 LUT 生成，不依赖用户素材。
