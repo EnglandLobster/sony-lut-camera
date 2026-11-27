@@ -482,7 +482,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }});
     }catch(Throwable e){failure("review_file",e);}
     }
-    private String captureModel,captureFirmware;
+    private String captureModel,captureFirmware,capturePlatform;
     private void prepare(){captureWorkerTid=android.os.Process.myTid();try{
         if(closed||destroyed)return;
         if(productUi()){
@@ -497,6 +497,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         for(String field:new String[]{"PROP_MODEL_NAME","PROP_VERSION_PLATFORM"})try{
             String value=String.valueOf(get.invoke(null,props.getField(field).get(null)));
             if("PROP_MODEL_NAME".equals(field))captureModel=value;
+            if("PROP_VERSION_PLATFORM".equals(field))capturePlatform=value;
             event("platform_property",field+"="+value);
         }catch(Exception unavailable){event("platform_property",field+" unavailable="+cause(unavailable));}
         try{captureFirmware=String.valueOf(props.getMethod("getFirmwareVersion").invoke(null));event("firmware",captureFirmware);}
@@ -651,14 +652,15 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
                 }
             }
             if(managedJpegQuality()){
-                String supported=p.get("jpeg-quality-values");event("quality_capabilities","values="+supported);
-                captureQuality=CaptureJpegQuality.select(supported);
+                String supported=p.get("jpeg-quality-values");event("quality_capabilities","values="+supported+" platform="+capturePlatform);
+                captureQuality=productUi()?CaptureJpegQuality.select(supported,capturePlatform):CaptureJpegQuality.select(supported);
                 if(!productUi()&&captureQuality!=95)throw new IOException("EXTRA FINE not advertised; diagnostic skipped");
                 originalQuality=p.get("jpeg-quality");if(originalQuality==null)throw new IOException("missing original JPEG quality");
                 try{p.setJpegQuality(captureQuality);camera.setParameters(p);}
                 catch(Exception error){throw new IOException("JPEG quality setting failed: "+CaptureJpegQuality.label(captureQuality),error);}
                 CaptureJpegQuality.verify(captureQuality,camera.getParameters().getJpegQuality());
-                event("quality_applied","jpeg_quality="+captureQuality+" label="+CaptureJpegQuality.label(captureQuality)+" original="+originalQuality);
+                event("quality_applied","jpeg_quality="+captureQuality+" label="+CaptureJpegQuality.label(captureQuality)+" original="+originalQuality
+                    +" selection="+(supported==null?"legacy_fine":"advertised"));
             }
             if(productUi()){
                 // The camera's own picture review ("自动检视") stays as the user set

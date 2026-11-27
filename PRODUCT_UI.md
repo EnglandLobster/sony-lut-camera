@@ -46,6 +46,10 @@ Fn／MENU 打开设置，包括对焦区域、点位、人脸、网格、当前�
 
 启动时如果自动调整了 RAW／RAW+JPEG、连拍／包围曝光、尺寸、曝光模式或 JPEG 画质，进入取景后显示实际读回确认的调整内容，持续 10 秒，并注明“仅本次拍摄生效，退出后恢复”。该说明不需要确认、不拦截快门；HDR 仍启用时显示关闭 HDR 的具体路径并保留错误页，MENU 可返回 LUT 库。
 
+旧 Sony API 0/1 没有 JPEG 画质列表时选择 FINE=50，保留写入后的读回检查和退出恢复。NEX-5R 1.00／1.03 已确认能进入取景；拍摄故障仍未解决，见 [验证范围](docs/compatibility/NEX5R_CONFIRMED_FIXES.md#jpeg-quality-fallback)。
+
+物理模式转盘按 Sony 的 `input.mode.sw.mode.list` 声明判断，不因模式状态键有效或收到模式通知就隐藏软件选档。无转盘时「曝光模式」在设置的「网格线」之前，中央键打开 P/A/S/M 列表。NEX-5R 日志已确认软件 A/S 选档可用，见 [验证范围](docs/compatibility/NEX5R_CONFIRMED_FIXES.md#software-exposure-mode-selection)。
+
 ## 显影等待
 
 拍摄 → 显影 → 调色 → 保存四阶段只向前推进，以真实事件更新。原片保留属于调色准备，不提前跳到最终保存。等待页展示本张照片小尺寸负片，再渐显 LUT 色彩；图片未到达时只显示暗底与阶段计时。
