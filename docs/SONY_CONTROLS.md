@@ -36,6 +36,11 @@ This is source/host validation, not an A7 II hardware acceptance record.
 - A missing physical mode dial still exposes the P/A/S/M menu. Dedicated
   P/A/S/M command keys (628–631) select a mode without marking the body as
   having a physical dial. The still/movie key (624) no longer counts as one.
+  Physical dial presence uses Sony's
+  `input.mode.sw.mode.list` property, as in `ModeDialDetector.hasModeDial`.
+  A valid mode-status key or a mode notification alone no longer hides the
+  software mode menu. NEX-5R field logs confirm software A/S selection;
+  [evidence and host coverage](compatibility/NEX5R_CONFIRMED_FIXES.md#software-exposure-mode-selection).
 
 ### Implemented assigned functions
 

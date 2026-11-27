@@ -11,6 +11,11 @@ mkdir -p out/product-ui-tests
 for suite in DiagnosticStoreTest CaptureSettingsNoticeTest CaptureStartupErrorTest CaptureSetupTest BuiltinRetirementTest LutRemovalTest LutNameTest PreviewProfileStoreTest AutoPreviewGateTest PreviewCaptureBarrierTest NativeExitGateTest DevelopTimelineTest ProductStorageTest PreJpegGateTest ReviewGeometryTest JpegPreviewTest ManualExposureTest ViewfinderControlsTest SonyControlsTest FocusFeedbackTest PreviewCacheTest UiModelsTest CaptureReadoutTest PhotoDeleteTargetTest CaptureGeometryTest; do
   "$java_home/bin/java" -cp out/product-ui-tests "io.github.englandlobster.lutcamera.$suite"
 done
+mkdir -p out/camera-input-tests
+"$java_home/bin/javac" --release 7 -Xlint:-options -encoding UTF-8 -cp out/product-ui-tests -d out/camera-input-tests \
+  android/capture/CameraInputs.java android-tests/sony-input-stubs/*.java android-tests/CameraInputsTest.java
+input_test_classpath="$(python3 -c 'import os; print(os.pathsep.join(["out/camera-input-tests", "out/product-ui-tests"]))')"
+"$java_home/bin/java" -cp "$input_test_classpath" io.github.englandlobster.lutcamera.CameraInputsTest
 python3 scripts/generate_preview_fixture.py
 "$java_home/bin/java" -cp out/product-ui-tests io.github.englandlobster.lutcamera.NativePreviewTest out/tests/native-preview/IDENT.PRV
 bash scripts/test_legacy_capture.sh

@@ -4,9 +4,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Asks Sony's ScalarInput which rotary controls and PASM dial a body has.
- * Sony's own app framework decides key availability from
- * ScalarInput.getKeyStatus(code).valid; null means the camera would not say. */
+/** Rotary key availability comes from ScalarInput. A physical PASM dial is
+ * instead declared by ScalarProperties' supported mode-switch positions,
+ * as in Sony's ModeDialDetector. A readable mode status is not that declaration. */
 final class CameraInputs {
     private CameraInputs(){}
     static Boolean has(int code){
@@ -63,8 +63,16 @@ final class CameraInputs {
         }
         return s.toString();
     }
-    /** TRUE/FALSE from the camera, null when unknown. */
-    static Boolean modeDial(){return has(ControlLayout.MODE_DIAL);}
+    private static int[] modePositions()throws Exception{
+        Class<?> props=Class.forName("com.sony.scalar.sysutil.ScalarProperties");
+        return (int[])props.getMethod("getIntArray",String.class).invoke(null,"input.mode.sw.mode.list");
+    }
+    /** Sony ModeDialDetector.hasModeDial uses this list, including on API 0.
+     * The mode-status key can be valid on a body without a physical dial. */
+    static Boolean modeDial(){
+        try{int[] positions=modePositions();return Boolean.valueOf(positions!=null&&positions.length>0);}
+        catch(Exception unavailable){return null;}
+    }
     static final SonyControlAssignments.Source ASSIGNMENTS=new SonyControlAssignments.Source(){
         public Integer logic(int key,int category){return integer("com.sony.scalar.sysutil.ScalarInput","getKeyLogicCode",
             new Class<?>[]{int.class,int.class,int.class},new Object[]{key,1,category});}
@@ -87,6 +95,8 @@ final class CameraInputs {
         int[] codes={ControlLayout.DIAL1_STATUS,ControlLayout.DIAL2_STATUS,ControlLayout.KURU_STATUS,
             ControlLayout.DIAL3_STATUS,ControlLayout.RING_STATUS,ControlLayout.MODE_DIAL};
         for(int code:codes)s.append(code).append('=').append(has(code)).append(' ');
+        try{s.append("mode_switch_positions=").append(java.util.Arrays.toString(modePositions()));}
+        catch(Exception unavailable){s.append("mode_switch_positions=unavailable");}
         return s.toString().trim();
     }
 }

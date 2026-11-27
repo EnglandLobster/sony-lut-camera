@@ -1466,7 +1466,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         CameraControlDriver driver=new CameraControlDriver(cameraEx,camera);ControlLog log=new ControlLog();
         android.content.SharedPreferences memory=getSharedPreferences("viewfinder_controls",0);
         Boolean dial=CameraInputs.modeDial();
-        // Unknown means the app offers mode selection; a dial event turns it off.
+        // A valid mode-status key alone does not mean a physical PASM dial.
+        // Unknown/absent hardware keeps software mode selection available.
         physicalDial=Boolean.TRUE.equals(dial);
         event("control_parameters",controlParameters(driver.read()));
         NativeSettings.Pending nativeExposure=NativeSettings.Pending.decode(memory.getString(NATIVE_EXPOSURE,null),memory.getString(LEFT_EXPOSURE,null));
@@ -1546,6 +1547,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     }
     private void dialMoved(){
         if(controls==null)return;
+        if(!Boolean.TRUE.equals(CameraInputs.modeDial())){
+            event("mode_dial_ignored","no declared physical mode switch");return;
+        }
         if(!physicalDial){physicalDial=true;controls.physicalDial(true);event("physical_dial_detected","source=event");}
         dialSyncRetries=0;ui.removeCallbacks(syncDial);
         // Sony applies the new position asynchronously; read it shortly after.
