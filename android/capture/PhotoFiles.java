@@ -78,6 +78,9 @@ final class PhotoFiles {
      * such), and after its newest photo was deleted the head ran two ahead of the
      * folder's newest file (head 4090, newest 4088), where neither successor
      * reaches it and the store stayed unconfirmed until the camera was switched off.
+     * That includes a head at the first number of a folder not yet on the card: the
+     * same body, after being off a long time, already heads the index with 103/1 and
+     * writes its next photo there (NAS 志威 report, beta.1), which has no predecessor.
      * Keep only identities absent now; a pre-existing file can never confirm a store,
      * and exactly one candidate may appear. */
     synchronized void predictAfter(int folder,int file){
@@ -90,9 +93,10 @@ final class PhotoFiles {
             addAfter(next,folder,file);
             int newest=dcim.isDirectory()?newestNumber(folder):-1;
             if(newest>0&&newest!=file){addAfter(next,folder,newest);note.append(" folder_max=").append(folder).append('/').append(newest);}
-            boolean headMissing=file>1&&dcim.isDirectory()&&resolveNumbers(folder,file)==null;
+            boolean headMissing=dcim.isDirectory()&&resolveNumbers(folder,file)==null;
             if(headMissing){addBefore(next,folder,file);addIdentity(next,folder,file);if(folder<999)addIdentity(next,folder+1,file);
-                note.append(" before_head=").append(folder).append('/').append(file-1);}
+                if(file>1)note.append(" before_head=").append(folder).append('/').append(file-1);
+                else note.append(" head_missing=").append(folder).append('/').append(file);}
             note.append(" candidates=");
             for(int[] identity:next){
                 boolean exists=dcim.isDirectory()&&resolveNumbers(identity[0],identity[1])!=null;

@@ -211,6 +211,25 @@ public final class LegacyDcfPredictionTest {
             System.out.println("PASS legacy prediction includes a missing index head's own number");
         }finally{s.close();}
     }
+    /** The ILCE-7R 3.20 report (NAS 志威, beta.1): the first shot after the camera had
+     * been off a long time. The index head is already the first number of a new folder
+     * (103/1) and names no file or folder on the card; the camera writes there. The
+     * previous folder's newest photo is the head's predecessor in neither numbering,
+     * and the store stayed at 「正在核验照片保存」 until the camera was switched off. */
+    private static void newFolderHead(File root,String folder,final String next)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            for(int n=1;n<=3;n++){s.photo(folder,"_DSC000"+n+".JPG");s.db.publish(9+n,102,n);}
+            s.db.publish(13,103,1); // first number of a folder not yet on the card
+            long token=s.completion.begin(0);
+            String note=s.files.prediction();
+            check(note.contains("after=103/1 head_missing=103/1 candidates=")&&note.contains("103/1,"),"new folder's first number predicted: "+note);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo(next,"_DSC0001.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(token,200);
+            check(r.recovered&&r.predicted&&r.file.getName().equals("_DSC0001.JPG")&&r.file.getParentFile().getName().equals(next),"write at the new folder's first number confirmed: "+r.file);
+            System.out.println("PASS legacy prediction includes a missing index head at a new folder's first number ("+next+")");
+        }finally{s.close();}
+    }
     /** A predecessor still on the card is never a candidate; the head's successor still confirms. */
     private static void beforeExists(File root)throws Exception{
         final Session s=new Session(root,false);
@@ -322,6 +341,8 @@ public final class LegacyDcfPredictionTest {
             deletedInPlayback(new File(root,"deleted"));
             deletedPair(new File(root,"deleted-pair"));
             missingHeadItself(new File(root,"missing-head"));
+            newFolderHead(new File(root,"new-folder"),"102MSDCF","103MSDCF");
+            newFolderHead(new File(root,"new-date-folder"),"10261126","10361127");
             beforeExists(new File(root,"before-exists"));
             filesAbove(new File(root,"above"),false);
             filesAbove(new File(root,"above-below"),true);
