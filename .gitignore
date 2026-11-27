@@ -4,6 +4,7 @@
 /results/
 /archives/
 /vendor/
+/external/
 /.venv*/
 /HANDOFF.md
 /docs/history/

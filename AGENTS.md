@@ -61,6 +61,8 @@ bash scripts/build_android.sh
 
 这些是事实记录，括号里是来源。新的观察按同样方式补充。
 
+- NEX-5R（2026-11-27，所有者反馈与 `external/5r/LOGS-*`）：旧平台 FINE=50 回退已解决取景启动失败；按 `input.mode.sw.mode.list` 检测物理模式转盘后，日志确认软件 A/S 选档可用。1.00／1.03 均仍没有成功拍摄，不能把这两项修复当作拍摄修复。原生控制版在 A7 II 使用正常为所有者反馈，未附详细日志。验证范围见 `docs/compatibility/NEX5R_CONFIRMED_FIXES.md`。
+
 - Android 的 `Build.MODEL` 在多数机身上是 `ScalarA`，真实型号要读 Sony 的 `PROP_MODEL_NAME`（用户日志的会话头）。
 - 内存映射随平台、像素数和修订号不同，取自相机固件里对应的文件；A6300 用 `MAP24R1`（`config/capture-maps.json`）。
 - 有的机身保存完成时会回调文件名，例如 A6300 2.01、A6500 1.05。有的没有，例如 A7 3.20，目前靠预测下一个 DCF 文件名确认（2026-11 用户日志）。
@@ -107,6 +109,8 @@ bash scripts/build_android.sh
 - ILCE-7R 3.20 关机（拨电源开关，开机编号不变）再开机后回到的是暂停前的拍摄页，不像 A6300 自动待机那样打开 LUT 库；同时 LUT 库进程被重新启动（同上报告，beta.3：481.0 s SUSPEND，489.2 s 拍摄页恢复后结束，490.2 s LUT 库新进程）。
 
 ## 当前实现（现状，不是要求）
+
+- 2026-11-27 所有者要求只整理已确认修复：保留旧平台 JPEG 画质回退和无模式转盘的软件选档修复。未解决拍摄的内存表交付、软件触发、序列选项、显式媒体对照及临时诊断代码已从当前源码移出，完整快照保存在本地 `results/nex5r-experiments-20261127-cleanup/`。拍摄沿用已有 DirectShutter／asset 内存表路径；参考图颜色和性能问题仍待调查。
 
 - 原生控制整合（2026-11-25，尚未发布）：取景读取 Sony 逻辑键／自定义按键、拨轮分配和带刻度的 EV 转盘；接入 CameraEx 对焦放大、MF／DMF 焦环辅助，Fn／MENU 设置提供无拨轮也能使用的曝光编辑，设置末项返回 LUT 库。尚未接入的原生功能提示不支持，完整范围见 `docs/SONY_CONTROLS.md`。主机产品／拍摄测试及 Java 7 兼容编译通过；2026-11-26 本工作区已安装工具链，release 模式 APK 构建及签名、API10／DEX035／ARM／资源检查通过（`dist/SonyLutTest.apk`）。使用新建的本地开发签名，不是公开发行签名；尚未上机或实拍验证。
 
