@@ -175,7 +175,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private boolean queuedStores;
     /** Device tests only, passed through from the library's launch intent; the
      * product UI never sets it. "legacy": ignore Sony's named receipt, so a
-     * receipt body confirms like a legacy one. "unidentified": also no index
+     * receipt body confirms like a legacy one, and +原片 grades only after the
+     * original is confirmed or handed off, as on legacy bodies. "unidentified": also no index
      * entry and no prediction, so every queued store is handed off. */
     private String storeTest;
     private static final class QueuedShot {
@@ -1093,7 +1094,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // Bodies with the completed-store callback grade while the original is
         // being written: pixel-checked on ILCE-6300 2.01, and the A7R II port of
         // this engine has run the same way for all its users (ILCE-7RM2 4.01).
-        overlapThisShot=paired()&&overlapOriginal&&storeEvents!=null&&storeEvents.hasNamedReceipt()
+        overlapThisShot=paired()&&overlapOriginal&&storeEvents!=null&&storeEvents.hasNamedReceipt()&&storeTest==null
                 &&(!alternateOverlap||shot%2==0);
         event("armed","origin="+origin+" lut_cache_reused="+(shot>1)+" overlap_original="+overlapThisShot);
         ui.post(new Runnable(){public void run(){if(shot==gate.shot()){clearOriginalReview();reviewing=false;review.setVisibility(View.INVISIBLE);review.setImageBitmap(null);}}});
