@@ -25,8 +25,13 @@ final class CaptureStoreCompletion {
      * before the store is left to the camera, and the limit while a found file is
      * still being written. Owner decision 2026-11-27: a store the app cannot
      * identify must never hold the user; ILCE-7R 3.20 field logs confirm in
-     * 1.5-2.0 s after the return when the prediction is right (NAS 志威). */
-    static final long HANDOFF_MS=10000,HANDOFF_LIMIT_MS=25000;
+     * 1.5-2.0 s after the return when the prediction is right (NAS 志威).
+     * Owner decision 2026-11-28: 4 s, was 10 s (a +原片 shot with both files
+     * unidentified took 25 s on the A6300 test). A predicted file appears on the
+     * card when the camera starts writing it; one still absent 4 s after the
+     * return was written under another name, and waiting longer does not find it.
+     * A found file still being written keeps the 25 s limit. */
+    static final long HANDOFF_MS=4000,HANDOFF_LIMIT_MS=25000;
     static final class ConfirmedInvalid extends IOException {
         final File file;
         ConfirmedInvalid(File file){super("saved picture-size differs from capture geometry: "+file.getName());this.file=file;}
