@@ -10,9 +10,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform: Sony PMCA](https://img.shields.io/badge/platform-Sony%20PMCA-black)](docs/compatibility/README.md)
 
-**[⬇ 下载 v0.11.0 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.0/SonyLutCamera-v0.11.0.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
-
-测试版 [v0.11.1-beta.5](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.5)：修复全画幅机身开 APS-C 画幅（或装 APS-C 镜头）一拍就「拍摄未完成」；含 beta.4 的相册删除卡死等三项修复、beta.3 的光圈环退出修复、beta.2 的出片即拍下一张与相册删除，以及 beta.1 的保存方式三选一，[说明](docs/RELEASE.md)
+**[⬇ 下载 v0.11.1 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1/SonyLutCamera-v0.11.1.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
@@ -21,18 +19,18 @@
 ## 特性
 
 - **完整 3D LUT 成片**：保存的照片按完整网格逐像素调色，不是近似滤镜。
-- **原片与成片各存一份**：未套 LUT 的原片 JPEG 和调色 JPEG 分别保存到 SD 卡。
+- **保存方式三选一**：仅成片（默认）、＋原片（另存未套 LUT 的 JPEG）、＋RAW（另存同编号的相机 RAW）。
 - **全尺寸、最高画质**：使用本机原生比例的最大尺寸（A6300 为 6000×4000），自动选择机身支持的最高 JPEG 档位。全画幅机身在 APS-C 画幅下按 APS-C 尺寸保存（如 A7 II 为 3936×2624）。
 - **导入自己的 LUT**：支持 2–65³ 的 `.cube`，单个文件最大 64 MiB，按内容去重。
 - **预装 10 个胶片风格 LUT**：Fuji、Ilford、Kodak、Ricoh，默认 Fuji C200，见[内置 LUT](docs/BUILTIN_LUTS.md)。
 - **手动曝光与对焦**：档位跟随机身 P/A/S/M 转盘，拨轮调光圈、快门和曝光补偿，可选 ISO、白平衡、对焦区域和自由点位置，半按合焦后显示绿框；设置会记住，退出后相机恢复原来的设置。
 - **取景网格线**：九宫格、九宫格＋对角线、方形网格、中心十字，只画在取景上，不进照片。
 - **近似实时取景**：导入时自动拟合相机原生色彩参数，取景接近成片效果；也可以改用原色取景。
-- **应用内相册**：随时切换原片和成片对比。
+- **应用内相册**：拍摄时按播放键直接打开，半按回到拍摄；可删除照片，保存了原片时可切换原片和成片对比。
 
 ## 安装
 
-1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.0)下载 `SonyLutCamera-v0.11.0.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
+1. 从[发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1)下载 `SonyLutCamera-v0.11.1.apk`。注意选 `.apk`，`Source code` 压缩包不是安装包。
 2. 相机 USB 连接设为 MTP，用 [Sony-PMCA-RE](https://github.com/ma1co/Sony-PMCA-RE) 安装这个 APK。
 3. 在相机的应用程序列表里打开 **LUT Camera**。第一次打开时会把预装 LUT 写入 SD 卡，稍等片刻。
 
@@ -125,6 +123,13 @@ A6300 / A6000 这类「上拨盘 + 控制轮」的机身，拨轮按档位分工
 日志不包含照片和 LUT 内容，也不会自动上传。详见[诊断日志说明](docs/DIAGNOSTICS.md)。
 
 ## 版本动态
+
+**v0.11.1**
+
+- 保存方式三选一：仅成片（默认，出片更快）、＋原片、＋RAW。
+- 有保存完成通知的机型（如 A6300、A6500）出成片后马上能拍下一张，写卡在后台完成。
+- 拍摄时按播放键，相册直接盖在取景上；相册里可以删除照片。
+- 修复：光圈环机身（如 RX1R II）按 MENU 要等 7–8 秒；拍摄页相册删除卡死；A7、A7R、A6000 等删掉最新一张后再拍停在「正在核验照片保存」；关机再开提示「拍摄会话意外结束」；全画幅机身开 APS-C 画幅一拍就「拍摄未完成」。
 
 **v0.11.0**
 

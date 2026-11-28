@@ -1,3 +1,42 @@
+# v0.11.1
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1/SonyLutCamera-v0.11.1.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1) · [安装教程](USER_GUIDE.md)
+
+code132，正式版，代码与 v0.11.1-beta.5 相同。签名和包名与 0.11.0 相同，可以直接覆盖安装，导入的 LUT 和照片都保留。
+
+## 新增
+
+- **保存方式三选一**：在 LUT 库按 MENU →「更多」→「保存方式」，按中央键切换：
+  - **仅成片**（默认）：只存 LUT 调色后的 JPEG，出片最快。**从 0.11.0 升级后默认就是仅成片**，想和以前一样保存原片，请改成「＋原片」。
+  - **＋原片**：另存一张未套 LUT 的 JPEG，相册里按中央键对照。
+  - **＋RAW**：另存相机 RAW，文件名与成片同编号（如 DSC00512.ARW 与 DSC00512.JPG），和相机自带的 RAW+JPEG 一样。RAW 不带 LUT 色彩，应用相册里不显示。
+- **出片后马上能拍下一张**：有保存完成通知的机型（如 A6300、A6500）在「仅成片」「＋RAW」下，相机一接手就显示成片、可以拍下一张，写卡在后台完成，右上角显示「写入中」。
+- **相册放进拍摄页面**：拍摄时按播放键，相册直接盖在取景上，半按快门约 0.6 秒回到拍摄。
+- **相册删除**：相册里按下键删除，成片、同编号的 RAW 和原片一起删除。
+
+## 修复
+
+- 用光圈环的机身（如 RX1R II）按 MENU 要等 7–8 秒才退出。
+- 在拍摄页的相册里删除照片，一直停在「正在删除」，只能关机。
+- A7、A7R、A6000 等机型删掉最新一张后再拍，停在「正在核验照片保存」。
+- 关机再开机后，LUT 库提示「拍摄会话意外结束」。
+- 全画幅机身打开 APS-C 画幅（或装 APS-C 镜头）后，一拍就「拍摄未完成」，之后要拔电池。
+
+各项细节见 [测试版说明](https://github.com/EnglandLobster/sony-lut-camera/blob/v0.11.1/docs/RELEASE.md)。
+
+## 验证与当前缺口
+
+- A7 II / 固件 4.01 的用户（NAS「298007」）在 beta.5 上确认：APS-C 拍照正常，拍摄页相册删除也正常。
+- A6300 / 固件 2.01：各测试版的功能都实拍过，见各版说明。
+- 主机套件通过；API10 ARM 模拟器整套与图形回归在发行 APK 上通过。发行 APK 签名证书与 0.11.0 相同。
+- 光圈环修复（RX1R II）和删除后推算编号的修复（A7R），还没收到这些机身的回传日志。
+- **已知问题**：A7、A7R、A6000 等没有保存完成通知的机型，相机较长时间没开机后，开机拍的第一张可能一直停在「正在核验照片保存」。这时照片其实已经存好，关机再开就恢复（NAS「志威」，A7R）。0.11.0 也有这个问题，下一个测试版会修复。
+- NEX-5R / NEX-5T 进入拍摄时提示无法设置 JPEG 画质（#9），还没有修复。
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.11.1-beta.5 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1-beta.5/SonyLutCamera-v0.11.1-beta.5.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1-beta.5) · [安装教程](USER_GUIDE.md)
