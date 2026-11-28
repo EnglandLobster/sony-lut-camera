@@ -1,3 +1,46 @@
+# v0.11.2-beta.2 测试包
+
+[下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.2-beta.2/SonyLutCamera-v0.11.2-beta.2.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.2-beta.2) · [安装教程](USER_GUIDE.md)
+
+code134，公开预发行测试包。beta.1 改一处：认不出照片时的等待从 10 秒缩短到 4 秒。签名和包名与 0.11.1 相同，可以直接覆盖安装，导入的 LUT 和照片都保留。想退回时重新安装 [v0.11.1](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1)；如果相机不让旧版本覆盖新版本，先在相机的「应用程序管理」里删除本版再装，SD 卡上的 LUT 和照片不受影响。
+
+## 改动：认不出的照片，4 秒后就交给相机
+
+只影响 A7、A7R、A6000、A5000 等没有保存完成通知的机型，A6300 等机型不变。
+
+beta.1 里，应用认不出一张照片时要等 10 秒才交给相机。「＋原片」下原片和成片都认不出时，一张照片要约 25 秒。现在改成 4 秒：
+
+- **仅成片、＋RAW**：下一张本来就马上能拍。认不出时，拍完立刻按 MENU 或播放键最多等 4 秒（beta.1 是 10 秒）。
+- **＋原片**：原片和成片都认不出时，一张最慢约 13 秒（beta.1 约 25 秒）；只认不出一个时约 9 秒。
+- 找到了文件、相机还在写时，照旧等它写完，最多 25 秒。
+- 正常认得出时（A7R 日志里约 2 秒）不受影响。
+
+为什么 4 秒够：相机一开始写，文件就出现在卡上，正常在保存后 1–2 秒内。4 秒后推算的文件名还不存在，说明相机把它写成了别的名字，再等也等不到。
+
+## beta.1 的内容（本版都包含）
+
+- **修复**：A7R 等机型相机较长时间不开机后，开机拍的第一张停在「正在核验照片保存」。
+- **改进**：没有保存完成通知的机型不再为核验卡住。「仅成片」「＋RAW」出成片后马上能拍下一张；认不出的照片交给相机，照常存在卡上、原生回放里能看到，只是不进应用相册。「＋原片」仍逐张等待，但不会卡死。
+- **修复**：「上一张照片仍在核验」提示里的方块字（☒）和被截掉的「关机再开机」。
+
+详见 [beta.1 说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.2-beta.1)。
+
+## 请帮忙确认
+
+1. **A7、A7R、A6000、A5000 等机型**：「仅成片」或「＋RAW」连拍几张，看出成片后是否马上能拍下一张；相机久不开机后拍的第一张，是否还会停在「正在核验照片保存」。
+2. 如果某张照片在应用相册里找不到、原生回放里却有，请导出日志。日志里的 `store_handed_off` 能帮我们补上这种编号规律。
+3. 在 LUT 库按 MENU → 更多 → 导出诊断日志，提交 `SONYLUT/DIAG/REPORT.ZIP`，写上机型和固件版本。
+
+## 验证与当前缺口
+
+- 交出的逻辑和 beta.1 相同，只改了时限。主机套件通过；API10 ARM 模拟器整套与图形回归在发行 APK 上通过。发行 APK 签名证书与 0.11.1 相同。
+- A6300 / 固件 2.01：本版发行 APK 正常打开、退出拍摄页。4 秒时限没有另外实拍，beta.1 的四轮测试（10 秒时限）见 beta.1 说明。
+- **我们手上没有 A7R 等老机身**，beta.1 和本版都没有在这些机身上实拍，等用户反馈。
+
+附件包含 APK、对应源码、BUILDINFO、SHA256SUMS 和安装/许可文件。
+
+## 历史记录
+
 # v0.11.2-beta.1 测试包
 
 [下载 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.2-beta.1/SonyLutCamera-v0.11.2-beta.1.apk) · [发行页](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.2-beta.1) · [安装教程](USER_GUIDE.md)

@@ -1,6 +1,8 @@
 # Current status
 
-Prerelease for user testing: **v0.11.2-beta.1 / code133**, 2026-11-27. v0.11.1 plus:
+Prerelease for user testing: **v0.11.2-beta.2 / code134**, 2026-11-28. beta.1 with the legacy hand-off limit cut from 10 s to 4 s (owner decision; a +原片 shot with both files unidentified took 25 s in the A6300 store_test round, now about 13 s). A found file still being written keeps the 25 s limit. Host suites and both API10 emulator suites pass on the release APK; this APK opens and exits capture on the A6300; the 4 s limit itself was not shot on a camera.
+
+v0.11.2-beta.1 / code133, 2026-11-27. v0.11.1 plus:
 - the legacy new-folder fix: an index head at a folder's first number is now predicted when missing (NAS 志威, ILCE-7R 3.20);
 - the owner's decision that verification must not hold the user: legacy graded-only/+RAW stores queue like receipt bodies, and a store unidentified 10 s after the return (25 s while a found file is written) is handed off to the camera without a history record (`store_handed_off`); legacy +原片 hands off its original and graded stores the same way, grading the retained buffer after the original's hand-off;
 - the library's recovery notice on one line (no ☒).

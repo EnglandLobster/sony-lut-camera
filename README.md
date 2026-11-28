@@ -12,7 +12,7 @@
 
 **[⬇ 下载 v0.11.1 APK](https://github.com/EnglandLobster/sony-lut-camera/releases/download/v0.11.1/SonyLutCamera-v0.11.1.apk)** · [发行说明](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.1) · [安装教程](docs/USER_GUIDE.md) · [反馈问题](https://github.com/EnglandLobster/sony-lut-camera/issues)
 
-测试版 [v0.11.2-beta.1](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.2-beta.1)：修复 A7R 等机型久不开机后第一张停在「正在核验照片保存」；没有保存完成通知的机型不再为核验卡住，认不出的照片 10 秒后交给相机，[说明](docs/RELEASE.md)
+测试版 [v0.11.2-beta.2](https://github.com/EnglandLobster/sony-lut-camera/releases/tag/v0.11.2-beta.2)：修复 A7R 等机型久不开机后第一张停在「正在核验照片保存」；没有保存完成通知的机型不再为核验卡住，认不出的照片 4 秒后交给相机，[说明](docs/RELEASE.md)
 
 <img src="docs/images/lut-library.png" alt="A6300 上的 LUT Camera 选择页" width="720">
 
