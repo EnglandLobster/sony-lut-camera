@@ -220,6 +220,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     private PhotoFiles photoFiles;
     private Object retainedImage;private long lutCache;private Bitmap lutReview;
     private File originalFile,gradedFile;private String originalQuality;
+    /** Legacy +原片: that store was handed off unconfirmed (CaptureStoreCompletion.handOff). */
+    private boolean originalHandedOff,gradedHandedOff;
     private ReviewView review;private boolean awaitFirstFrame;
     private long displayedAt,nextReadyAt,rearmAt;private boolean finishingRearm,reviewing;
     private boolean reviewClearCheck;
@@ -940,7 +942,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(recoveryFence!=null)recoveryFence.acquire();
             storeCallStage="index_snapshot";
             ui.post(new Runnable(){public void run(){ui.removeCallbacks(storeWatchdog);ui.postDelayed(storeWatchdog,1000);}});
-            token=storeCompletion==null?0:paired()&&originalFile!=null&&gate.state()==PreJpegGate.State.SAVING
+            token=storeCompletion==null?0:paired()&&(originalFile!=null||originalHandedOff)&&gate.state()==PreJpegGate.State.SAVING
                 ?storeCompletion.beginFinalStore(SystemClock.elapsedRealtime()):storeCompletion.begin(SystemClock.elapsedRealtime());recoveryNoticeShown=false;
         }
         catch(Exception error){
@@ -1010,6 +1012,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         }
         storeObserverAt=SystemClock.elapsedRealtime();
         if(queuedStores&&storeCompletion.handOff(token,storeObserverAt)){queuedHandedOff(token);return;}
+        if(productUi()&&paired()&&storeCompletion.handOff(token,storeObserverAt)){pairHandedOff(token,shot);return;}
         if(storeCompletion.active(token))scheduleStorePoll(token,shot,recoveryNoticeShown?1000:200);
     }
     private String procWait(String name,boolean firstToken){
@@ -1086,7 +1089,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(gate.arm()){
         shutterNoticed=false;
         final long shot=gate.shot();processingProgress.begin(shot);pressAt=SystemClock.elapsedRealtime();timingOrigin=origin;journalAtPress=journalWriteMs();
-        originalFile=null;gradedFile=null;displayedAt=0;nextReadyAt=0;awaitFirstFrame=false;lutApplied=false;
+        originalFile=null;gradedFile=null;originalHandedOff=false;gradedHandedOff=false;displayedAt=0;nextReadyAt=0;awaitFirstFrame=false;lutApplied=false;
         // Bodies with the completed-store callback grade while the original is
         // being written: pixel-checked on ILCE-6300 2.01, and the A7R II port of
         // this engine has run the same way for all its users (ILCE-7RM2 4.01).
@@ -1275,6 +1278,16 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             maybeOpenGallery();
         }});
     }
+    /** Confirmation thread, legacy +原片: nothing identified this store's file
+     * in time. The pair goes on as if confirmed, without that file: a handed-off
+     * original still gets its graded store, a handed-off graded file no record. */
+    private void pairHandedOff(long token,final long shot){
+        event("store_handed_off","role="+(gate.state()==PreJpegGate.State.ORIGINAL_SAVING?"original":"graded")+" token="+token+" "+storeCompletion.diagnostics());
+        work.post(new Runnable(){public void run(){
+            if(closed||shot!=gate.shot())return;
+            verifyPairStore(null,SystemClock.elapsedRealtime());
+        }});
+    }
     /** UI thread. A record needs the confirmed file and the shot's timing; a
      * forced record (session closing) writes without the ready time. A
      * handed-off shot has no file: it only leaves the queue. */
@@ -1296,25 +1309,26 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(startupFailure==null&&gate.state()!=PreJpegGate.State.FAILED)setResult(RESULT_OK);
         finish();
     }
+    /** A confirmed file, or null for a store handed off unconfirmed (legacy). */
     private void verifyPairStore(File file,long confirmedAt){workerActive=true;try{
         boolean original=gate.state()==PreJpegGate.State.ORIGINAL_SAVING;
         if(!original&&gate.state()!=PreJpegGate.State.SAVING)throw new IOException("unexpected pair store in "+gate.state());
-        photoFiles.accepted(file);
-        event(original?"original_saved":"graded_saved","file="+file+" bytes="+file.length()+" from_press_ms="+(confirmedAt-pressAt)+" store_ms="+(confirmedAt-storeAt));
+        if(file!=null)photoFiles.accepted(file);
+        event(original?"original_saved":"graded_saved","file="+(file==null?"none handed_off=true":file+" bytes="+file.length())+" from_press_ms="+(confirmedAt-pressAt)+" store_ms="+(confirmedAt-storeAt));
         if(original){
-            originalFile=file;gate.originalSaved();
+            originalFile=file;originalHandedOff=file==null;gate.originalSaved();
             // RECORD_COUNT=2 was declared before exposure. Even a MENU/stop
             // request must drain its second record before leaving the sequence.
             if(stopAfterStore)event("capture_finishing_pair","stop requested; completing declared second record");
-            if(!lutApplied)applyRetainedLut("original_file_confirmed");
+            if(!lutApplied)applyRetainedLut(file==null?"original_handed_off":"original_file_confirmed");
             gate.savingGraded();storeAt=SystemClock.elapsedRealtime();event("store_begin","type=YC role=graded release_source=true");
             processing(CaptureProgress.Stage.SAVE,"正在保存成片");
             Object image=retainedImage;retainedImage=null;
             storeToCamera(imageType,image,true);
             event("store_accepted","role=graded call_ms="+(SystemClock.elapsedRealtime()-storeAt));
         }else{
-            if(paired()&&(originalFile==null||originalFile.equals(file)))throw new IOException("graded save did not preserve distinct original");
-            gradedFile=file;gate.saved();event("pair_saved","shutter_to_saved_ms="+(confirmedAt-pressAt));
+            if(paired()&&((originalFile==null&&!originalHandedOff)||(file!=null&&file.equals(originalFile))))throw new IOException("graded save did not preserve distinct original");
+            gradedFile=file;gradedHandedOff=file==null;gate.saved();event("pair_saved","shutter_to_saved_ms="+(confirmedAt-pressAt));
             ui.post(new Runnable(){public void run(){
                 if(stopAfterStore){recordPair();setResult(RESULT_OK);finish();return;}
                 if(!active||destroyed){close();return;}
@@ -1417,7 +1431,9 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         if(!gate.beginRearm(shot))return;
         try{
             QueuedShot q=queued;boolean released=q!=null&&q.shot==shot;
-            if(workerActive||retainedImage!=null||(gradedFile==null&&!released)||(paired()&&(originalFile==null||originalFile.equals(gradedFile))))
+            boolean gradedDone=gradedFile!=null||gradedHandedOff||released;
+            boolean originalDone=!paired()||((originalFile!=null||originalHandedOff)&&(originalFile==null||!originalFile.equals(gradedFile)));
+            if(workerActive||retainedImage!=null||!gradedDone||!originalDone)
                 throw new IllegalStateException("cannot rearm before the declared records complete and buffers transfer");
             CaptureJpegQuality.verify(captureQuality,camera.getParameters().getJpegQuality());
             Camera.Size current=camera.getParameters().getPictureSize();
@@ -1770,7 +1786,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         event("review_compare","role="+(original?"original":"graded")+" switch_ms="+(SystemClock.elapsedRealtime()-begin)+" jpeg_decode=false");
     }
     private void recordPair(){
-        if(selectedLut==null||gradedFile==null||(paired()&&originalFile==null)||recordedPairShot==gate.shot())return;
+        if(selectedLut==null||gradedFile==null||(paired()&&originalFile==null&&!originalHandedOff)||recordedPairShot==gate.shot())return;
         recordedPairShot=gate.shot();
         writeReceipt(originalFile,gradedFile,selectedLut,Math.max(0,displayedAt-pressAt),Math.max(0,nextReadyAt-pressAt));
     }

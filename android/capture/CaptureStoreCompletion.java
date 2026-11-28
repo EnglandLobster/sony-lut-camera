@@ -109,20 +109,22 @@ final class CaptureStoreCompletion {
     synchronized boolean active(long token){return pending&&token==generation;}
     synchronized boolean overdue(long token,long now){return active(token)&&now-started>=NOTICE_MS;}
     synchronized void cancel(){if(rpcActive)throw new IllegalStateException("native store still owns its arguments");pending=false;continuationAllowed=false;++generation;}
-    /** Legacy bodies only, for a store whose source buffer Sony released
-     * (storeImage with releaseSource): once the call has returned, a store that
-     * nothing has identified within HANDOFF_MS is left to the camera, which
-     * writes it as it does any shot. A candidate file still being written
-     * (await_file, or a read refused while it is open) gets up to
-     * HANDOFF_LIMIT_MS. Returns true when this call ended the store. Never for
-     * the original of a pair, whose buffer is graded next: the caller only
-     * hands off single-record stores. */
+    /** Legacy bodies only: once storeImage has returned, a store that nothing
+     * has identified within HANDOFF_MS is left to the camera, which writes it as
+     * it does any shot. A candidate file still being written (await_file, or a
+     * read refused while it is open) gets up to HANDOFF_LIMIT_MS. Returns true
+     * when this call ended the store.
+     * The original of a pair may be handed off too; its declared second record
+     * may then begin, and the caller grades the retained buffer. That is at
+     * least HANDOFF_MS after the call returned: the A6300 2.01 encoder no longer
+     * reads the source once storeImage returns, and legacy bodies finish the file
+     * 1.5-2.0 s after the return (NAS 志威, ILCE-7R 3.20). */
     synchronized boolean handOff(long token,long now){
-        if(namedProtocol||continuation||!active(token)||rpcActive||!rpcComplete||confirmed||returnedAt<0)return false;
+        if(namedProtocol||!active(token)||rpcActive||!rpcComplete||confirmed||returnedAt<0)return false;
         long age=now-returnedAt;
         boolean writing=stage.equals("await_file")||stage.equals("file_error");
         if(age<HANDOFF_MS||(writing&&age<HANDOFF_LIMIT_MS))return false;
-        pending=false;continuationAllowed=false;++generation;handOffs++;indexRecovery=false;
+        pending=false;continuationAllowed=!continuation;++generation;handOffs++;indexRecovery=false;
         stage="handed_off";
         if(registration instanceof DcfBase)((DcfBase)registration).handedOff();
         return true;

@@ -278,6 +278,25 @@ public final class LegacyDcfPredictionTest {
             System.out.println("PASS legacy hand-off waits up to HANDOFF_LIMIT_MS for a found file still being written");
         }finally{s.close();}
     }
+    /** Legacy +原片: a handed-off original still opens its declared second
+     * record; a handed-off graded store closes the pair. */
+    private static void pairHandOff(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00010.JPG");s.db.publish(10,100,10);
+            long original=s.completion.begin(0);
+            s.store(original,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00030.JPG");}}));
+            check(s.completion.poll(original,200)==null,"unpredicted original not confirmed");
+            check(s.completion.handOff(original,200+HANDOFF),"original handed off");
+            long graded=s.completion.beginFinalStore(20000);
+            s.store(graded,20100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00040.JPG");}}));
+            check(s.completion.poll(graded,20200)==null,"unpredicted graded not confirmed");
+            check(s.completion.handOff(graded,20200+HANDOFF),"graded handed off");
+            try{s.completion.beginFinalStore(40000);throw new AssertionError("a third record after the pair");}
+            catch(IllegalStateException expected){}
+            System.out.println("PASS legacy pair hand-off: the original's hand-off opens the declared graded record, the graded one closes the pair");
+        }finally{s.close();}
+    }
     /** Bodies with Sony's named receipt never hand off. */
     private static void namedNeverHandsOff(File root)throws Exception{
         final Session s=new Session(root,true);
@@ -431,6 +450,7 @@ public final class LegacyDcfPredictionTest {
             handOffUnidentified(new File(root,"hand-off"));
             handOffWhileWriting(new File(root,"hand-off-writing"));
             namedNeverHandsOff(new File(root,"hand-off-named"));
+            pairHandOff(new File(root,"hand-off-pair"));
             handOffThenHead(new File(root,"hand-off-head"));
             beforeExists(new File(root,"before-exists"));
             filesAbove(new File(root,"above"),false);

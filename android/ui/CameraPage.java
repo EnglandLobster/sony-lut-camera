@@ -21,7 +21,8 @@ final class CameraPage extends SonyReviewView {
     @Override protected void pixelAspectChanged(float value){pixelAspect=value;invalidate();}
     private void text(Canvas c,String text,float x,float y,float size,int color){paint.setTextAlign(Paint.Align.LEFT);paint.setColor(color);paint.setTextSize(size);c.drawText(text,x,y,paint);}
     private void right(Canvas c,String text,float x,float y,float size,int color){paint.setTextAlign(Paint.Align.RIGHT);paint.setColor(color);paint.setTextSize(size);c.drawText(text,x,y,paint);}
-    private String fit(String s,float width,float size){paint.setTextSize(size);if(paint.measureText(s)<=width)return s;int n=paint.breakText(s,true,Math.max(0,width-paint.measureText("…")),null);return s.substring(0,n)+"…";}
+    /** One line each: a newline would draw as a box glyph (☒) in the camera font. */
+    private String fit(String s,float width,float size){s=s.replace('\n',' ');paint.setTextSize(size);if(paint.measureText(s)<=width)return s;int n=paint.breakText(s,true,Math.max(0,width-paint.measureText("…")),null);return s.substring(0,n)+"…";}
     private void round(Canvas c,float x,float y,float r,float b,int color){paint.setStyle(Paint.Style.FILL);paint.setColor(color);c.drawRoundRect(new RectF(x,y,r,b),10,10,paint);}
     private void outline(Canvas c,float x,float y,float r,float b,boolean focus){paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1);paint.setColor(focus?ACCENT:LINE);c.drawRoundRect(new RectF(x+.5f,y+.5f,r-.5f,b-.5f),10,10,paint);paint.setStyle(Paint.Style.FILL);}
     private void badge(Canvas c,String value,float x,float y,boolean focus){if(value.length()==0)return;right(c,fit(value,92,15),x,y,15,focus?ACCENT:MUTED);}

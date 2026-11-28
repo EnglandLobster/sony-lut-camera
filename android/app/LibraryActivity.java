@@ -231,7 +231,8 @@ public final class LibraryActivity extends Activity {
         if(!captureRecoveryBlocked())return true;
         showingCaptureRecovery=true;
         if(mode.equals("loading"))mode="library";
-        showNotice("上一张照片仍在核验","暂不能再次拍摄或返回原生相机。\n可导出日志，后台恢复后自动解除。\n若持续未恢复，请待存储灯熄灭后正常关机再开机。");return false;
+        // One line on the notice page: the action comes first so a cut keeps it.
+        showNotice("上一张照片仍在核验","稍候会自动恢复；一直不恢复时，等存储灯熄灭后关机再开机。");return false;
     }
     private void openGallery(String pairId,int offset){openGallery(pairId,offset,null);}
     /** deletePair: delete this pair once listed (confirmed in capture's history). */
