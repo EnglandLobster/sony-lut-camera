@@ -16,6 +16,8 @@ final class CaptureIndexQueries implements CaptureStoreCompletion.Registration,C
     private Future<PhotoIndex.Entry> reading;
     private long before=Long.MIN_VALUE;
     private PhotoIndex.Entry latest;
+    /** A store was handed off since the last confirmed file: that file is no longer the newest. */
+    private boolean handedOff;
     private volatile long queryStarted;
     private volatile String queryKind="none";
     private volatile int submittedQueries;
@@ -23,6 +25,12 @@ final class CaptureIndexQueries implements CaptureStoreCompletion.Registration,C
     CaptureIndexQueries(PhotoIndex index,long waitMs){this.index=index;this.snapshotWaitMs=waitMs;}
     public synchronized void begin()throws Exception{
         reading=null;
+        // After a hand-off the base depends on a fresh head (dcfBase); the
+        // handed-off store's last recovery query is short, so let it finish.
+        if(handedOff&&outstanding!=null&&!outstanding.isDone()){
+            try{outstanding.get(snapshotWaitMs,TimeUnit.MILLISECONDS);}
+            catch(TimeoutException e){}catch(ExecutionException e){} // the earlier store's query
+        }
         if(outstanding!=null&&!outstanding.isDone()){
             if(before!=Long.MIN_VALUE)return; // Earlier watermark + confirmed DCF exclusions remain safe.
             throw new IOException("previous Sony index query still running");
@@ -50,15 +58,22 @@ final class CaptureIndexQueries implements CaptureStoreCompletion.Registration,C
         try{return done.get();}catch(ExecutionException e){throw failure(e);}
     }
     public synchronized void accepted(File file)throws IOException{
-        accepted.add(index.key(file));
+        accepted.add(index.key(file));handedOff=false;
         while(accepted.size()>64){Iterator<String> first=accepted.iterator();first.next();first.remove();}
     }
-    /** Most recent DCF identity: this session's last confirmed file, else the pre-store index head. */
+    /** Most recent DCF identity: this session's last confirmed file, else the pre-store index head.
+     * After an unconfirmed hand-off the camera has written past the last confirmed
+     * file, so the later of the two (DCF numbers only grow) is the base. */
     public synchronized int[] dcfBase(){
         String last=null;for(String key:accepted)last=key;
-        if(last!=null){String[] part=last.split("/");return new int[]{Integer.parseInt(part[0]),Integer.parseInt(part[1])};}
-        return latest==null?null:new int[]{latest.folder,latest.file};
+        int[] confirmed=null;
+        if(last!=null){String[] part=last.split("/");confirmed=new int[]{Integer.parseInt(part[0]),Integer.parseInt(part[1])};}
+        int[] head=latest==null?null:new int[]{latest.folder,latest.file};
+        if(confirmed==null)return head;
+        if(!handedOff||head==null)return confirmed;
+        return head[0]*10000+head[1]>confirmed[0]*10000+confirmed[1]?head:confirmed;
     }
+    public synchronized void handedOff(){handedOff=true;}
     public synchronized void close(){worker.shutdown();}
     String diagnostics(){Future<?> current=outstanding;boolean busy=current!=null&&!current.isDone();
         return "index_worker="+queryKind+" index_worker_active="+busy+" index_queries_submitted="+submittedQueries

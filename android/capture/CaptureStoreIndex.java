@@ -29,6 +29,7 @@ final class CaptureStoreIndex implements CaptureStoreCompletion.Registration,Cap
     public PhotoIndex.Entry saved()throws Exception{return queries.saved();}
     public void accepted(File file)throws Exception{queries.accepted(file);}
     public int[] dcfBase(){return queries.dcfBase();}
+    public void handedOff(){queries.handedOff();}
     public void close(){queries.close();}
     String diagnostics(){return queries.diagnostics();}
 }

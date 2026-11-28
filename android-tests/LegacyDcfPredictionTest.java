@@ -230,6 +230,91 @@ public final class LegacyDcfPredictionTest {
             System.out.println("PASS legacy prediction includes a missing index head at a new folder's first number ("+next+")");
         }finally{s.close();}
     }
+    private static final long HANDOFF=CaptureStoreCompletion.HANDOFF_MS,LIMIT=CaptureStoreCompletion.HANDOFF_LIMIT_MS;
+    /** Owner decision 2026-11-27: a legacy store nothing identifies is handed off
+     * to the camera HANDOFF_MS after storeImage returned, never waited on until
+     * power-off. Its index record, published during the next store's wait, must
+     * not be taken for that store's file: after a hand-off only the prediction
+     * (absent before the store) confirms. */
+    private static void handOffUnidentified(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00010.JPG");s.db.publish(10,100,10);
+            long token=s.completion.begin(0);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00020.JPG");}}));
+            check(!s.completion.handOff(token,150),"no hand-off before the first poll after the return");
+            check(s.completion.poll(token,200)==null,"unpredicted file not confirmed");
+            check(!s.completion.handOff(token,200+HANDOFF-1),"no hand-off before HANDOFF_MS");
+            check(s.completion.handOff(token,200+HANDOFF),"handed off at HANDOFF_MS");
+            check(!s.completion.pending()&&!s.completion.active(token),"handed-off store no longer pending");
+            check(s.completion.diagnostics().contains("confirmation_stage=handed_off")&&s.completion.diagnostics().contains("hand_offs=1 index_recovery=false"),"hand-off diagnostics: "+s.completion.diagnostics());
+            check(s.completion.poll(token,200+HANDOFF+200)==null,"a handed-off store never confirms later");
+            // Next store: the handed-off photo's record appears only after this
+            // store's snapshot, exactly when an index recovery would take it.
+            // While the camera has not written the new file yet, nothing confirms.
+            long next=s.completion.begin(20000);
+            s.db.publish(11,100,20);
+            s.store(next,20100,writes(new Write(){public void run(){}}));
+            s.stays(next,20200);
+            s.photo("100MSDCF","DSC00021.JPG");
+            CaptureStoreCompletion.Receipt r=s.await(next,30000);
+            check(r.predicted&&r.file.getName().equals("DSC00021.JPG"),"the next store confirms its own file, not the handed-off one: "+r.file);
+            System.out.println("PASS legacy hand-off after HANDOFF_MS; the handed-off photo's late index record is not taken for the next store");
+        }finally{s.close();}
+    }
+    /** A predicted file that is still being written gets up to HANDOFF_LIMIT_MS. */
+    private static void handOffWhileWriting(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            s.photo("100MSDCF","DSC00010.JPG");s.db.publish(10,100,10);
+            long token=s.completion.begin(0);
+            s.store(token,100,writes(new Write(){public void run()throws Exception{s.photo("100MSDCF","DSC00011.JPG",6000,4000,false);}}));
+            long at=200;
+            for(int n=0;n<8;n++,at+=1100)check(s.completion.poll(token,at)==null,"incomplete file not confirmed");
+            check(s.completion.stage().equals("await_file"),"found file awaits completion: "+s.completion.stage());
+            check(!s.completion.handOff(token,200+HANDOFF),"no hand-off at HANDOFF_MS while the found file is written");
+            check(!s.completion.handOff(token,200+LIMIT-1),"still written before the limit");
+            check(s.completion.handOff(token,200+LIMIT),"handed off at HANDOFF_LIMIT_MS");
+            System.out.println("PASS legacy hand-off waits up to HANDOFF_LIMIT_MS for a found file still being written");
+        }finally{s.close();}
+    }
+    /** Bodies with Sony's named receipt never hand off. */
+    private static void namedNeverHandsOff(File root)throws Exception{
+        final Session s=new Session(root,true);
+        try{
+            s.photo("100MSDCF","DSC00010.JPG");s.db.publish(10,100,10);
+            long token=s.completion.begin(0);
+            s.store(token,100,writes(new Write(){public void run(){}}));
+            check(s.completion.poll(token,200)==null,"no receipt yet");
+            check(!s.completion.handOff(token,200+LIMIT*10)&&s.completion.pending(),"named protocol keeps waiting for its receipt");
+            System.out.println("PASS named-receipt stores are never handed off");
+        }finally{s.close();}
+    }
+    /** ILCE-7R 3.20 heads its index with the number it writes next. After a
+     * hand-off the last confirmed file is no longer the newest; the base is the
+     * later of it and the index head, so the following store confirms again. */
+    private static void handOffThenHead(File root)throws Exception{
+        final Session s=new Session(root,false);
+        try{
+            for(int n=1;n<=3;n++){s.photo("102MSDCF","_DSC000"+n+".JPG");s.db.publish(9+n,102,n);}
+            s.db.publish(13,102,4); // the number written next
+            long first=s.completion.begin(0);
+            s.store(first,100,writes(new Write(){public void run()throws Exception{s.photo("102MSDCF","_DSC0004.JPG");}}));
+            CaptureStoreCompletion.Receipt r=s.await(first,200);s.files.accepted(r.file);
+            check(r.file.getName().equals("_DSC0004.JPG"),"first store at the head: "+r.file);
+            long second=s.completion.begin(10000);
+            s.store(second,10100,writes(new Write(){public void run()throws Exception{s.photo("105MSDCF","_DSC0001.JPG");}}));
+            check(s.completion.poll(second,10200)==null,"unpredicted folder not confirmed");
+            check(s.completion.handOff(second,10200+HANDOFF),"second store handed off");
+            s.db.publish(14,105,2); // the head moves past the handed-off photo
+            long third=s.completion.begin(30000);
+            check(s.files.prediction().startsWith("after=105/2"),"base is the index head after a hand-off: "+s.files.prediction());
+            s.store(third,30100,writes(new Write(){public void run()throws Exception{s.photo("105MSDCF","_DSC0002.JPG");}}));
+            r=s.await(third,30200);
+            check(r.predicted&&r.file.getName().equals("_DSC0002.JPG")&&r.file.getParentFile().getName().equals("105MSDCF"),"third store confirmed after the hand-off: "+r.file);
+            System.out.println("PASS after a hand-off the later of last confirmed file and index head is the prediction base");
+        }finally{s.close();}
+    }
     /** A predecessor still on the card is never a candidate; the head's successor still confirms. */
     private static void beforeExists(File root)throws Exception{
         final Session s=new Session(root,false);
@@ -343,6 +428,10 @@ public final class LegacyDcfPredictionTest {
             missingHeadItself(new File(root,"missing-head"));
             newFolderHead(new File(root,"new-folder"),"102MSDCF","103MSDCF");
             newFolderHead(new File(root,"new-date-folder"),"10261126","10361127");
+            handOffUnidentified(new File(root,"hand-off"));
+            handOffWhileWriting(new File(root,"hand-off-writing"));
+            namedNeverHandsOff(new File(root,"hand-off-named"));
+            handOffThenHead(new File(root,"hand-off-head"));
             beforeExists(new File(root,"before-exists"));
             filesAbove(new File(root,"above"),false);
             filesAbove(new File(root,"above-below"),true);

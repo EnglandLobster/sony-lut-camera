@@ -166,11 +166,21 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
      * confirms the file before its gallery record, and at most one store is ever
      * unconfirmed: the next shot develops and grades, then its store waits.
      * A6300 2.01: the write finished 0.6-2.0 s after the return, display ~1.5 s
-     * earlier (results/queue-exp-20261122). Legacy bodies keep waiting per shot. */
+     * earlier (results/queue-exp-20261122).
+     * Owner decision 2026-11-27: legacy bodies without the receipt queue the
+     * same way. Their file is looked for by the predicted DCF name; a store
+     * still unidentified CaptureStoreCompletion.HANDOFF_MS after the return is
+     * handed off to the camera unconfirmed, without a history record, instead of
+     * holding the next store or the exit until power-off (NAS 志威, a7r1). */
     private boolean queuedStores;
+    /** Device tests only, passed through from the library's launch intent; the
+     * product UI never sets it. "legacy": ignore Sony's named receipt, so a
+     * receipt body confirms like a legacy one. "unidentified": also no index
+     * entry and no prediction, so every queued store is handed off. */
+    private String storeTest;
     private static final class QueuedShot {
         final long shot;final LutLibrary.Entry lut;volatile long token; // token: diagnostics only
-        volatile File file;volatile boolean failed;long display=-1,ready=-1;boolean recorded;
+        volatile File file;volatile boolean failed,handedOff;long display=-1,ready=-1;boolean recorded;
         QueuedShot(long shot,LutLibrary.Entry lut){this.shot=shot;this.lut=lut;}
     }
     /** The released shot whose store is unconfirmed or whose record is unwritten. */
@@ -409,6 +419,8 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         // Diagnostic entries keep the verified pair; the product passes the user's choice.
         saveOriginal=getIntent().getBooleanExtra("save_original",!productUi());
         saveRaw=getIntent().getBooleanExtra("save_raw",false);
+        storeTest=getIntent().getStringExtra("store_test");
+        if(!"legacy".equals(storeTest)&&!"unidentified".equals(storeTest))storeTest=null;
         if(saveRaw&&(!lutSession()||saveOriginal)){
             status=new TextView(this);status.setText("RAW 只能和成片一起保存，不能同时保存原片 JPEG。");setContentView(status);return;
         }
@@ -889,6 +901,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
         storeEvents=new CaptureStoreEvents(owner,new CaptureStoreEvents.Sink(){
             public void named(final int receiptId,final String directory,final String file){
                 if(closed||cameraEx!=owner)return;
+                if(storeTest!=null){event("named_receipt_ignored","store_test="+storeTest+" file="+file);return;}
                 final long shot=gate.shot(),at=SystemClock.elapsedRealtime();
                 final long token=storeCompletion==null?0:storeCompletion.token();
                 storeObserver.post(new Runnable(){public void run(){
@@ -904,14 +917,21 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             }
             public void failed(Throwable error){if(!closed&&cameraEx==owner)failure("store_notification",error);}
         });
+        final boolean namedReceipt=storeEvents.hasNamedReceipt()&&storeTest==null;
         if(!initOnly&&develops()){
             storeIndex=new CaptureStoreIndex(this,sd);
-            storeCompletion=new CaptureStoreCompletion(photoFiles,storeIndex,storeEvents.hasNamedReceipt());
+            CaptureStoreCompletion.Registration registration=storeIndex;
+            if("unidentified".equals(storeTest))registration=new CaptureStoreCompletion.Registration(){
+                public void begin()throws Exception{storeIndex.begin();}
+                public PhotoIndex.Entry saved(){return null;}
+                public void accepted(File file)throws Exception{storeIndex.accepted(file);}
+            };
+            storeCompletion=new CaptureStoreCompletion(photoFiles,registration,namedReceipt);
             event("store_validation","jpeg_header_and_tail");
         }
-        queuedStores=productUi()&&develops()&&lutSession()&&!paired()&&storeCompletion!=null&&storeEvents.hasNamedReceipt();
-        event("store_queue","enabled="+queuedStores);
-        event("store_protocol",storeEvents.hasNamedReceipt()?"named_store_complete_with_index_recovery":"index_and_complete_file; overlap_original=false");
+        queuedStores=productUi()&&develops()&&lutSession()&&!paired()&&storeCompletion!=null;
+        event("store_queue","enabled="+queuedStores+(queuedStores&&!namedReceipt?" hand_off_ms="+CaptureStoreCompletion.HANDOFF_MS+" limit_ms="+CaptureStoreCompletion.HANDOFF_LIMIT_MS:""));
+        event("store_protocol",(namedReceipt?"named_store_complete_with_index_recovery":"index_and_complete_file; overlap_original=false")+(storeTest==null?"":" store_test="+storeTest+" receipt_available="+storeEvents.hasNamedReceipt()));
     }
     private void storeToCamera(Class<?> type,Object image,boolean releaseSource)throws Exception{
         final long shot=gate.shot();
@@ -989,6 +1009,7 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             if(storeCompletion.overdue(token,SystemClock.elapsedRealtime()))showStoreRecovery();
         }
         storeObserverAt=SystemClock.elapsedRealtime();
+        if(queuedStores&&storeCompletion.handOff(token,storeObserverAt)){queuedHandedOff(token);return;}
         if(storeCompletion.active(token))scheduleStorePoll(token,shot,recoveryNoticeShown?1000:200);
     }
     private String procWait(String name,boolean firstToken){
@@ -1212,19 +1233,19 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
     /** Work thread: one unconfirmed store at a time. The next shot has already
      * been captured, developed and graded; only its store waits. */
     private void awaitPreviousStore()throws InterruptedException,IOException{
-        QueuedShot q=queued;if(q==null||q.file!=null)return;
+        QueuedShot q=queued;if(q==null||q.file!=null||q.handedOff)return;
         long begin=SystemClock.elapsedRealtime();
         processing(CaptureProgress.Stage.SAVE,"正在等待上一张写入");
-        synchronized(storeTurn){while(!closed&&!q.failed&&q.file==null&&gate.state()!=PreJpegGate.State.FAILED)storeTurn.wait(100);}
-        event("store_turn_waited","ms="+(SystemClock.elapsedRealtime()-begin)+" previous_shot="+q.shot+" written="+(q.file!=null));
-        if(q.file==null)throw new IOException("previous photo was not confirmed");
+        synchronized(storeTurn){while(!closed&&!q.failed&&q.file==null&&!q.handedOff&&gate.state()!=PreJpegGate.State.FAILED)storeTurn.wait(100);}
+        event("store_turn_waited","ms="+(SystemClock.elapsedRealtime()-begin)+" previous_shot="+q.shot+" written="+(q.file!=null)+" handed_off="+q.handedOff);
+        if(q.file==null&&!q.handedOff)throw new IOException("previous photo was not confirmed");
     }
     /** Confirmation thread: the queued store's file is confirmed. */
     private void queuedConfirmed(long token,CaptureStoreCompletion.Receipt receipt){
         final QueuedShot q=queued;
         if(receipt.stopRequested)stopAfterStore=true;
         final File file=receipt.file;
-        event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" queued=true confirmation="+(receipt.recovered?"index_recovery":"named_receipt")+" "+storeCompletion.diagnostics());
+        event(receipt.recovered?"store_recovered":"store_confirmed","file="+file+" token="+token+" recovered="+receipt.recovered+" queued=true confirmation="+(receipt.predicted?"dcf_prediction":receipt.recovered?"index_recovery":"named_receipt")+" "+storeCompletion.diagnostics());
         photoFiles.accepted(file);
         // Only one store is ever unconfirmed, so this receipt is the queued
         // shot's; its token may not be copied yet when the receipt is quick.
@@ -1238,15 +1259,33 @@ public class PreJpegProbeActivity extends Activity implements SurfaceHolder.Call
             maybeOpenGallery();
         }});
     }
+    /** Confirmation thread, legacy bodies: nothing identified the queued
+     * store's file in time. The camera writes it as it writes any shot; the
+     * app keeps no history record for it and stops waiting. */
+    private void queuedHandedOff(long token){
+        final QueuedShot q=queued;
+        String detail="token="+token+" "+storeCompletion.diagnostics();
+        if(q==null||q.file!=null){event("store_handed_off","unmatched "+detail);return;}
+        synchronized(storeTurn){q.handedOff=true;storeTurn.notifyAll();}
+        event("store_handed_off","shot_of_file="+q.shot+" current_shot="+gate.shot()+" "+detail);
+        ui.post(new Runnable(){public void run(){
+            writingChanged();recordQueued(q,false);
+            if(!active||destroyed){close();return;}
+            if(stopAfterStore||exitAfterWrites)finishAfterWrites();
+            maybeOpenGallery();
+        }});
+    }
     /** UI thread. A record needs the confirmed file and the shot's timing; a
-     * forced record (session closing) writes without the ready time. */
+     * forced record (session closing) writes without the ready time. A
+     * handed-off shot has no file: it only leaves the queue. */
     private void recordQueued(QueuedShot q,boolean force){
         // The confirmation may land after the next shot replaced `queued`.
-        if(q==null||q.recorded||q.file==null||q.lut==null||(q.ready<0&&!force))return;
+        if(q==null||q.recorded||(q.file==null&&!q.handedOff)||q.lut==null||(q.ready<0&&!force))return;
         q.recorded=true;synchronized(storeTurn){if(queued==q)queued=null;}
+        if(q.file==null){event("receipt_skipped","shot_of_file="+q.shot+" handed_off=true");return;}
         writeReceipt(null,q.file,q.lut,Math.max(0,q.display),Math.max(0,q.ready));
     }
-    private boolean writing(){QueuedShot q=queued;return q!=null&&q.file==null;}
+    private boolean writing(){QueuedShot q=queued;return q!=null&&q.file==null&&!q.handedOff;}
     private void writingChanged(){
         if(productHud==null)return;
         productHud.writing=writing()?(playbackRequested?"写入中 · 写完打开相册":"写入中"):"";productHud.invalidate();

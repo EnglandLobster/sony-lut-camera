@@ -259,7 +259,8 @@ public final class LibraryActivity extends Activity {
                     .putExtra("develop_animation",getIntent().getBooleanExtra("develop_animation",true))
                     .putExtra("develop_animation_alternate",getIntent().getBooleanExtra("develop_animation_alternate",false))
                     .putExtra("save_original",saveOriginal())
-                    .putExtra("save_raw",saveRaw()),CAPTURE_REQUEST);
+                    .putExtra("save_raw",saveRaw())
+                    .putExtra("store_test",getIntent().getStringExtra("store_test")),CAPTURE_REQUEST);
     }
     private int captureRestarts;
     /** The capture screen found its process left over from a session that auto
